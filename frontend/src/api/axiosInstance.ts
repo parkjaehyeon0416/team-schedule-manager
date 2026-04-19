@@ -3,7 +3,7 @@ import { useAuthStore } from "../store/authStore";
 
 // ★ 에뮬레이터에서 localhost는 PC를 가리키지 않습니다!
 //    Android 에뮬레이터에서 PC의 localhost는 10.0.2.2 로 접근합니다.
-const BASE_URL = "http://10.0.2.2:8000";
+const BASE_URL = "http://localhost:8000";
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

@@ -1,40 +1,36 @@
-// 웹 버전과 동일하되 persist에 AsyncStorage 사용
-
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
-  id: number
-  name: string
-  email: string
-  role: { name: string }
-  team_id: number | null
+  id: number;
+  name: string;
+  email: string;
+  role_id: number;
+  role?: { id: number; name: string };
+  team?: { id: number; name: string };
 }
 
 interface AuthState {
-  user: User | null
-  token: string | null
-  isLoggedIn: boolean
-  setAuth: (user: User, token: string) => void
-  clearAuth: () => void
+  user: User | null;
+  token: string | null;
+  isLoggedIn: boolean;
+  setAuth: (user: User, token: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()()
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isLoggedIn: false,
-      // setAuth(): 로그인 성공 시 상태 저장
-      setAuth: (user, token) => set({ user, token, isLoggedIn: true }),
-      // clearAuth(): 로그아웃 시 상태 초기화
-      clearAuth: () => set({ user: null, token: null, isLoggedIn: false }),
-    }),
-    {
-      name: 'auth-storage',
-      // ★ 웹과 다른 점: localStorage 대신 AsyncStorage 사용
-      storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
-)
+// ★ Zustand v5에서는 async 함수를 바깥으로 빼야 해요
+export const useAuthStore = create<AuthState>()(set => ({
+  user: null,
+  token: null,
+  isLoggedIn: false,
+
+  setAuth: async (user: User, token: string) => {
+    await AsyncStorage.setItem('token', token);
+    set({ user, token, isLoggedIn: true });
+  },
+
+  logout: async () => {
+    await AsyncStorage.removeItem('token');
+    set({ user: null, token: null, isLoggedIn: false });
+  },
+}));

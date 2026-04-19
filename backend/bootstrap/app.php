@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api'
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // ★ CORS — 맨 위에 있어야 해요!
+        $middleware->prepend(\App\Http\Middleware\CorsMiddleware::class);
+
+        $middleware->preventRequestForgery(except: ['api/*']);
+
         // ★ 아래 한 줄 추가
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,

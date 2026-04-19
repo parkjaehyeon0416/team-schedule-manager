@@ -27,4 +27,23 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    // ── 관계 설정 ──
+
+    /**
+     * belongsTo: "이 User는 하나의 Role에 속한다"
+     * User::find(1)->role  →  SELECT * FROM roles WHERE id = user.role_id
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * belongsTo: "이 User는 하나의 Team에 속한다"
+     */
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 }

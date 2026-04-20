@@ -18,9 +18,16 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role_id', 'team_id',
+        'name',
+        'email',
+        'password',
+        'role_id',
+        'team_id',
+        // ★ v1.9 추가 — 프리랜서 모드 지원
+        'user_type',
+        'individual_plan',
+        'individual_plan_expires_at',
     ];
-
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [

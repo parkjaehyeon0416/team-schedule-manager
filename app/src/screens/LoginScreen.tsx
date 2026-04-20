@@ -24,7 +24,7 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await axiosInstance.post('/api/auth/login', {
+      const res = await axiosInstance.post('/auth/login', {
         email,
         password,
       });

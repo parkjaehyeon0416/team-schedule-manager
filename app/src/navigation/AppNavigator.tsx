@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
+import ScheduleDetailScreen from '../screens/ScheduleDetailScreen'; // ★ 추가
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -29,7 +30,21 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            {/* 메인 탭 (홈·근태) */}
+            <Stack.Screen name="Main" component={MainTabs} />
+
+            {/* ★ 일정 상세 화면 — 탭 위에 덮여서 열림 */}
+            <Stack.Screen
+              name="ScheduleDetail"
+              component={ScheduleDetailScreen}
+              options={{
+                headerShown: true, // 상세 화면엔 헤더 표시
+                title: '일정 상세',
+                headerBackTitle: '뒤로',
+              }}
+            />
+          </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}

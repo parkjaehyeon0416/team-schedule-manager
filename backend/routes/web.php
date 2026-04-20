@@ -2,9 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 
-// React SPA 진입점
-// 모든 웹 경로를 index.html(React 앱)으로 보냄
-// API는 routes/api.php 에서 처리
-Route::get('/{any}', function () {
-    return view('app');
-})->where('any', '.*');
+// API 백엔드 전용 — 웹 페이지는 React 프론트엔드에서 제공
+Route::get('/', function () {
+    return response()->json([
+        'app' => 'Team Schedule Manager API',
+        'version' => '1.0',
+        'status' => 'running',
+    ]);
+});

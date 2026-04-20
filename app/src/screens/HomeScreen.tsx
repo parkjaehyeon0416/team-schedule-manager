@@ -1,29 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useAuthStore } from '../store/authStore';
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { SegmentedButtons } from 'react-native-paper';
+import CalendarScreen from './CalendarScreen';
+import CardViewScreen from './CardViewScreen';
 
 export default function HomeScreen() {
-  const { user } = useAuthStore();
+  const [view, setView] = useState('calendar'); // 'calendar' | 'card'
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>안녕하세요, {user?.name}님 👋</Text>
-      <Text style={styles.sub}>v7에서 스케줄·현장 정보가 표시됩니다.</Text>
+      {/* 뷰 전환 탭 */}
+      <SegmentedButtons
+        value={view}
+        onValueChange={setView}
+        style={styles.tab}
+        buttons={[
+          { value: 'calendar', label: '📅 달력 뷰', icon: 'calendar-month' },
+          { value: 'card', label: '📋 카드 뷰', icon: 'view-list' },
+        ]}
+      />
+      {/* 선택된 뷰 표시 */}
+      <View style={styles.content}>
+        {view === 'calendar' ? <CalendarScreen /> : <CardViewScreen />}
+      </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1F3864',
-    marginBottom: 12,
-  },
-  sub: { fontSize: 15, color: '#666' },
+  container: { flex: 1, backgroundColor: '#fff' },
+  tab: { margin: 12 },
+  content: { flex: 1 },
 });

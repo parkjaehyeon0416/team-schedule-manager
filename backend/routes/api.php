@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\TeamController;
+use App\Http\Controllers\Api\CalculateController;
+use App\Http\Controllers\Api\PhotoController;
 
 // ───────────────────────────────────
 // 인증 없이 접근 가능한 라우트 (공개 API)
@@ -40,6 +42,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sites/{id}',    [SiteController::class, 'show']);
     Route::apiResource('attendances', AttendanceController::class);
     Route::post('/teams/join',   [TeamController::class, 'join']);
+
+    // 스케줄 CRUD (팀장·팀원 모두 조회 가능, 등록·수정·삭제는 팀장만)
+    Route::apiResource('schedules', ScheduleController::class);
+
+    // routes/api.php — auth 미들웨어 그룹 안에 추가
+    Route::post('calculate/area', [CalculateController::class, 'area']);
+
+    Route::post('schedules/{scheduleId}/photos', [PhotoController::class, 'store']);
+    Route::delete('schedules/{scheduleId}/photos/{photoId}', [PhotoController::class, 'destroy']);
 
 });
 

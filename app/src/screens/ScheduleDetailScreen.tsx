@@ -13,8 +13,34 @@ export default function ScheduleDetailScreen({ route }: any) {
   }, []);
 
   const fetchDetail = async () => {
-    const res = await axios.get(`/schedules/${id}`);
-    setSchedule(res.data.data);
+    console.log('🟢 [1] fetchDetail 시작, id =', id);
+    try {
+      console.log('🟢 [2] axios 요청 직전');
+      const res = await axios.get(`/schedules/${id}`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('🟢 [3] 응답 수신 성공');
+      console.log('📦 응답 status:', res.status);
+      console.log('📦 응답 data (raw):', res.data);
+      console.log('📦 응답 data 타입:', typeof res.data);
+      console.log('📦 응답 headers:', res.headers);
+      setSchedule(res.data?.data);
+      console.log('🟢 [4] setSchedule 완료, 값:', res.data?.data);
+    } catch (e: any) {
+      console.log('🔴 에러 발생!');
+      console.log('🔴 에러 메시지:', e?.message);
+      console.log('🔴 에러 응답:', JSON.stringify(e?.response?.data, null, 2));
+      console.log('🔴 에러 상태코드:', e?.response?.status);
+      Alert.alert(
+        '조회 실패',
+        `상태: ${e?.response?.status || '없음'}\n메시지: ${
+          e?.message || '알 수 없음'
+        }`,
+      );
+    }
   };
 
   // 사진 업로드

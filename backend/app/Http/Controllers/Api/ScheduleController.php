@@ -1,59 +1,148 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api;   // ★ 수정 — Api 추가!
 
-use App\Models\Schedule;                   // ★ 추가
+use App\Http\Controllers\Controller;   // ★ 추가 — 부모 Controller 네임스페이스
+use App\Models\Schedule;
 use App\Http\Responses\ApiResponse;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // ─── ① 스케줄 목록 조회 ───
+    //   캘린더에서 한 달치 조회할 때 사용
+    //   ?year=2026&month=4 쿼리로 필터링
     public function index(Request $request)
     {
         $user = $request->user();
 
-        // ★ with()로 관계 데이터 같이 불러오기 (N+1 쿼리 방지 + 프론트에 필요한 데이터 포함)
-        $schedules = Schedule::with(['users:id,name', 'site:id,apt_name,dong,ho'])
+        $query = Schedule::with([
+            'users:id,name',                              // ★ 수정 — assignedUsers.user 아님
+            'site:id,apt_name,dong,ho',
+        ])
             ->when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
-            ->orderBy('date', 'desc')
-            ->get();
+            ->orderBy('date');
 
-        return ApiResponse::success($schedules, '일정 조회 성공');
+        // 연도·월 필터 (옵션)
+        if ($year = $request->query('year')) {
+            $query->whereYear('date', $year);
+        }
+        if ($month = $request->query('month')) {
+            $query->whereMonth('date', $month);
+        }
+
+        $schedules = $query->get();
+
+        return ApiResponse::success($schedules, '일정 목록 조회 성공');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // ─── ② 스케줄 등록 ───
     public function store(Request $request)
     {
-        //
+        $user = $request->user();
+
+        $data = $request->validate([
+            'date'       => 'required|date',
+            'district'   => 'nullable|string|max:100',
+            'work_type'  => 'nullable|in:도배,타일,필름',
+            'area_m2'    => 'nullable|numeric|min:0',
+            'memo'       => 'nullable|string',
+            'user_ids'   => 'nullable|array',
+            'user_ids.*' => 'integer|exists:users,id',
+            'site_id'    => 'nullable|integer|exists:sites,id',
+        ]);
+
+        // 팀 ID 자동 주입
+        $data['team_id'] = $user->team_id;
+
+        // 1) 기본 정보 생성
+        $schedule = Schedule::create([
+            'date'      => $data['date'],
+            'district'  => $data['district']  ?? null,
+            'work_type' => $data['work_type'] ?? null,
+            'area_m2'   => $data['area_m2']   ?? null,
+            'memo'      => $data['memo']      ?? null,
+            'team_id'   => $data['team_id'],
+            'site_id'   => $data['site_id']   ?? null,
+            'status'    => 'pending',
+        ]);
+
+        // 2) 투입 인원 배정 (belongsToMany 관계의 attach() 메서드 사용)
+        if (!empty($data['user_ids'])) {
+            $schedule->users()->attach($data['user_ids']);
+        }
+
+        // 3) 응답에 관계 데이터 포함 (★ 관계 이름 users로 통일)
+        $schedule->load(['users:id,name', 'site:id,apt_name,dong,ho']);
+
+        return ApiResponse::success($schedule, '일정이 등록되었습니다.', 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    // ─── ③ 스케줄 상세 조회 ───
+    public function show(Request $request, string $id)
     {
-        //
+        $user = $request->user();
+
+        $schedule = Schedule::with(['users:id,name', 'site:id,apt_name,dong,ho'])
+            ->when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+            ->find($id);
+
+        if (!$schedule) {
+            return ApiResponse::error('일정을 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        return ApiResponse::success($schedule, '일정 조회 성공');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // ─── ④ 스케줄 수정 ───
     public function update(Request $request, string $id)
     {
-        //
+        $user = $request->user();
+
+        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+            ->find($id);
+
+        if (!$schedule) {
+            return ApiResponse::error('일정을 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        $data = $request->validate([
+            'date'       => 'sometimes|date',
+            'district'   => 'nullable|string|max:100',
+            'work_type'  => 'nullable|in:도배,타일,필름',
+            'area_m2'    => 'nullable|numeric|min:0',
+            'memo'       => 'nullable|string',
+            'user_ids'   => 'nullable|array',
+            'user_ids.*' => 'integer|exists:users,id',
+            'site_id'    => 'nullable|integer|exists:sites,id',
+        ]);
+
+        $schedule->update($data);
+
+        // 투입 인원 재배정 (기존 삭제 후 새로 배정)
+        if (isset($data['user_ids'])) {
+            $schedule->users()->sync($data['user_ids']);
+        }
+
+        $schedule->load(['users:id,name', 'site:id,apt_name,dong,ho']);
+
+        return ApiResponse::success($schedule, '일정이 수정되었습니다.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    // ─── ⑤ 스케줄 삭제 ───
+    public function destroy(Request $request, string $id)
     {
-        //
+        $user = $request->user();
+
+        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+            ->find($id);
+
+        if (!$schedule) {
+            return ApiResponse::error('일정을 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        $schedule->delete();  // SoftDelete — deleted_at 기록만, 복구 가능
+
+        return ApiResponse::success(null, '일정이 삭제되었습니다.');
     }
 }

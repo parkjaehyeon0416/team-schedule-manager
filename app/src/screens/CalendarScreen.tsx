@@ -1,7 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 //   app/src/screens/CalendarScreen.tsx
-//   범례를 툴바로 이동 (상단 한 줄 통합)
-//   v7.4 — 2026-04-20
+//   v7.6 — 2026-04-22 Phase 5 완성
+//   - 일정 등록 네비게이션
+//   - 화면 복귀 시 자동 갱신 (addListener)
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -200,11 +201,10 @@ const CustomDay: React.FC<CustomDayProps> = ({
 // ═══════════════════════════════════════════════════════════════
 // [6] 메인 화면
 // ═══════════════════════════════════════════════════════════════
-export default function CalendarScreen() {
+export default function CalendarScreen({ navigation }: any) {
   const [currentMonth, setCurrentMonth] = useState(
     dayjs().format('YYYY-MM-DD'),
   );
-
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSchedules, setSelectedSchedules] = useState<ScheduleItem[]>(
@@ -212,6 +212,7 @@ export default function CalendarScreen() {
   );
   const [modalVisible, setModalVisible] = useState(false);
 
+  // ─── 일정 목록 조회 ───
   const fetchSchedules = useCallback(async () => {
     try {
       const res = await axios.get('/schedules');
@@ -219,17 +220,30 @@ export default function CalendarScreen() {
       setSchedules(list);
     } catch (e: any) {
       console.error('스케줄 조회 실패:', e);
-      Alert.alert(
-        '조회 실패',
-        e?.response?.data?.message || '스케줄을 불러오지 못했습니다.',
-      );
+      // Alert는 제거 — 불필요한 팝업 방지
     }
   }, []);
 
+  // ─── 최초 로드 ───
   useEffect(() => {
     fetchSchedules();
   }, [fetchSchedules]);
 
+  // ─── 화면 복귀 시 자동 갱신 ───
+  //   다른 화면(일정 등록 등)에서 돌아올 때마다 다시 조회
+  useEffect(() => {
+    if (!navigation) return;
+
+    // React Navigation의 'focus' 이벤트 리스너 등록
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchSchedules();
+    });
+
+    // 클린업 — 화면 언마운트 시 리스너 제거
+    return unsubscribe;
+  }, [navigation, fetchSchedules]);
+
+  // ─── 날짜별로 일정 그룹화 ───
   const markedDates = useMemo(() => {
     const grouped: Record<string, { schedules: ScheduleItem[] }> = {};
     schedules.forEach(s => {
@@ -239,6 +253,7 @@ export default function CalendarScreen() {
     return grouped;
   }, [schedules]);
 
+  // ─── 날짜 클릭 시 모달 열기 ───
   const handleDayPress = (dateString: string, daySchedules: ScheduleItem[]) => {
     setSelectedDate(dateString);
     setSelectedSchedules(daySchedules);
@@ -249,11 +264,22 @@ export default function CalendarScreen() {
     setCurrentMonth(dayjs().format('YYYY-MM-DD'));
   };
 
+  // ─── 일정 등록 화면으로 이동 ───
+  const goToCreate = () => {
+    setModalVisible(false);
+    // 부모 Navigator(Stack)에 등록된 ScheduleCreate로 이동
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('ScheduleCreate', { date: selectedDate });
+    } else {
+      navigation.navigate('ScheduleCreate', { date: selectedDate });
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* ─── 상단 툴바: 범례(왼쪽) + 오늘 버튼(오른쪽) ─── */}
+      {/* ─── 상단 툴바: 범례 + 오늘 버튼 ─── */}
       <View style={styles.toolbar}>
-        {/* 왼쪽: 범례 */}
         <View style={styles.toolbarLegend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#2E75B6' }]} />
@@ -268,8 +294,6 @@ export default function CalendarScreen() {
             <Text style={styles.legendText}>필름</Text>
           </View>
         </View>
-
-        {/* 오른쪽: 오늘 버튼 */}
         <Button
           mode="outlined"
           compact
@@ -368,16 +392,7 @@ export default function CalendarScreen() {
               >
                 닫기
               </Button>
-              <Button
-                mode="contained"
-                style={{ flex: 1 }}
-                onPress={() => {
-                  Alert.alert(
-                    '알림',
-                    '일정 등록 기능은 v7에서 구현 예정입니다.',
-                  );
-                }}
-              >
+              <Button mode="contained" style={{ flex: 1 }} onPress={goToCreate}>
                 + 일정 추가
               </Button>
             </View>
@@ -392,10 +407,9 @@ export default function CalendarScreen() {
 // [7] 스타일
 // ═══════════════════════════════════════════════════════════════
 const styles = StyleSheet.create({
-  // ── 툴바 (범례 + 오늘 버튼 통합) ──
   toolbar: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // 왼쪽(범례)과 오른쪽(버튼)을 양 끝으로
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -403,26 +417,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: '#EEE',
   },
-  toolbarLegend: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 12,
-    color: '#555',
-  },
-
-  // ── 화살표 버튼 ──
+  toolbarLegend: { flexDirection: 'row', gap: 10 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 12, color: '#555' },
   arrowBtn: {
     width: 36,
     height: 36,
@@ -431,13 +429,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: '#F0F7FF',
   },
-  arrowText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2E75B6',
-  },
-
-  // ── 날짜 셀 ──
+  arrowText: { fontSize: 16, fontWeight: '700', color: '#2E75B6' },
   cell: {
     width: '100%',
     minHeight: 90,
@@ -446,43 +438,20 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#EEEEEE',
   },
-  todayCell: {
-    backgroundColor: '#FFF9E6',
-  },
-  pressedCell: {
-    backgroundColor: '#F0F7FF',
-  },
+  todayCell: { backgroundColor: '#FFF9E6' },
+  pressedCell: { backgroundColor: '#F0F7FF' },
   cellHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 2,
   },
-  dateText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  dotRow: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  itemRow: {
-    marginBottom: 2,
-  },
-  itemName: {
-    fontSize: 9,
-    color: '#333',
-    fontWeight: '500',
-  },
-  itemSite: {
-    fontSize: 8,
-    color: '#888',
-  },
+  dateText: { fontSize: 12, fontWeight: '600' },
+  dotRow: { flexDirection: 'row', gap: 2 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  itemRow: { marginBottom: 2 },
+  itemName: { fontSize: 9, color: '#333', fontWeight: '500' },
+  itemSite: { fontSize: 8, color: '#888' },
   moreText: {
     fontSize: 9,
     color: '#2E75B6',
@@ -490,8 +459,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
     fontWeight: '500',
   },
-
-  // ── 모달 ──
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -503,16 +470,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     padding: 16,
   },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#888',
-    paddingVertical: 24,
-  },
+  modalTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
+  emptyText: { textAlign: 'center', color: '#888', paddingVertical: 24 },
   scheduleItem: {
     flexDirection: 'row',
     gap: 12,
@@ -526,24 +485,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
   },
-  workTypeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  scheduleSite: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  scheduleUsers: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  scheduleArea: {
-    fontSize: 11,
-    color: '#888',
-    marginTop: 2,
-  },
+  workTypeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  scheduleSite: { fontSize: 14, fontWeight: '500', color: '#333' },
+  scheduleUsers: { fontSize: 12, color: '#666', marginTop: 2 },
+  scheduleArea: { fontSize: 11, color: '#888', marginTop: 2 },
 });

@@ -6,7 +6,8 @@ import { useAuthStore } from '../store/authStore';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
-import ScheduleDetailScreen from '../screens/ScheduleDetailScreen'; // ★ 추가
+import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
+import ScheduleCreateScreen from '../screens/ScheduleCreateScreen'; // ★ 추가 (v7)
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,14 +35,25 @@ export default function AppNavigator() {
             {/* 메인 탭 (홈·근태) */}
             <Stack.Screen name="Main" component={MainTabs} />
 
-            {/* ★ 일정 상세 화면 — 탭 위에 덮여서 열림 */}
+            {/* ── 일정 상세 화면 — 탭 위에 덮여서 열림 ── */}
             <Stack.Screen
               name="ScheduleDetail"
               component={ScheduleDetailScreen}
               options={{
-                headerShown: true, // 상세 화면엔 헤더 표시
+                headerShown: true,
                 title: '일정 상세',
                 headerBackTitle: '뒤로',
+              }}
+            />
+
+            {/* ── ★ 일정 등록 화면 (모달) ── */}
+            <Stack.Screen
+              name="ScheduleCreate"
+              component={ScheduleCreateScreen}
+              options={{
+                headerShown: true,
+                title: '일정 등록',
+                presentation: 'modal', // 아래→위 슬라이드 애니메이션
               }}
             />
           </>

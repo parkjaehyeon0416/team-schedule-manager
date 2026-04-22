@@ -34,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sites',           [SiteController::class, 'index']);
     Route::get('/sites/{id}',      [SiteController::class, 'show']);
 
+    // ★ 추가 — 내 팀 멤버 목록 조회 (일정 등록 시 투입 인원 선택용)
+    Route::get('/team/members',    [TeamController::class, 'members']);
+
     // 근태는 본인 것만 CRUD (member 이상)
     Route::apiResource('attendances', AttendanceController::class);
 

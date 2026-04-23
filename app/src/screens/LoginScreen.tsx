@@ -24,9 +24,13 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
+      // ★ v9: platform='mobile' 파라미터 추가
+      //   - 백엔드가 user_type과 platform 매칭 검증
+      //   - user_type='operator'(운영자) 는 모바일 로그인 거부됨
       const res = await axiosInstance.post('/auth/login', {
         email,
         password,
+        platform: 'mobile',
       });
       if (res.data.success) {
         setAuth(res.data.data.user, res.data.data.token);
@@ -36,6 +40,12 @@ export default function LoginScreen() {
       const errCode = error.response?.data?.error_code;
       if (errCode === 'ERR_AUTH_001') {
         Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
+      } else if (errCode === 'ERR_AUTH_008') {
+        // ★ v9 신규: 운영자 계정이 모바일 로그인 시도
+        Alert.alert(
+          '접근 불가',
+          '운영자 계정은 모바일 앱 이용이 불가합니다.\n웹 관리자에서 로그인해주세요.',
+        );
       } else {
         Alert.alert('오류', '네트워크 오류가 발생했습니다.');
       }

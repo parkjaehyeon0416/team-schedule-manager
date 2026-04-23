@@ -1,9 +1,7 @@
-// ★ v6 변경: 임시 로그인 → 실제 API 연동
-
-import { Form, Input, Button, Card, Typography, message } from "antd";
+import { Form, Input, Button, Card, Typography, App } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
-import { login } from "../api/auth"; // ★ API 함수 import
+import { login } from "../api/auth";
 import { useState } from "react";
 
 export default function Login() {
@@ -12,23 +10,29 @@ export default function Login() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
+  // v9: message를 App.useApp() 훅에서 가져오기
+  // (AntApp wrapper 적용으로 전환)
+  const { message } = App.useApp();
+
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
-      // ★ 실제 API 호출
       const result = await login(values.email, values.password);
 
       if (result.success) {
-        // 로그인 성공: Zustand store에 사용자 정보 + 토큰 저장
         setAuth(result.data.user, result.data.token);
         message.success("로그인 성공!");
         navigate("/");
       }
     } catch (error: any) {
-      // 오류 코드 정의서에 맞게 오류 처리
       const errCode = error.response?.data?.error_code;
+
       if (errCode === "ERR_AUTH_001") {
         message.error("이메일 또는 비밀번호를 확인해주세요.");
+      } else if (errCode === "ERR_AUTH_007") {
+        message.error(
+          "이 계정은 모바일 앱 전용입니다. 모바일 앱에서 로그인해주세요.",
+        );
       } else {
         message.error("로그인에 실패했습니다. 잠시 후 다시 시도해주세요.");
       }

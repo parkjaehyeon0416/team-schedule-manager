@@ -7,7 +7,6 @@ import {
   TeamOutlined,
   ClockCircleOutlined,
   LogoutOutlined,
-  BarChartOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../../store/authStore";
 
@@ -29,7 +28,6 @@ export default function AdminLayout() {
     { key: "/sites", icon: <ShopOutlined />, label: "현장 목록" },
     { key: "/teams", icon: <TeamOutlined />, label: "팀/팀원 관리" },
     { key: "/attendance", icon: <ClockCircleOutlined />, label: "근태 현황" },
-    { key: "/summary", icon: <BarChartOutlined />, label: "월별 수입 현황" },
   ];
 
   return (

@@ -7,6 +7,7 @@ import Sites from "./pages/Sites";
 import SiteDetail from "./pages/SiteDetail";
 import Teams from "./pages/Teams";
 import Attendance from "./pages/Attendance";
+import MonthlySummary from "./pages/MonthlySummary";
 import { useAuthStore } from "./store/authStore";
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="sites/:id" element={<SiteDetail />} />
           <Route path="teams" element={<Teams />} />
           <Route path="attendance" element={<Attendance />} />
+          <Route path="summary" element={<MonthlySummary />} />
         </Route>
       </Routes>
     </BrowserRouter>

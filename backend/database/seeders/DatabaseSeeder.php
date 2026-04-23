@@ -45,5 +45,7 @@ class DatabaseSeeder extends Seeder
         Site::create(['address'=>'서울시 강남구 역삼동','apt_name'=>'테스트아파트',
             'dong'=>'101동','ho'=>'501호','area_m2'=>84.50,'team_id'=>$team->id]);
 
+        $this->call(WorkTypeSeeder::class);
+
     }
 }

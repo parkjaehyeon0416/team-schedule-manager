@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 //   app/src/screens/CalendarScreen.tsx
-//   v7.6 — 2026-04-22 Phase 5 완성
-//   - 일정 등록 네비게이션
-//   - 화면 복귀 시 자동 갱신 (addListener)
+//   v9.1 — 2026-04-24
+//   - 모달에서 일정 터치 시 상세 화면 이동 (CardView 대체)
+//   - 일정 아이템을 Pressable로 변경
 // ═══════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -220,26 +220,18 @@ export default function CalendarScreen({ navigation }: any) {
       setSchedules(list);
     } catch (e: any) {
       console.error('스케줄 조회 실패:', e);
-      // Alert는 제거 — 불필요한 팝업 방지
     }
   }, []);
 
-  // ─── 최초 로드 ───
   useEffect(() => {
     fetchSchedules();
   }, [fetchSchedules]);
 
-  // ─── 화면 복귀 시 자동 갱신 ───
-  //   다른 화면(일정 등록 등)에서 돌아올 때마다 다시 조회
   useEffect(() => {
     if (!navigation) return;
-
-    // React Navigation의 'focus' 이벤트 리스너 등록
     const unsubscribe = navigation.addListener('focus', () => {
       fetchSchedules();
     });
-
-    // 클린업 — 화면 언마운트 시 리스너 제거
     return unsubscribe;
   }, [navigation, fetchSchedules]);
 
@@ -267,12 +259,25 @@ export default function CalendarScreen({ navigation }: any) {
   // ─── 일정 등록 화면으로 이동 ───
   const goToCreate = () => {
     setModalVisible(false);
-    // 부모 Navigator(Stack)에 등록된 ScheduleCreate로 이동
     const parent = navigation.getParent();
     if (parent) {
       parent.navigate('ScheduleCreate', { date: selectedDate });
     } else {
       navigation.navigate('ScheduleCreate', { date: selectedDate });
+    }
+  };
+
+  // ─── ★ v9.1 신규: 일정 탭 시 상세 화면으로 이동 ───
+  //   모달 먼저 닫고(자연스러운 전환) 부모 Stack Navigator에서 ScheduleDetail로 이동
+  const goToDetail = (scheduleId: number) => {
+    setModalVisible(false);
+    // Drawer > Tab > CalendarScreen 구조이므로 Stack(최상위)를 얻으려면 getParent 2번
+    const parent =
+      navigation.getParent()?.getParent() || navigation.getParent();
+    if (parent) {
+      parent.navigate('ScheduleDetail', { id: scheduleId });
+    } else {
+      navigation.navigate('ScheduleDetail', { id: scheduleId });
     }
   };
 
@@ -348,6 +353,9 @@ export default function CalendarScreen({ navigation }: any) {
             <Text style={styles.modalTitle}>
               {selectedDate} 일정 ({selectedSchedules.length}건)
             </Text>
+            <Text style={styles.modalHint}>
+              일정을 터치하면 상세 정보를 볼 수 있습니다.
+            </Text>
             <Divider style={{ marginVertical: 8 }} />
 
             <ScrollView style={{ maxHeight: 300 }}>
@@ -355,7 +363,16 @@ export default function CalendarScreen({ navigation }: any) {
                 <Text style={styles.emptyText}>등록된 일정이 없습니다.</Text>
               ) : (
                 selectedSchedules.map(s => (
-                  <View key={s.id} style={styles.scheduleItem}>
+                  // ★ v9.1: View → Pressable 로 변경 (터치 가능)
+                  <Pressable
+                    key={s.id}
+                    onPress={() => goToDetail(s.id)}
+                    style={({ pressed }) => [
+                      styles.scheduleItem,
+                      pressed && styles.scheduleItemPressed,
+                    ]}
+                    android_ripple={{ color: '#E8F0FE' }}
+                  >
                     <View
                       style={[
                         styles.workTypeBadge,
@@ -378,7 +395,9 @@ export default function CalendarScreen({ navigation }: any) {
                         </Text>
                       )}
                     </View>
-                  </View>
+                    {/* ★ v9.1: 우측 > 아이콘 — 탭 가능하다는 시각적 힌트 */}
+                    <Text style={styles.chevron}>›</Text>
+                  </Pressable>
                 ))
               )}
             </ScrollView>
@@ -471,14 +490,27 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
+  // ★ v9.1: 사용자 힌트 안내
+  modalHint: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 4,
+  },
   emptyText: { textAlign: 'center', color: '#888', paddingVertical: 24 },
   scheduleItem: {
     flexDirection: 'row',
     gap: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
     borderBottomWidth: 0.5,
     borderBottomColor: '#EEE',
+    // ★ v9.1: 터치 영역 확대 + 모서리 둥글게
+    borderRadius: 6,
+  },
+  // ★ v9.1: 터치 피드백 (iOS용)
+  scheduleItemPressed: {
+    backgroundColor: '#F0F7FF',
   },
   workTypeBadge: {
     paddingHorizontal: 10,
@@ -489,4 +521,10 @@ const styles = StyleSheet.create({
   scheduleSite: { fontSize: 14, fontWeight: '500', color: '#333' },
   scheduleUsers: { fontSize: 12, color: '#666', marginTop: 2 },
   scheduleArea: { fontSize: 11, color: '#888', marginTop: 2 },
+  // ★ v9.1: > 아이콘 (탭 가능 힌트)
+  chevron: {
+    fontSize: 24,
+    color: '#CCC',
+    fontWeight: '300',
+  },
 });

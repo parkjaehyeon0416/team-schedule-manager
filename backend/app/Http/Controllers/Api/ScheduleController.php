@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api;   // ★ 수정 — Api 추가!
+namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;   // ★ 추가 — 부모 Controller 네임스페이스
+use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\Request;
@@ -10,20 +10,17 @@ use Illuminate\Http\Request;
 class ScheduleController extends Controller
 {
     // ─── ① 스케줄 목록 조회 ───
-    //   캘린더에서 한 달치 조회할 때 사용
-    //   ?year=2026&month=4 쿼리로 필터링
     public function index(Request $request)
     {
         $user = $request->user();
 
         $query = Schedule::with([
-            'users:id,name',                              // ★ 수정 — assignedUsers.user 아님
+            'users:id,name',
             'site:id,apt_name,dong,ho',
         ])
             ->when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
             ->orderBy('date');
 
-        // 연도·월 필터 (옵션)
         if ($year = $request->query('year')) {
             $query->whereYear('date', $year);
         }
@@ -42,37 +39,52 @@ class ScheduleController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'date'       => 'required|date',
-            'district'   => 'nullable|string|max:100',
-            'work_type'  => 'nullable|in:도배,타일,필름',
-            'area_m2'    => 'nullable|numeric|min:0',
-            'memo'       => 'nullable|string',
-            'user_ids'   => 'nullable|array',
-            'user_ids.*' => 'integer|exists:users,id',
-            'site_id'    => 'nullable|integer|exists:sites,id',
+            'date'          => 'required|date',
+            'district'      => 'nullable|string|max:100',
+            // 기존 ENUM 방식 (v7 호환)
+            'work_type'     => 'nullable|in:도배,타일,필름',
+            // ★ v9.0 추가 공수/급여 필드
+            'work_type_id'  => 'nullable|integer|exists:work_types,id',
+            'daily_wage'    => 'nullable|numeric|min:0|max:99999999.99',
+            'work_units'    => 'nullable|numeric|min:0|max:99.9',
+            'expenses'      => 'nullable|numeric|min:0|max:99999999.99',
+            'expenses_memo' => 'nullable|string|max:255',
+
+            'area_m2'       => 'nullable|numeric|min:0',
+            'memo'          => 'nullable|string',
+            'user_ids'      => 'nullable|array',
+            'user_ids.*'    => 'integer|exists:users,id',
+            'site_id'       => 'nullable|integer|exists:sites,id',
         ]);
 
         // 팀 ID 자동 주입
         $data['team_id'] = $user->team_id;
 
-        // 1) 기본 정보 생성
+        // 1) 기본 정보 생성 (v9.0 신규 필드 포함)
         $schedule = Schedule::create([
-            'date'      => $data['date'],
-            'district'  => $data['district']  ?? null,
-            'work_type' => $data['work_type'] ?? null,
-            'area_m2'   => $data['area_m2']   ?? null,
-            'memo'      => $data['memo']      ?? null,
-            'team_id'   => $data['team_id'],
-            'site_id'   => $data['site_id']   ?? null,
-            'status'    => 'pending',
+            'date'          => $data['date'],
+            'district'      => $data['district']     ?? null,
+            'work_type'     => $data['work_type']    ?? null,
+            // ★ v9.0 추가
+            'work_type_id'  => $data['work_type_id'] ?? null,
+            'daily_wage'    => $data['daily_wage']   ?? null,
+            'work_units'    => $data['work_units']   ?? 1.0,
+            'expenses'      => $data['expenses']     ?? 0,
+            'expenses_memo' => $data['expenses_memo']?? null,
+
+            'area_m2'       => $data['area_m2']      ?? null,
+            'memo'          => $data['memo']         ?? null,
+            'team_id'       => $data['team_id'],
+            'site_id'       => $data['site_id']      ?? null,
+            'status'        => 'pending',
         ]);
 
-        // 2) 투입 인원 배정 (belongsToMany 관계의 attach() 메서드 사용)
+        // 2) 투입 인원 배정
         if (!empty($data['user_ids'])) {
             $schedule->users()->attach($data['user_ids']);
         }
 
-        // 3) 응답에 관계 데이터 포함 (★ 관계 이름 users로 통일)
+        // 3) 응답에 관계 데이터 포함
         $schedule->load(['users:id,name', 'site:id,apt_name,dong,ho']);
 
         return ApiResponse::success($schedule, '일정이 등록되었습니다.', 201);
@@ -107,19 +119,26 @@ class ScheduleController extends Controller
         }
 
         $data = $request->validate([
-            'date'       => 'sometimes|date',
-            'district'   => 'nullable|string|max:100',
-            'work_type'  => 'nullable|in:도배,타일,필름',
-            'area_m2'    => 'nullable|numeric|min:0',
-            'memo'       => 'nullable|string',
-            'user_ids'   => 'nullable|array',
-            'user_ids.*' => 'integer|exists:users,id',
-            'site_id'    => 'nullable|integer|exists:sites,id',
+            'date'          => 'sometimes|date',
+            'district'      => 'nullable|string|max:100',
+            'work_type'     => 'nullable|in:도배,타일,필름',
+            // ★ v9.0 추가 공수/급여 필드
+            'work_type_id'  => 'nullable|integer|exists:work_types,id',
+            'daily_wage'    => 'nullable|numeric|min:0|max:99999999.99',
+            'work_units'    => 'nullable|numeric|min:0|max:99.9',
+            'expenses'      => 'nullable|numeric|min:0|max:99999999.99',
+            'expenses_memo' => 'nullable|string|max:255',
+
+            'area_m2'       => 'nullable|numeric|min:0',
+            'memo'          => 'nullable|string',
+            'user_ids'      => 'nullable|array',
+            'user_ids.*'    => 'integer|exists:users,id',
+            'site_id'       => 'nullable|integer|exists:sites,id',
         ]);
 
         $schedule->update($data);
 
-        // 투입 인원 재배정 (기존 삭제 후 새로 배정)
+        // 투입 인원 재배정
         if (isset($data['user_ids'])) {
             $schedule->users()->sync($data['user_ids']);
         }
@@ -141,7 +160,7 @@ class ScheduleController extends Controller
             return ApiResponse::error('일정을 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
         }
 
-        $schedule->delete();  // SoftDelete — deleted_at 기록만, 복구 가능
+        $schedule->delete();
 
         return ApiResponse::success(null, '일정이 삭제되었습니다.');
     }

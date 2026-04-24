@@ -15,11 +15,28 @@ class Schedule extends Model
         'site_id',
         'team_id',
         'date',
+        // 공정 (v7 ENUM + v9.0 외래키 둘 다 지원)
         'work_type',
+        'work_type_id',
+        // ★ v9.0 추가 — 공수·급여·경비
+        'daily_wage',
+        'work_units',
+        'expenses',
+        'expenses_memo',
+        // 기타
         'district',
         'area_m2',
         'memo',
         'status',
+    ];
+
+    // ★ v9.0 추가 — 숫자 컬럼 자동 변환 ($casts)
+    protected $casts = [
+        'date'         => 'date:Y-m-d',
+        'daily_wage'   => 'decimal:2',
+        'work_units'   => 'decimal:1',
+        'expenses'     => 'decimal:2',
+        'area_m2'      => 'decimal:2',
     ];
 
     // ────────────────────────────────────────────────
@@ -48,6 +65,16 @@ class Schedule extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'schedule_users')
-                    ->withTimestamps();
+                    ->withTimestamps()
+                    ->wherePivotNull('deleted_at');   // ★ SoftDelete된 연결 제외
+    }
+
+    // ────────────────────────────────────────────────
+    // [관계 4] ★ v9.0 추가 — 공정 (work_type_id 외래키)
+    //   $schedule->workType  →  WorkType 객체 반환
+    // ────────────────────────────────────────────────
+    public function workType()
+    {
+        return $this->belongsTo(WorkType::class, 'work_type_id');
     }
 }

@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\CalculateController;
 use App\Http\Controllers\Api\PhotoController;
+use App\Http\Controllers\Api\WorkTypeController;                // ★ v10.1
+use App\Http\Controllers\Api\UserWageSettingController;         // ★ v10.1
+use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -45,6 +48,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 평수 계산
     Route::post('calculate/area',  [CalculateController::class, 'area']);
+
+    // ═══════════════════════════════════════════════════════════
+    // ── ★ v10.1 공수·급여 자동 계산 API (member 이상) ──
+    // ═══════════════════════════════════════════════════════════
+
+    // 공정 목록 조회
+    Route::get('/work-types', [WorkTypeController::class, 'index']);
+
+    // 내 단가 프로파일 CRUD
+    Route::get('/wage-settings',         [UserWageSettingController::class, 'index']);
+    Route::post('/wage-settings',        [UserWageSettingController::class, 'store']);
+    Route::delete('/wage-settings/{id}', [UserWageSettingController::class, 'destroy']);
+
+    // 월별 수입 집계 조회
+    Route::get('/monthly-summary', [MonthlySummaryController::class, 'show']);
 
     // ═══════════════════════════════════════════════════════════
     // ── 등록·수정·삭제 (manager 이상) ──

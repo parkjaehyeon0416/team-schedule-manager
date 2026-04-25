@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
-// 📄 ScheduleCreateScreen.tsx (v10.2 확장본)
-//   - v9.0/v10.2: 공정·단가·공수·경비 입력 추가
-//   - 공정 선택 시 내 단가 자동 채우기 (★ 핵심 UX)
-//   - 기존: 날짜, 공종(ENUM), 지역, 평수, 메모, 팀원
+// 📄 ScheduleCreateScreen.tsx (v10.2.1 — 등록/수정 겸용)
+//   - route.params.scheduleId 있으면 수정 모드, 없으면 등록 모드
+//   - 수정 모드: GET /api/schedules/{id} → 폼 채우기 → PUT 저장
+//   - 등록 모드: 빈 폼 → POST 저장
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect } from 'react';
 import {
@@ -19,7 +19,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 
-import { getTeamMembers, createSchedule } from '../api/schedulesApi';
+import {
+  getTeamMembers,
+  createSchedule,
+  updateSchedule,
+  getScheduleById,
+} from '../api/schedulesApi';
 import { getWageSettings } from '../api/wageSettingsApi';
 import WorkTypePicker from '../components/WorkTypePicker';
 import { formatMoney, parseMoney } from '../utils/format';
@@ -41,9 +46,11 @@ const ROLE_LABELS: Record<number, string> = {
 };
 
 export default function ScheduleCreateScreen({ navigation, route }: any) {
-  // ─────────────────────────────────────────────────────────────
-  // [1] 폼 상태 — 기존 필드
-  // ─────────────────────────────────────────────────────────────
+  // ★ v10.2.1: 수정 모드 판단
+  const editingScheduleId: number | undefined = route.params?.scheduleId;
+  const isEditMode = !!editingScheduleId;
+
+  // ─── 폼 상태 ───
   const [date, setDate] = useState<Date>(
     route.params?.date ? new Date(route.params.date) : new Date(),
   );
@@ -53,42 +60,43 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   const [areaM2, setAreaM2] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
 
-  // ─────────────────────────────────────────────────────────────
-  // [2] 폼 상태 — ★ v9.0 / v10.2 신규 필드
-  // ─────────────────────────────────────────────────────────────
+  // v9.0/v10.2 신규 필드
   const [workTypeId, setWorkTypeId] = useState<number | null>(null);
   const [dailyWage, setDailyWage] = useState<number>(0);
   const [workUnits, setWorkUnits] = useState<number>(1.0);
   const [expenses, setExpenses] = useState<number>(0);
   const [expensesMemo, setExpensesMemo] = useState<string>('');
 
-  // ─── 내 단가 목록 (자동 채우기용) ───
+  // 단가 자동 채우기용
   const [wageSettings, setWageSettings] = useState<WageSetting[]>([]);
 
-  // ─────────────────────────────────────────────────────────────
-  // [3] 팀원 관련
-  // ─────────────────────────────────────────────────────────────
+  // 팀원 관련
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const [loadingMembers, setLoadingMembers] = useState<boolean>(true);
 
-  // ─── 저장 중 ───
+  // 저장 / 로딩
   const [saving, setSaving] = useState<boolean>(false);
+  const [loadingData, setLoadingData] = useState<boolean>(isEditMode);
 
   // ─────────────────────────────────────────────────────────────
-  // [4] 마운트 시 — 팀원 + 단가 목록 동시 로드
+  // [1] 마운트 시 — 초기 데이터 로드
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoadingMembers(true);
-        // Promise.all 로 두 요청 병렬 실행 (속도 ↑)
         const [membersData, wageData] = await Promise.all([
           getTeamMembers(),
           getWageSettings(),
         ]);
         setMembers(membersData);
         setWageSettings(wageData);
+
+        // ★ v10.2.1: 수정 모드이면 일정 데이터 로드
+        if (isEditMode && editingScheduleId) {
+          await loadScheduleForEdit(editingScheduleId);
+        }
       } catch (e: any) {
         console.error('초기 데이터 로드 실패:', e);
         Alert.alert(
@@ -97,45 +105,68 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         );
       } finally {
         setLoadingMembers(false);
+        setLoadingData(false);
       }
     };
     fetchInitialData();
   }, []);
 
   // ─────────────────────────────────────────────────────────────
-  // [5] ★ 공정 선택 시 → 내 단가 자동 채우기 (v10.2 핵심 UX)
+  // ★ v10.2.1: 수정 모드 - 기존 일정 데이터로 폼 채우기
   // ─────────────────────────────────────────────────────────────
+  const loadScheduleForEdit = async (id: number) => {
+    try {
+      const data = await getScheduleById(id);
+
+      // 기본 필드 채우기
+      setDate(new Date(data.date));
+      setWorkType((data.work_type as WorkTypeEnum) || null);
+      setDistrict(data.district || '');
+      setAreaM2(data.area_m2 ? String(data.area_m2) : '');
+      setMemo(data.memo || '');
+
+      // v9.0/v10.2 필드
+      setWorkTypeId(data.work_type_id || null);
+      setDailyWage(data.daily_wage ? parseFloat(data.daily_wage) : 0);
+      setWorkUnits(data.work_units ? parseFloat(data.work_units) : 1.0);
+      setExpenses(data.expenses ? parseFloat(data.expenses) : 0);
+      setExpensesMemo(data.expenses_memo || '');
+
+      // 투입 인원
+      if (data.users && data.users.length > 0) {
+        setSelectedUserIds(data.users.map(u => u.id));
+      }
+    } catch (e: any) {
+      console.error('일정 로드 실패:', e);
+      Alert.alert('조회 실패', '일정을 불러오지 못했습니다.', [
+        { text: '확인', onPress: () => navigation.goBack() },
+      ]);
+    }
+  };
+
+  // ─── 공정 선택 시 단가 자동 채우기 ───
   const handleWorkTypeChange = (
     id: number | null,
     workTypeObj: WorkType | null,
   ) => {
     setWorkTypeId(id);
 
-    if (id === null || !workTypeObj) {
-      return;
-    }
+    if (id === null || !workTypeObj) return;
 
-    // 내 단가 목록에서 해당 공정의 단가 찾기
     const matched = wageSettings.find(s => s.work_type_id === id);
     if (matched) {
-      // ★ 자동 채우기!
       setDailyWage(parseFloat(matched.default_wage));
       setWorkUnits(parseFloat(matched.default_work_units));
       console.log(
         `🎯 자동 채우기: ${workTypeObj.name} → 단가 ${matched.default_wage}, 공수 ${matched.default_work_units}`,
       );
-    } else {
-      // 등록된 단가 없음 → 기본값 유지
-      console.log(`ℹ️ ${workTypeObj.name} 단가 미등록 — 직접 입력 필요`);
     }
   };
 
   // ─── 날짜 변경 ───
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
+    if (selectedDate) setDate(selectedDate);
   };
 
   // ─── 팀원 토글 ───
@@ -148,10 +179,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // [6] 저장
+  // [2] 저장 — 등록/수정 분기
   // ─────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    // 검증 — 공종(ENUM) 또는 공정(ID) 둘 중 하나는 필수
     if (!workType && !workTypeId) {
       Alert.alert('입력 오류', '공종 또는 공정을 선택해주세요.');
       return;
@@ -162,12 +192,12 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
     try {
       const payload = {
         date: dayjs(date).format('YYYY-MM-DD'),
-        work_type: workType, // 기존 ENUM
+        work_type: workType,
         district: district.trim() || null,
         area_m2: areaM2 ? parseFloat(areaM2) : null,
         memo: memo.trim() || null,
         user_ids: selectedUserIds,
-        // ★ v10.2 신규 필드
+        // v9.0 / v10.2
         work_type_id: workTypeId,
         daily_wage: dailyWage > 0 ? dailyWage : null,
         work_units: workUnits,
@@ -175,31 +205,32 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         expenses_memo: expensesMemo.trim() || null,
       };
 
-      console.log('📤 등록 요청:', JSON.stringify(payload, null, 2));
+      console.log('📤 요청:', JSON.stringify(payload, null, 2));
 
-      const schedule = await createSchedule(payload);
-
-      console.log('✅ 등록 성공:', schedule);
-
-      Alert.alert('등록 완료', '일정이 등록되었습니다.', [
-        {
-          text: '확인',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      // ★ v10.2.1: 모드별 분기
+      if (isEditMode && editingScheduleId) {
+        await updateSchedule(editingScheduleId, payload);
+        Alert.alert('수정 완료', '일정이 수정되었습니다.', [
+          { text: '확인', onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        await createSchedule(payload);
+        Alert.alert('등록 완료', '일정이 등록되었습니다.', [
+          { text: '확인', onPress: () => navigation.goBack() },
+        ]);
+      }
     } catch (e: any) {
-      console.error('❌ 등록 실패:', e?.response?.data || e);
-
+      console.error('❌ 저장 실패:', e?.response?.data || e);
       if (e?.response?.status === 422) {
         const errors = e?.response?.data?.errors || {};
         const firstError = Object.values(errors)[0] as string[] | undefined;
         Alert.alert('입력 오류', firstError?.[0] || '입력값을 확인해주세요.');
       } else if (e?.response?.status === 403) {
-        Alert.alert('권한 없음', '일정 등록 권한이 없습니다. (팀장 이상)');
+        Alert.alert('권한 없음', '권한이 없습니다. (팀장 이상)');
       } else {
         Alert.alert(
-          '등록 실패',
-          e?.response?.data?.message || '일정 등록에 실패했습니다.',
+          isEditMode ? '수정 실패' : '등록 실패',
+          e?.response?.data?.message || '저장에 실패했습니다.',
         );
       }
     } finally {
@@ -207,8 +238,26 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
     }
   };
 
+  // ─── 데이터 로딩 중 ───
+  if (loadingData) {
+    return (
+      <View style={styles.centerBox}>
+        <ActivityIndicator size="large" color="#2E75B6" />
+        <Text style={styles.loadingText}>일정 정보 불러오는 중...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
+      {/* ── 모드 표시 ── */}
+      {isEditMode && (
+        <View style={styles.modeBadge}>
+          <Icon name="pencil" size={14} color="#FFF" />
+          <Text style={styles.modeBadgeText}>수정 모드</Text>
+        </View>
+      )}
+
       {/* ── 1) 날짜 ── */}
       <View style={styles.labelRow}>
         <Icon name="calendar" size={18} color="#2E75B6" />
@@ -269,7 +318,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
 
       <Divider style={styles.divider} />
 
-      {/* ── 3) ★ 공정 (v10.2 신규 — work_type_id) ── */}
+      {/* ── 3) 공정 ── */}
       <View style={styles.labelRow}>
         <Icon name="briefcase" size={18} color="#2E75B6" />
         <Text style={styles.label}>공정 (상세)</Text>
@@ -286,7 +335,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
 
       <Divider style={styles.divider} />
 
-      {/* ── 4) ★ 단가 (v10.2 신규) ── */}
+      {/* ── 4) 단가 ── */}
       <View style={styles.labelRow}>
         <Icon name="currency-krw" size={18} color="#2E75B6" />
         <Text style={styles.label}>단가 (원)</Text>
@@ -301,7 +350,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         disabled={saving}
       />
 
-      {/* ── 5) ★ 공수 (v10.2 신규) ── */}
+      {/* ── 5) 공수 ── */}
       <View style={styles.labelRow}>
         <Icon name="counter" size={18} color="#2E75B6" />
         <Text style={styles.label}>공수</Text>
@@ -321,7 +370,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
 
       <Divider style={styles.divider} />
 
-      {/* ── 6) ★ 경비 (v10.2 신규) ── */}
+      {/* ── 6) 경비 ── */}
       <View style={styles.labelRow}>
         <Icon name="cash-multiple" size={18} color="#2E75B6" />
         <Text style={styles.label}>경비 (원)</Text>
@@ -336,7 +385,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         disabled={saving}
       />
 
-      {/* ── 7) ★ 경비 메모 (v10.2 신규) ── */}
+      {/* ── 7) 경비 메모 ── */}
       <View style={styles.labelRow}>
         <Icon name="receipt" size={18} color="#2E75B6" />
         <Text style={styles.label}>경비 메모 (선택)</Text>
@@ -469,11 +518,11 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
           mode="contained"
           onPress={handleSave}
           style={styles.btn}
-          icon="content-save"
+          icon={isEditMode ? 'content-save-edit' : 'content-save'}
           loading={saving}
           disabled={saving}
         >
-          {saving ? '저장 중...' : '저장'}
+          {saving ? '저장 중...' : isEditMode ? '수정 완료' : '저장'}
         </Button>
       </View>
 
@@ -484,6 +533,25 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#FAFAFA' },
+  centerBox: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  modeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FF9800',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  modeBadgeText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -13,6 +13,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
 import ScheduleCreateScreen from '../screens/ScheduleCreateScreen';
+import WageSettingsScreen from '../screens/WageSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -133,6 +134,18 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: '일정 등록',
                 presentation: 'modal',
+              }}
+            />
+            {/* ★ v10.2 추가 — 내 단가 설정 화면 */}
+            <Stack.Screen
+              name="WageSettings"
+              component={WageSettingsScreen}
+              options={{
+                headerShown: true,
+                title: '내 단가 설정',
+                headerStyle: { backgroundColor: '#1F3864' },
+                headerTintColor: '#FFFFFF',
+                headerBackTitle: '뒤로',
               }}
             />
           </>

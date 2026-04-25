@@ -1,17 +1,20 @@
 /**
  * 프로필 화면 (햄버거 메뉴용)
  *
- * ★ 현재: 사용자 정보 표시 + 로그아웃 버튼 (뼈대)
- * ★ 다음 단계: 정보 수정, 비밀번호 변경 등
+ * ★ 현재: 사용자 정보 + 메뉴 + 로그아웃
+ * ★ v10.2: "내 단가 설정" 메뉴 추가
  */
 
 import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Card, Text, Button, Avatar, Divider } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const navigation = useNavigation<any>();
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '정말 로그아웃하시겠습니까?', [
@@ -30,6 +33,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      {/* ── 1) 프로필 카드 ── */}
       <Card style={styles.profileCard}>
         <Card.Content style={styles.profileContent}>
           <Avatar.Text
@@ -51,8 +55,29 @@ export default function ProfileScreen() {
         </Card.Content>
       </Card>
 
+      {/* ── 2) 업무 설정 섹션 ── */}
+      <Text style={styles.sectionTitle}>업무 설정</Text>
+      <Card style={styles.menuCard}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('WageSettings')}
+          style={styles.menuItem}
+        >
+          <View style={styles.menuLeft}>
+            <Icon name="currency-krw" size={24} color="#2E75B6" />
+            <View style={styles.menuTextBox}>
+              <Text style={styles.menuLabel}>내 단가 설정</Text>
+              <Text style={styles.menuSub}>
+                공정별 기본 단가를 등록하면 일정 작성 시 자동 입력됩니다
+              </Text>
+            </View>
+          </View>
+          <Icon name="chevron-right" size={22} color="#BBB" />
+        </TouchableOpacity>
+      </Card>
+
       <Divider style={styles.divider} />
 
+      {/* ── 3) 로그아웃 ── */}
       <Button
         mode="outlined"
         icon="logout"
@@ -73,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   profileCard: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   profileContent: {
     alignItems: 'center',
@@ -93,6 +118,43 @@ const styles = StyleSheet.create({
   },
   role: {
     color: '#999',
+  },
+  sectionTitle: {
+    fontSize: 13,
+    color: '#888',
+    fontWeight: '500',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  menuCard: {
+    marginBottom: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+  },
+  menuTextBox: {
+    flex: 1,
+  },
+  menuLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 2,
+  },
+  menuSub: {
+    fontSize: 12,
+    color: '#999',
+    lineHeight: 16,
   },
   divider: {
     marginVertical: 16,

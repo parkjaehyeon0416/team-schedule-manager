@@ -82,6 +82,10 @@ class ScheduleController extends Controller
         // 2) 투입 인원 배정
         if (!empty($data['user_ids'])) {
             $schedule->users()->attach($data['user_ids']);
+
+            // ★ v10.2 패치 — schedule_users 연결 후 Observer 재발동
+            //   (monthly_summary 자동 갱신 트리거)
+            $schedule->touch();
         }
 
         // 3) 응답에 관계 데이터 포함
@@ -141,6 +145,10 @@ class ScheduleController extends Controller
         // 투입 인원 재배정
         if (isset($data['user_ids'])) {
             $schedule->users()->sync($data['user_ids']);
+
+            // ★ v10.2 패치 — schedule_users 변경 후 Observer 재발동
+            //   (monthly_summary 자동 갱신 트리거)
+            $schedule->touch();
         }
 
         $schedule->load(['users:id,name', 'site:id,apt_name,dong,ho']);

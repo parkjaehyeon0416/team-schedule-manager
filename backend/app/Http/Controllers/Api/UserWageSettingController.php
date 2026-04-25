@@ -68,17 +68,30 @@ class UserWageSettingController extends Controller
         $memo             = $request->input('memo');
 
         // 2) updateOrCreate: 있으면 업데이트, 없으면 생성
-        $setting = UserWageSetting::updateOrCreate(
-            [
-                'user_id'      => $user->id,
-                'work_type_id' => $workTypeId,
-            ],
-            [
+        // ✅ 수정 — SoftDelete된 레코드까지 포함해서 찾고 복원
+        $setting = UserWageSetting::withTrashed()
+            ->where('user_id', $user->id)
+            ->where('work_type_id', $workTypeId)
+            ->first();
+
+        if ($setting) {
+            // 기존 레코드(삭제된 것 포함) 발견 → 복원 + 업데이트
+            $setting->restore();  // deleted_at = null 로 복원
+            $setting->update([
                 'default_wage'       => $defaultWage,
                 'default_work_units' => $defaultWorkUnits,
                 'memo'               => $memo,
-            ]
-        );
+            ]);
+        } else {
+            // 진짜 신규 → INSERT
+            $setting = UserWageSetting::create([
+                'user_id'            => $user->id,
+                'work_type_id'       => $workTypeId,
+                'default_wage'       => $defaultWage,
+                'default_work_units' => $defaultWorkUnits,
+                'memo'               => $memo,
+            ]);
+        }
 
         // 3) workType 관계 데이터 함께 로드
         $setting->load('workType:id,name,code,color,icon');

@@ -1,54 +1,97 @@
 /**
- * 홈 화면 — v9.2 재구성
+ * 홈 화면 — v9.2 + v10.3
  *
- * 변경 사항:
- *  - Bottom Tab Navigator 제거 → 내 수입/근태는 햄버거 메뉴에서 접근
- *  - 요약 스트립 이모지 제거 → 공간 효율 ↑
- *  - 달력 영역 최대 확장 → 빈 날짜 조망 최적화
- *
- * 네비게이션:
- *  - 요약 스트립 터치 시 → navigation.navigate('MySummary' / 'Attendance')
- *    (Drawer.Screen 이름과 일치)
+ * 핵심 원칙:
+ *  - 홈은 "캘린더가 보고 있는 달"을 따라간다
+ *  - 요약 스트립의 데이터는 캘린더의 달 기준
+ *  - "이번달 수입" 탭 시 그 달을 MySummary에 params로 전달
+ *  - MySummary 화면 변경에 영향 받지 않음
  */
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+
 import CalendarScreen from './CalendarScreen';
-
-// ═══════════════════════════════════════════════
-// Mock 요약 데이터 (v10에서 API 연동 시 교체)
-// ═══════════════════════════════════════════════
-const MOCK_SUMMARY = {
-  work_days: 18,
-  total_income: 3_600_000,
-  site_count: 12,
-};
-
-const formatShortKRW = (value: number): string => {
-  if (value >= 10_000_000) {
-    return `${(value / 10_000_000).toFixed(1)}천만`;
-  }
-  if (value >= 10_000) {
-    return `${Math.floor(value / 10_000)}만`;
-  }
-  return value.toLocaleString('ko-KR');
-};
+import { getMonthlySummary } from '../api/schedulesApi';
+import type { MonthlySummary } from '../types/api';
+import { formatShortKRW } from '../utils/format';
 
 export default function HomeScreen({ navigation }: any) {
-  const summary = MOCK_SUMMARY;
+  // ─── 캘린더가 보고 있는 달을 따라가는 state ──
+  const now = new Date();
+  const [calendarYear, setCalendarYear] = useState<number>(now.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState<number>(
+    now.getMonth() + 1,
+  );
 
-  // ─── v9.2: Drawer.Screen 이름으로 이동 ───
+  // ─── 월별 집계 데이터 ──────────────────────
+  const [summary, setSummary] = useState<MonthlySummary | null>(null);
+
+  // ─── 캘린더가 월 변경 알리면 즉시 fetch ────
+  const handleCalendarMonthChange = useCallback(
+    async (newYear: number, newMonth: number) => {
+      setCalendarYear(newYear);
+      setCalendarMonth(newMonth);
+      // 캘린더 변경 즉시 새 데이터 fetch
+      try {
+        const data = await getMonthlySummary(newYear, newMonth);
+        setSummary(data);
+      } catch {
+        setSummary(null);
+      }
+    },
+    [],
+  );
+
+  // ─── 화면 포커스 시 현재 캘린더 달로 새로고침 ──
+  // (다른 화면 갔다가 돌아왔을 때 데이터 갱신)
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      const load = async () => {
+        try {
+          const data = await getMonthlySummary(calendarYear, calendarMonth);
+          if (!cancelled) setSummary(data);
+        } catch {
+          if (!cancelled) setSummary(null);
+        }
+      };
+      load();
+      return () => {
+        cancelled = true;
+      };
+    }, [calendarYear, calendarMonth]),
+  );
+
+  // ─── 안전한 숫자 변환 ──────────────────────
+  const workDays = summary?.work_days ?? 0;
+  const totalIncome = parseFloat(summary?.total_income || '0');
+  const siteCount = summary?.site_count ?? 0;
+
+  // ─── 네비게이션 ─────────────────────────────
+  // ★ 캘린더가 보고 있는 달을 MySummary에 전달
   const goToMySummary = () => {
-    navigation.navigate('MySummary');
+    navigation.navigate('MySummary', {
+      year: calendarYear,
+      month: calendarMonth,
+      _ts: Date.now(), // 같은 달 재진입도 인식되게
+    });
   };
 
   const goToAttendance = () => {
     navigation.navigate('Attendance');
   };
 
+  // ─── 라벨 동적 변경 ─────────────────────────
+  const isCurrentMonth =
+    calendarYear === now.getFullYear() && calendarMonth === now.getMonth() + 1;
+  const incomeLabel = isCurrentMonth
+    ? '이번달 수입'
+    : `${calendarMonth}월 수입`;
+
   return (
     <View style={styles.container}>
-      {/* ═══ 이번달 요약 스트립 (이모지 제거, 컴팩트) ═══ */}
       <View style={styles.summaryStrip}>
         {/* 근무일 */}
         <Pressable
@@ -59,13 +102,13 @@ export default function HomeScreen({ navigation }: any) {
           onPress={goToAttendance}
           android_ripple={{ color: '#E8F0FE' }}
         >
-          <Text style={styles.summaryValue}>{summary.work_days}일</Text>
+          <Text style={styles.summaryValue}>{workDays}일</Text>
           <Text style={styles.summaryLabel}>근무일</Text>
         </Pressable>
 
         <View style={styles.separator} />
 
-        {/* 수입 — 가운데, 강조 */}
+        {/* 수입 — 캘린더 달 기준 */}
         <Pressable
           style={({ pressed }) => [
             styles.summaryItem,
@@ -76,10 +119,10 @@ export default function HomeScreen({ navigation }: any) {
           android_ripple={{ color: '#FFE7B8' }}
         >
           <Text style={[styles.summaryValue, styles.summaryValueHighlight]}>
-            ₩{formatShortKRW(summary.total_income)}
+            ₩{formatShortKRW(totalIncome)}
           </Text>
           <Text style={[styles.summaryLabel, styles.summaryLabelHighlight]}>
-            이번달 수입
+            {incomeLabel}
           </Text>
         </Pressable>
 
@@ -94,25 +137,24 @@ export default function HomeScreen({ navigation }: any) {
           onPress={goToMySummary}
           android_ripple={{ color: '#E8F0FE' }}
         >
-          <Text style={styles.summaryValue}>{summary.site_count}개</Text>
+          <Text style={styles.summaryValue}>{siteCount}개</Text>
           <Text style={styles.summaryLabel}>현장</Text>
         </Pressable>
       </View>
 
-      {/* ═══ 큰 달력 (화면 대부분 차지) ═══ */}
+      {/* 큰 달력 */}
       <View style={styles.calendarArea}>
-        <CalendarScreen navigation={navigation} />
+        <CalendarScreen
+          navigation={navigation}
+          onMonthChange={handleCalendarMonthChange}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  // ─── 요약 스트립 (컴팩트 버전) ───
+  container: { flex: 1, backgroundColor: '#fff' },
   summaryStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -128,38 +170,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
-  summaryItemHighlight: {
-    backgroundColor: '#FFF8E1',
-    flex: 1.3,
-  },
-  summaryItemPressed: {
-    opacity: 0.6,
-  },
+  summaryItemHighlight: { backgroundColor: '#FFF8E1', flex: 1.3 },
+  summaryItemPressed: { opacity: 0.6 },
   summaryValue: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1F3864',
     marginBottom: 2,
   },
-  summaryValueHighlight: {
-    color: '#D48806',
-    fontSize: 17,
-  },
-  summaryLabel: {
-    fontSize: 10,
-    color: '#888',
-  },
-  summaryLabelHighlight: {
-    color: '#666',
-    fontWeight: '600',
-  },
+  summaryValueHighlight: { color: '#D48806', fontSize: 17 },
+  summaryLabel: { fontSize: 10, color: '#888' },
+  summaryLabelHighlight: { color: '#666', fontWeight: '600' },
   separator: {
     width: 1,
     height: 28,
     backgroundColor: '#E0E0E0',
     marginHorizontal: 4,
   },
-  calendarArea: {
-    flex: 1,
-  },
+  calendarArea: { flex: 1 },
 });

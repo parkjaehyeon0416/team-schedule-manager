@@ -61,7 +61,7 @@ export interface MonthlySummary {
   work_days: number;
   site_count: number;
   estimated_tax: string;
-  last_calculated_at: string;
+  last_calculated_at: string | null;
   created_at: string;
   updated_at: string;
 }

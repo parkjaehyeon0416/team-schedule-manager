@@ -201,7 +201,12 @@ const CustomDay: React.FC<CustomDayProps> = ({
 // ═══════════════════════════════════════════════════════════════
 // [6] 메인 화면
 // ═══════════════════════════════════════════════════════════════
-export default function CalendarScreen({ navigation }: any) {
+interface Props {
+  navigation: any;
+  onMonthChange?: (year: number, month: number) => void; // ★ v10.3 추가
+}
+
+export default function CalendarScreen({ navigation, onMonthChange }: Props) {
   const [currentMonth, setCurrentMonth] = useState(
     dayjs().format('YYYY-MM-DD'),
   );
@@ -226,6 +231,15 @@ export default function CalendarScreen({ navigation }: any) {
   useEffect(() => {
     fetchSchedules();
   }, [fetchSchedules]);
+
+  // ★ v10.3: 첫 마운트 시 부모에게 현재 달 알림
+  useEffect(() => {
+    if (onMonthChange) {
+      const m = dayjs(currentMonth);
+      onMonthChange(m.year(), m.month() + 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!navigation) return;
@@ -311,7 +325,13 @@ export default function CalendarScreen({ navigation }: any) {
 
       <Calendar
         current={currentMonth}
-        onMonthChange={m => setCurrentMonth(m.dateString)}
+        onMonthChange={m => {
+          setCurrentMonth(m.dateString);
+          // ★ v10.3: 부모에게 알림 (HomeScreen이 요약 스트립 갱신용)
+          if (onMonthChange) {
+            onMonthChange(m.year, m.month);
+          }
+        }}
         markedDates={markedDates}
         enableSwipeMonths={true}
         renderArrow={(direction: 'left' | 'right') => (

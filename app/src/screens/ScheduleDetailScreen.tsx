@@ -1,41 +1,62 @@
 // ═══════════════════════════════════════════════════════════════
-// 📄 ScheduleDetailScreen.tsx (v10.2.1)
-//   - v9.0 필드 표시 (공정, 단가, 공수, 경비, 경비 메모)
-//   - 수정 버튼 → ScheduleCreateScreen에 scheduleId param 전달
-//   - 삭제 버튼 → DELETE /api/schedules/{id}
-//   - 사진 업로드 (기존)
-//   - 화면 포커스 시 자동 새로고침 (useFocusEffect)
+// 📄 ScheduleDetailScreen.tsx
+//   v10.2.1: v9.0 필드 표시 + 수정/삭제
+//   ★ v11: 사진 섹션을 카테고리 기반으로 교체
+//          (PhotoCategoryTabs + PhotoGrid + 비교 버튼)
 // ═══════════════════════════════════════════════════════════════
 import React, { useCallback, useState } from 'react';
 import {
   View,
   ScrollView,
-  Image,
   StyleSheet,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import {
-  Text,
-  Chip,
-  Button,
-  Divider,
-  Avatar,
-  IconButton,
-} from 'react-native-paper';
+import { Text, Chip, Button, Divider, Avatar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
-import axios from '../api/axiosInstance';
-import { getScheduleById, deleteSchedule } from '../api/schedulesApi';
-import type { Schedule } from '../types/api';
+import {
+  getScheduleById,
+  deleteSchedule,
+  // ★ v11
+  getSchedulePhotos,
+  uploadSchedulePhoto,
+  deleteSchedulePhoto,
+} from '../api/schedulesApi';
+import type { Schedule, PhotoCategory, PhotoListResponse } from '../types/api';
 import { formatMoney } from '../utils/format';
+import PhotoCategoryTabs from '../components/PhotoCategoryTabs';
+import PhotoGrid from '../components/PhotoGrid';
 
 const ROLE_LABELS: Record<number, string> = {
   1: '관리자',
   2: '팀장',
   3: '팀원',
+};
+
+// ★ v11 — 카테고리별 라벨 / 빈 상태 문구 매핑
+const CATEGORY_LABELS: Record<PhotoCategory, string> = {
+  before: '시공 전',
+  during: '시공 중',
+  after: '시공 후',
+  other: '기타',
+};
+const CATEGORY_EMPTY_TEXT: Record<PhotoCategory, string> = {
+  before: '시공 전 사진을 추가해 보세요',
+  during: '시공 중 사진을 추가해 보세요',
+  after: '시공 후 사진을 추가해 보세요',
+  other: '기타 사진을 추가해 보세요',
+};
+
+// ★ v11 — 사진 빈 응답의 초기값 (state 기본값)
+const EMPTY_PHOTOS: PhotoListResponse = {
+  before: [],
+  during: [],
+  after: [],
+  other: [],
+  counts: { before: 0, during: 0, after: 0, other: 0 },
 };
 
 export default function ScheduleDetailScreen({ route }: any) {
@@ -46,13 +67,18 @@ export default function ScheduleDetailScreen({ route }: any) {
   const [loading, setLoading] = useState<boolean>(true);
   const [deleting, setDeleting] = useState<boolean>(false);
 
+  // ★ v11 — 사진 state
+  const [photos, setPhotos] = useState<PhotoListResponse>(EMPTY_PHOTOS);
+  const [currentCategory, setCurrentCategory] =
+    useState<PhotoCategory>('before');
+
   // ─────────────────────────────────────────────────────────────
   // 화면 포커스 시 자동 새로고침
-  //   - 수정 화면 다녀온 후 자동으로 최신 데이터 표시
   // ─────────────────────────────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
       fetchDetail();
+      fetchPhotos(); // ★ v11
     }, [id]),
   );
 
@@ -72,7 +98,18 @@ export default function ScheduleDetailScreen({ route }: any) {
     }
   };
 
-  // ─── 사진 업로드 ───
+  // ★ v11 — 사진 목록 조회
+  const fetchPhotos = async () => {
+    try {
+      const data = await getSchedulePhotos(id);
+      setPhotos(data);
+    } catch (e: any) {
+      console.error('사진 조회 실패:', e);
+      // 사진 조회 실패는 화면 전체를 막지 않음 — 콘솔에만 기록
+    }
+  };
+
+  // ★ v11 — 사진 업로드 (현재 활성 탭의 카테고리로 자동 분류)
   const handlePhotoUpload = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
@@ -80,19 +117,27 @@ export default function ScheduleDetailScreen({ route }: any) {
     });
     if (!result.assets?.[0]) return;
 
-    const formData = new FormData();
-    formData.append('photo', {
-      uri: result.assets[0].uri,
-      name: result.assets[0].fileName,
-      type: result.assets[0].type,
-    } as any);
+    const asset = result.assets[0];
+    if (!asset.uri || !asset.fileName || !asset.type) {
+      Alert.alert('오류', '사진 정보를 읽을 수 없습니다.');
+      return;
+    }
 
     try {
-      await axios.post(`/schedules/${id}/photos`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      Alert.alert('완료', '사진이 업로드되었습니다.');
-      fetchDetail();
+      await uploadSchedulePhoto(
+        id,
+        {
+          uri: asset.uri,
+          name: asset.fileName,
+          type: asset.type,
+        },
+        currentCategory, // 현재 선택된 탭의 카테고리로 업로드
+      );
+      Alert.alert(
+        '업로드 완료',
+        `[${CATEGORY_LABELS[currentCategory]}] 카테고리에 사진이 추가되었습니다.`,
+      );
+      fetchPhotos(); // 목록 갱신
     } catch (e: any) {
       console.error('사진 업로드 실패:', e);
       Alert.alert(
@@ -102,13 +147,36 @@ export default function ScheduleDetailScreen({ route }: any) {
     }
   };
 
-  // ─── ★ 수정 버튼 ───
+  // ★ v11 — 사진 삭제 (PhotoGrid의 onDelete 콜백)
+  const handlePhotoDelete = async (photoId: number) => {
+    try {
+      await deleteSchedulePhoto(id, photoId);
+      fetchPhotos();
+    } catch (e: any) {
+      console.error('사진 삭제 실패:', e);
+      Alert.alert(
+        '삭제 실패',
+        e?.response?.data?.message || '다시 시도해주세요.',
+      );
+    }
+  };
+
+  // ★ v11 — 비교 보기 화면 이동 (시공 전·후 사진 모두 있을 때만 노출)
+  const handleComparePress = () => {
+    navigation.navigate('PhotoCompare', {
+      scheduleId: id,
+      siteName: schedule?.site
+        ? `${schedule.site.apt_name} ${schedule.site.dong} ${schedule.site.ho}`
+        : '현장',
+    });
+  };
+
+  // ─── 수정 버튼 ───
   const handleEdit = () => {
-    // ScheduleCreate를 수정 모드로 진입 (scheduleId param 전달)
     navigation.navigate('ScheduleCreate', { scheduleId: id });
   };
 
-  // ─── ★ 삭제 버튼 ───
+  // ─── 삭제 버튼 ───
   const handleDelete = () => {
     Alert.alert(
       '일정 삭제',
@@ -123,10 +191,7 @@ export default function ScheduleDetailScreen({ route }: any) {
             try {
               await deleteSchedule(id);
               Alert.alert('완료', '일정이 삭제되었습니다.', [
-                {
-                  text: '확인',
-                  onPress: () => navigation.goBack(),
-                },
+                { text: '확인', onPress: () => navigation.goBack() },
               ]);
             } catch (e: any) {
               console.error('일정 삭제 실패:', e);
@@ -159,15 +224,25 @@ export default function ScheduleDetailScreen({ route }: any) {
     ? (parseFloat(schedule.area_m2) / 3.3).toFixed(1)
     : null;
 
-  // ─── 예상 수입 계산 (단가 × 공수) ───
+  // ─── 예상 수입 계산 ───
   const expectedIncome =
     schedule.daily_wage && schedule.work_units
       ? parseFloat(schedule.daily_wage) * parseFloat(schedule.work_units)
       : 0;
 
+  // ★ v11 — 비교 버튼 노출 조건: 전·후 사진 둘 다 1장 이상
+  const canCompare = photos.counts.before > 0 && photos.counts.after > 0;
+
+  // ★ v11 — 전체 사진 수 (헤더 표시용)
+  const totalPhotos =
+    photos.counts.before +
+    photos.counts.during +
+    photos.counts.after +
+    photos.counts.other;
+
   return (
     <ScrollView style={styles.container}>
-      {/* ── 헤더 (날짜 + 공종 Chip) ── */}
+      {/* ── 헤더 ── */}
       <View style={styles.header}>
         <Text style={styles.date}>{schedule.date}</Text>
         {schedule.work_type && (
@@ -175,7 +250,7 @@ export default function ScheduleDetailScreen({ route }: any) {
         )}
       </View>
 
-      {/* ── 공정 (v10.2.1 추가) ── */}
+      {/* ── 공정 ── */}
       {schedule.work_type_relation && (
         <View style={styles.row}>
           <View
@@ -208,7 +283,7 @@ export default function ScheduleDetailScreen({ route }: any) {
 
       <Divider style={styles.divider} />
 
-      {/* ── ★ v10.2.1: 공수/단가/수입 정보 카드 ── */}
+      {/* ── 공수/단가/수입 카드 ── */}
       {(schedule.daily_wage || schedule.work_units !== '0.0') && (
         <View style={styles.wageCard}>
           <View style={styles.wageHeader}>
@@ -217,7 +292,6 @@ export default function ScheduleDetailScreen({ route }: any) {
           </View>
 
           <View style={styles.wageGrid}>
-            {/* 단가 */}
             <View style={styles.wageItem}>
               <Text style={styles.wageLabel}>단가</Text>
               <Text style={styles.wageValue}>
@@ -226,7 +300,6 @@ export default function ScheduleDetailScreen({ route }: any) {
                   : '-'}
               </Text>
             </View>
-            {/* 공수 */}
             <View style={styles.wageItem}>
               <Text style={styles.wageLabel}>공수</Text>
               <Text style={styles.wageValue}>
@@ -235,7 +308,6 @@ export default function ScheduleDetailScreen({ route }: any) {
             </View>
           </View>
 
-          {/* 예상 수입 (강조) */}
           {expectedIncome > 0 && (
             <View style={styles.expectedBox}>
               <Text style={styles.expectedLabel}>예상 수입</Text>
@@ -245,7 +317,6 @@ export default function ScheduleDetailScreen({ route }: any) {
             </View>
           )}
 
-          {/* 경비 */}
           {schedule.expenses && parseFloat(schedule.expenses) > 0 && (
             <View style={styles.expenseRow}>
               <View style={styles.row}>
@@ -283,24 +354,44 @@ export default function ScheduleDetailScreen({ route }: any) {
 
       <Divider style={styles.divider} />
 
-      {/* ── 사진 ── */}
+      {/* ── ★ v11: 사진 섹션 (카테고리 + 그리드) ── */}
       <View style={styles.photoHeader}>
-        <Text style={styles.section}>
-          현장 사진 ({(schedule as any).photos?.length || 0}장)
-        </Text>
-        <Button mode="outlined" compact onPress={handlePhotoUpload} icon="plus">
-          추가
-        </Button>
+        <Text style={styles.section}>현장 사진 ({totalPhotos}장)</Text>
+        <View style={styles.photoActions}>
+          {canCompare && (
+            <Button
+              mode="outlined"
+              compact
+              icon="compare-horizontal"
+              onPress={handleComparePress}
+            >
+              비교
+            </Button>
+          )}
+          <Button
+            mode="outlined"
+            compact
+            onPress={handlePhotoUpload}
+            icon="plus"
+          >
+            추가
+          </Button>
+        </View>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {(schedule as any).photos?.map((p: any) => (
-          <Image
-            key={p.id}
-            source={{ uri: `http://10.0.2.2:8000/storage/${p.file_path}` }}
-            style={styles.photo}
-          />
-        ))}
-      </ScrollView>
+
+      {/* 부모 padding 16을 상쇄해서 탭/그리드를 화면 가로 전체에 펼침 */}
+      <View style={styles.photoSectionWrapper}>
+        <PhotoCategoryTabs
+          current={currentCategory}
+          counts={photos.counts}
+          onChange={setCurrentCategory}
+        />
+        <PhotoGrid
+          photos={photos[currentCategory]}
+          onDelete={handlePhotoDelete}
+          emptyText={CATEGORY_EMPTY_TEXT[currentCategory]}
+        />
+      </View>
 
       {/* ── 메모 ── */}
       {schedule.memo && (
@@ -313,7 +404,7 @@ export default function ScheduleDetailScreen({ route }: any) {
 
       <Divider style={styles.divider} />
 
-      {/* ── ★ v10.2.1: 수정/삭제 버튼 ── */}
+      {/* ── 수정/삭제 버튼 ── */}
       <View style={styles.actionRow}>
         <Button
           mode="outlined"
@@ -384,16 +475,27 @@ const styles = StyleSheet.create({
   },
   memberName: { fontSize: 15, color: '#333', fontWeight: '500' },
   roleText: { fontSize: 12, color: '#999' },
+
+  // ★ v11: 사진 섹션
   photoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  photo: { width: 120, height: 120, borderRadius: 8, marginRight: 8 },
+  photoActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  // 부모 container의 padding: 16 을 상쇄해서 탭이 화면 가로 끝까지 닿게
+  photoSectionWrapper: {
+    marginHorizontal: -16,
+    marginBottom: 8,
+  },
+
   memo: { fontSize: 14, color: '#555', lineHeight: 22 },
 
-  // ★ v10.2.1: 공수/단가 카드
+  // 공수/단가 카드
   wageCard: {
     backgroundColor: '#F5F8FB',
     borderRadius: 10,
@@ -408,11 +510,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   wageTitle: { fontSize: 14, fontWeight: '600', color: '#2E75B6' },
-  wageGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 10,
-  },
+  wageGrid: { flexDirection: 'row', gap: 12, marginBottom: 10 },
   wageItem: {
     flex: 1,
     backgroundColor: '#FFF',
@@ -447,12 +545,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // ★ v10.2.1: 액션 버튼
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
+  // 액션 버튼
+  actionRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   actionBtn: { flex: 1 },
   deleteBtn: {},
 });

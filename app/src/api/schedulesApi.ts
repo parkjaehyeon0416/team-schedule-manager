@@ -3,13 +3,18 @@
 //   일정 관련 API 모음
 //   v9.0 필드 (work_type_id, daily_wage, work_units, expenses 등) 포함
 //   ★ v10.3: getMonthlySummary 추가
+//   ★ v11:   현장 사진 함수 3개 (get/upload/delete Photos)
 // ═══════════════════════════════════════════════════════════════
 import axios from './axiosInstance';
 import type {
   ApiResponse,
   Schedule,
   TeamMember,
-  MonthlySummary, // ★ v10.3 추가
+  MonthlySummary,
+  // ★ v11 추가
+  PhotoCategory,
+  PhotoListResponse,
+  SiteFile,
 } from '../types/api';
 
 // ─────────────────────────────────────────────────────────────────
@@ -124,4 +129,68 @@ export async function getMonthlySummary(
     params: { year, month },
   });
   return res.data.data;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v11 추가 — 현장 사진 구조화 (시공 전·중·후 카테고리)
+// ═══════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────
+// [조회] 일정의 사진 목록 (카테고리별 그룹핑)
+// GET /api/schedules/{id}/photos
+//
+// 응답: { before: [...], during: [...], after: [...], other: [...],
+//        counts: { before, during, after, other } }
+// ─────────────────────────────────────────────────────────────────
+export async function getSchedulePhotos(
+  scheduleId: number,
+): Promise<PhotoListResponse> {
+  const res = await axios.get<ApiResponse<PhotoListResponse>>(
+    `/schedules/${scheduleId}/photos`,
+  );
+  return res.data.data;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// [등록] 사진 업로드 (카테고리 + 캡션 포함)
+// POST /api/schedules/{id}/photos
+//
+// photo: react-native-image-picker가 반환하는 { uri, name, type }
+// category: 'before' | 'during' | 'after' | 'other'
+// description: 사진 캡션 (선택)
+// ─────────────────────────────────────────────────────────────────
+export async function uploadSchedulePhoto(
+  scheduleId: number,
+  photo: { uri: string; name: string; type: string },
+  category: PhotoCategory,
+  description?: string,
+): Promise<SiteFile> {
+  const formData = new FormData();
+  // FormData에 파일 객체를 넣을 때 RN은 { uri, name, type } 형태를 받음.
+  // 표준 FormData 타입은 이 형태를 모르므로 'as any'로 강제 변환.
+  formData.append('photo', photo as any);
+  formData.append('photo_category', category);
+  if (description) {
+    formData.append('description', description);
+  }
+
+  const res = await axios.post<ApiResponse<SiteFile>>(
+    `/schedules/${scheduleId}/photos`,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  );
+  return res.data.data;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// [삭제] 사진 삭제 (SoftDelete)
+// DELETE /api/schedules/{id}/photos/{photoId}
+// ─────────────────────────────────────────────────────────────────
+export async function deleteSchedulePhoto(
+  scheduleId: number,
+  photoId: number,
+): Promise<void> {
+  await axios.delete(`/schedules/${scheduleId}/photos/${photoId}`);
 }

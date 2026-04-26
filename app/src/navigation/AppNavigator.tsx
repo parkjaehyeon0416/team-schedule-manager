@@ -14,6 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
 import ScheduleCreateScreen from '../screens/ScheduleCreateScreen';
 import WageSettingsScreen from '../screens/WageSettingsScreen';
+import PhotoCompareScreen from '../screens/PhotoCompareScreen'; // ★ v11
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -146,6 +147,14 @@ export default function AppNavigator() {
                 headerStyle: { backgroundColor: '#1F3864' },
                 headerTintColor: '#FFFFFF',
                 headerBackTitle: '뒤로',
+              }}
+            />
+            {/* ★ v11 추가 — 사진 비교 보기 (시공 전·후 페어) */}
+            <Stack.Screen
+              name="PhotoCompare"
+              component={PhotoCompareScreen}
+              options={{
+                headerShown: false, // 화면 자체에 커스텀 헤더가 있음 (검정 배경)
               }}
             />
           </>

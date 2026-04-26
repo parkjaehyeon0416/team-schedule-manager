@@ -1,9 +1,19 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// ─────────────────────────────────────────────────────────
 // ★ 10.0.2.2 = Android 에뮬레이터에서 내 PC의 localhost를 가리키는 주소
+//
+// API_BASE_URL: API 호출용 (예: GET /api/schedules → http://10.0.2.2:8000/api/schedules)
+// SERVER_BASE_URL: 정적 자원 (사진/파일) 접근용
+//   사진 URL 예: http://10.0.2.2:8000/storage/site-photos/abc123.jpg
+//   /api 가 빠진 루트 경로로 접근해야 storage:link로 연결된 폴더에 닿음
+// ─────────────────────────────────────────────────────────
+export const SERVER_BASE_URL = 'http://10.0.2.2:8000';
+export const API_BASE_URL = `${SERVER_BASE_URL}/api`;
+
 const axiosInstance = axios.create({
-  baseURL: 'http://10.0.2.2:8000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

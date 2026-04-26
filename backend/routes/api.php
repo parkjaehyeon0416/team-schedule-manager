@@ -50,6 +50,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('calculate/area',  [CalculateController::class, 'area']);
 
     // ═══════════════════════════════════════════════════════════
+    // ── ★ v11 현장 사진 (member 이상 — 작업자도 업로드 가능) ──
+    // ═══════════════════════════════════════════════════════════
+    Route::get('schedules/{scheduleId}/photos',                [PhotoController::class, 'index']);   // ★ v11 신규
+    Route::post('schedules/{scheduleId}/photos',               [PhotoController::class, 'store']);   // ★ v11 권한 변경 (manager → member)
+    Route::delete('schedules/{scheduleId}/photos/{photoId}',   [PhotoController::class, 'destroy']); // ★ v11 권한 변경 (manager → member)
+
+    // ═══════════════════════════════════════════════════════════
     // ── ★ v10.1 공수·급여 자동 계산 API (member 이상) ──
     // ═══════════════════════════════════════════════════════════
 
@@ -82,8 +89,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('teams', TeamController::class)
             ->only(['index', 'show', 'update', 'destroy']);
 
-        // 현장 사진 업로드·삭제
-        Route::post('schedules/{scheduleId}/photos',               [PhotoController::class, 'store']);
-        Route::delete('schedules/{scheduleId}/photos/{photoId}',   [PhotoController::class, 'destroy']);
+        // ★ v11 변경: 사진 라우트는 member 그룹으로 이동됨 (위)
     });
 });

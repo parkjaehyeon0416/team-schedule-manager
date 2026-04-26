@@ -60,4 +60,10 @@ class ErrorCode
     // 서버 일반
     // ═══════════════════════════════════════════════
     public const SERVER_ERROR            = 'ERR_SERVER_001';
+
+    // ═══════════════════════════════════════════════
+    // ★ v11 현장 사진 ★
+    // ═══════════════════════════════════════════════
+    public const PHOTO_NOT_FOUND         = 'ERR_PHOTO_001';
+    public const PHOTO_NO_SITE_LINKED    = 'ERR_PHOTO_002';
 }

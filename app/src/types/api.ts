@@ -2,6 +2,7 @@
 // 📄 src/types/api.ts
 //   백엔드 API 응답 타입 정의 모음
 //   v10.1.1 백엔드 API 5개 + v9.0 Schedule 확장 반영
+//   ★ v11: 현장 사진 카테고리 (PhotoCategory, SiteFile, PhotoListResponse)
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -110,4 +111,59 @@ export interface Schedule {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v11 추가 — 현장 사진 구조화 (시공 전·중·후 카테고리)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * 사진 카테고리 — 시공 단계 4분류
+ *  before: 시공 전 (착수 증빙)
+ *  during: 시공 중 (진행 경과)
+ *  after:  시공 후 (완료 증빙)
+ *  other:  기타 (도면, 영수증 등)
+ */
+export type PhotoCategory = 'before' | 'during' | 'after' | 'other';
+
+/**
+ * 현장 사진/파일 (site_files 테이블)
+ * GET /api/schedules/{id}/photos 응답의 각 사진 객체
+ */
+export interface SiteFile {
+  id: number;
+  site_id: number;
+  original_name: string; // 업로드 원본 파일명 (예: "IMG_001.jpg")
+  stored_name: string; // 서버 저장명 (해시)
+  mime_type: string; // "image/jpeg" 등
+  file_size: number; // bytes
+  file_path: string; // "site-photos/abc123.jpg" 형태
+  file_type: 'photo' | 'document' | null;
+  uploaded_by: number | null;
+  // ★ v11 신규
+  photo_category: PhotoCategory;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+/**
+ * 사진 목록 응답 (카테고리별 그룹핑)
+ * GET /api/schedules/{id}/photos
+ *
+ * 빈 카테고리도 항상 [] 로 반환되어 모바일 코드가 안전하게 .map() 가능
+ */
+export interface PhotoListResponse {
+  before: SiteFile[];
+  during: SiteFile[];
+  after: SiteFile[];
+  other: SiteFile[];
+  counts: {
+    before: number;
+    during: number;
+    after: number;
+    other: number;
+  };
 }

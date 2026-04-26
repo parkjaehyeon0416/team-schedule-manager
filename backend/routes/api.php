@@ -56,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('schedules/{scheduleId}/photos',               [PhotoController::class, 'store']);   // ★ v11 권한 변경 (manager → member)
     Route::delete('schedules/{scheduleId}/photos/{photoId}',   [PhotoController::class, 'destroy']); // ★ v11 권한 변경 (manager → member)
 
+    // ★ v11.1.1 추가 — 사진 부분 수정 (현재는 paired_with_id만 지원)
+    Route::patch('schedules/{scheduleId}/photos/{photoId}',    [PhotoController::class, 'update']);
+
     // ═══════════════════════════════════════════════════════════
     // ── ★ v10.1 공수·급여 자동 계산 API (member 이상) ──
     // ═══════════════════════════════════════════════════════════

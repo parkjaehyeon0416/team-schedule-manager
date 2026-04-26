@@ -66,4 +66,8 @@ class ErrorCode
     // ═══════════════════════════════════════════════
     public const PHOTO_NOT_FOUND         = 'ERR_PHOTO_001';
     public const PHOTO_NO_SITE_LINKED    = 'ERR_PHOTO_002';
+    // ★ v11.1 페어 매칭
+    public const PHOTO_PAIR_INVALID         = 'ERR_PHOTO_003'; // 시공 전 사진에서 paired 지정
+    public const PHOTO_PAIR_TARGET_NOT_FOUND = 'ERR_PHOTO_004'; // 짝 시공 전 사진 없음
+    public const PHOTO_PAIR_DUPLICATE       = 'ERR_PHOTO_005'; // 이미 다른 짝이 지정됨
 }

@@ -144,6 +144,8 @@ export interface SiteFile {
   photo_category: PhotoCategory;
   description: string | null;
   sort_order: number;
+  // ★ v11.1 — 시공 후 사진이 가리키는 시공 전 사진의 id (시공 전 사진은 null)
+  paired_with_id: number | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

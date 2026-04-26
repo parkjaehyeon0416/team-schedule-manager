@@ -9,7 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 //   사진 URL 예: http://10.0.2.2:8000/storage/site-photos/abc123.jpg
 //   /api 가 빠진 루트 경로로 접근해야 storage:link로 연결된 폴더에 닿음
 // ─────────────────────────────────────────────────────────
-export const SERVER_BASE_URL = 'http://10.0.2.2:8000';
+// export const SERVER_BASE_URL = 'http://10.0.2.2:8000';
+// 신규 (에뮬·핸드폰 둘 다 됨, adb reverse 사용)
+export const SERVER_BASE_URL = 'http://localhost:8000';
 export const API_BASE_URL = `${SERVER_BASE_URL}/api`;
 
 const axiosInstance = axios.create({

@@ -152,26 +152,30 @@ export async function getSchedulePhotos(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// [등록] 사진 업로드 (카테고리 + 캡션 포함)
+// [등록] 사진 업로드 (카테고리 + 캡션 + 페어 지정)
 // POST /api/schedules/{id}/photos
 //
 // photo: react-native-image-picker가 반환하는 { uri, name, type }
 // category: 'before' | 'during' | 'after' | 'other'
 // description: 사진 캡션 (선택)
+// pairedWithId: 시공 후 사진이 가리키는 시공 전 사진의 id (선택, ★ v11.1)
 // ─────────────────────────────────────────────────────────────────
 export async function uploadSchedulePhoto(
   scheduleId: number,
   photo: { uri: string; name: string; type: string },
   category: PhotoCategory,
   description?: string,
+  pairedWithId?: number, // ★ v11.1
 ): Promise<SiteFile> {
   const formData = new FormData();
-  // FormData에 파일 객체를 넣을 때 RN은 { uri, name, type } 형태를 받음.
-  // 표준 FormData 타입은 이 형태를 모르므로 'as any'로 강제 변환.
   formData.append('photo', photo as any);
   formData.append('photo_category', category);
   if (description) {
     formData.append('description', description);
+  }
+  // ★ v11.1 — paired_with_id가 있으면 추가 (FormData는 문자열만 받으므로 String으로 변환)
+  if (pairedWithId !== undefined && pairedWithId !== null) {
+    formData.append('paired_with_id', String(pairedWithId));
   }
 
   const res = await axios.post<ApiResponse<SiteFile>>(
@@ -193,4 +197,24 @@ export async function deleteSchedulePhoto(
   photoId: number,
 ): Promise<void> {
   await axios.delete(`/schedules/${scheduleId}/photos/${photoId}`);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ★ v11.1.1 — 사진 부분 수정 (paired_with_id 변경)
+// PATCH /api/schedules/{scheduleId}/photos/{photoId}
+//
+// pairedWithId:
+//   - 숫자: 그 id의 시공 전 사진과 짝 지움
+//   - null: 짝 해제
+// ─────────────────────────────────────────────────────────────────
+export async function updateSchedulePhotoPair(
+  scheduleId: number,
+  photoId: number,
+  pairedWithId: number | null,
+): Promise<SiteFile> {
+  const res = await axios.patch<ApiResponse<SiteFile>>(
+    `/schedules/${scheduleId}/photos/${photoId}`,
+    { paired_with_id: pairedWithId },
+  );
+  return res.data.data;
 }

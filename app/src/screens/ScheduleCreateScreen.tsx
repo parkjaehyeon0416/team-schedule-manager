@@ -3,6 +3,7 @@
 //   - route.params.scheduleId 있으면 수정 모드, 없으면 등록 모드
 //   - 수정 모드: GET /api/schedules/{id} → 폼 채우기 → PUT 저장
 //   - 등록 모드: 빈 폼 → POST 저장
+//   ★ v11.1.2 — 하단 SafeArea + 키보드 회피 적용
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect } from 'react';
 import {
@@ -13,10 +14,13 @@ import {
   TouchableOpacity,
   Platform,
   ActivityIndicator,
+  KeyboardAvoidingView, // ★ v11.1.2
+  Keyboard, // ★ v11.1.2
 } from 'react-native';
 import { Text, TextInput, Button, Divider, Chip } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // ★ v11.1.2
 import dayjs from 'dayjs';
 
 import {
@@ -49,6 +53,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   // ★ v10.2.1: 수정 모드 판단
   const editingScheduleId: number | undefined = route.params?.scheduleId;
   const isEditMode = !!editingScheduleId;
+
+  // ★ v11.1.2 — 안전 영역 정보 (하단 제스처 바 회피용)
+  const insets = useSafeAreaInsets();
 
   // ─── 폼 상태 ───
   const [date, setDate] = useState<Date>(
@@ -182,6 +189,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   // [2] 저장 — 등록/수정 분기
   // ─────────────────────────────────────────────────────────────
   const handleSave = async () => {
+    // ★ v11.1.2 — 키보드가 올라와 있으면 먼저 닫기 (저장 후 화면 깨끗이)
+    Keyboard.dismiss();
+
     if (!workType && !workTypeId) {
       Alert.alert('입력 오류', '공종 또는 공정을 선택해주세요.');
       return;
@@ -249,289 +259,305 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* ── 모드 표시 ── */}
-      {isEditMode && (
-        <View style={styles.modeBadge}>
-          <Icon name="pencil" size={14} color="#FFF" />
-          <Text style={styles.modeBadgeText}>수정 모드</Text>
-        </View>
-      )}
-
-      {/* ── 1) 날짜 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="calendar" size={18} color="#2E75B6" />
-        <Text style={styles.label}>날짜 *</Text>
-      </View>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        style={styles.dateButton}
-        disabled={saving}
+    // ★ v11.1.2 — KeyboardAvoidingView로 감싸서 키보드 올라올 때 화면 자동 조정
+    //   안드로이드: padding 모드 — 키보드 높이만큼 화면 자체가 위로 올라감
+    //   iOS:       그대로
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        style={styles.container}
+        // ★ v11.1.2 — 키보드 떠 있을 때 외부 탭하면 키보드 닫힘
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.dateButtonText}>
-          {dayjs(date).format('YYYY년 MM월 DD일 (ddd)')}
+        {/* ── 모드 표시 ── */}
+        {isEditMode && (
+          <View style={styles.modeBadge}>
+            <Icon name="pencil" size={14} color="#FFF" />
+            <Text style={styles.modeBadgeText}>수정 모드</Text>
+          </View>
+        )}
+
+        {/* ── 1) 날짜 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="calendar" size={18} color="#2E75B6" />
+          <Text style={styles.label}>날짜 *</Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setShowDatePicker(true)}
+          style={styles.dateButton}
+          disabled={saving}
+        >
+          <Text style={styles.dateButtonText}>
+            {dayjs(date).format('YYYY년 MM월 DD일 (ddd)')}
+          </Text>
+          <Icon name="calendar-edit" size={20} color="#2E75B6" />
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            locale="ko-KR"
+          />
+        )}
+
+        <Divider style={styles.divider} />
+
+        {/* ── 2) 공종 (기존 ENUM) ── */}
+        <View style={styles.labelRow}>
+          <Icon name="palette" size={18} color="#2E75B6" />
+          <Text style={styles.label}>공종 (분류)</Text>
+        </View>
+        <View style={styles.workTypeRow}>
+          {(['도배', '타일', '필름'] as WorkTypeEnum[]).map(type => (
+            <TouchableOpacity
+              key={type}
+              onPress={() => setWorkType(workType === type ? null : type)}
+              style={[
+                styles.workTypeBtn,
+                workType === type && {
+                  backgroundColor: WORK_TYPE_COLORS[type],
+                  borderColor: WORK_TYPE_COLORS[type],
+                },
+              ]}
+              disabled={saving}
+            >
+              <Text
+                style={[
+                  styles.workTypeText,
+                  workType === type && styles.workTypeTextActive,
+                ]}
+              >
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Divider style={styles.divider} />
+
+        {/* ── 3) 공정 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="briefcase" size={18} color="#2E75B6" />
+          <Text style={styles.label}>공정 (상세)</Text>
+        </View>
+        <Text style={styles.hint}>
+          공정 선택 시 등록된 단가가 자동 채워집니다
         </Text>
-        <Icon name="calendar-edit" size={20} color="#2E75B6" />
-      </TouchableOpacity>
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          locale="ko-KR"
+        <WorkTypePicker
+          value={workTypeId}
+          onChange={handleWorkTypeChange}
+          disabled={saving}
+          placeholder="공정 선택 (선택사항)"
         />
-      )}
 
-      <Divider style={styles.divider} />
+        <Divider style={styles.divider} />
 
-      {/* ── 2) 공종 (기존 ENUM) ── */}
-      <View style={styles.labelRow}>
-        <Icon name="palette" size={18} color="#2E75B6" />
-        <Text style={styles.label}>공종 (분류)</Text>
-      </View>
-      <View style={styles.workTypeRow}>
-        {(['도배', '타일', '필름'] as WorkTypeEnum[]).map(type => (
-          <TouchableOpacity
-            key={type}
-            onPress={() => setWorkType(workType === type ? null : type)}
-            style={[
-              styles.workTypeBtn,
-              workType === type && {
-                backgroundColor: WORK_TYPE_COLORS[type],
-                borderColor: WORK_TYPE_COLORS[type],
-              },
-            ]}
+        {/* ── 4) 단가 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="currency-krw" size={18} color="#2E75B6" />
+          <Text style={styles.label}>단가 (원)</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={formatMoney(dailyWage)}
+          onChangeText={text => setDailyWage(parseMoney(text))}
+          placeholder="공정 선택 시 자동 입력"
+          keyboardType="numeric"
+          style={styles.input}
+          disabled={saving}
+        />
+
+        {/* ── 5) 공수 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="counter" size={18} color="#2E75B6" />
+          <Text style={styles.label}>공수</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={String(workUnits)}
+          onChangeText={text => {
+            const n = parseFloat(text);
+            setWorkUnits(isNaN(n) ? 0 : n);
+          }}
+          placeholder="예: 1.0, 1.5"
+          keyboardType="decimal-pad"
+          style={styles.input}
+          disabled={saving}
+        />
+
+        <Divider style={styles.divider} />
+
+        {/* ── 6) 경비 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="cash-multiple" size={18} color="#2E75B6" />
+          <Text style={styles.label}>경비 (원)</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={formatMoney(expenses)}
+          onChangeText={text => setExpenses(parseMoney(text))}
+          placeholder="교통비, 자재비 등"
+          keyboardType="numeric"
+          style={styles.input}
+          disabled={saving}
+        />
+
+        {/* ── 7) 경비 메모 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="receipt" size={18} color="#2E75B6" />
+          <Text style={styles.label}>경비 메모 (선택)</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={expensesMemo}
+          onChangeText={setExpensesMemo}
+          placeholder="예: 톨게이트, 주차비"
+          multiline
+          numberOfLines={2}
+          maxLength={255}
+          style={[styles.input, { minHeight: 60 }]}
+          disabled={saving}
+        />
+
+        <Divider style={styles.divider} />
+
+        {/* ── 8) 지역 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="map-marker" size={18} color="#2E75B6" />
+          <Text style={styles.label}>지역</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={district}
+          onChangeText={setDistrict}
+          placeholder="예: 강남구"
+          style={styles.input}
+          disabled={saving}
+        />
+
+        <Divider style={styles.divider} />
+
+        {/* ── 9) 평수 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="ruler-square" size={18} color="#2E75B6" />
+          <Text style={styles.label}>평수 (㎡)</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={areaM2}
+          onChangeText={setAreaM2}
+          placeholder="예: 23.5"
+          keyboardType="numeric"
+          style={styles.input}
+          disabled={saving}
+        />
+
+        <Divider style={styles.divider} />
+
+        {/* ── 10) 메모 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="note-text" size={18} color="#2E75B6" />
+          <Text style={styles.label}>메모</Text>
+        </View>
+        <TextInput
+          mode="outlined"
+          value={memo}
+          onChangeText={setMemo}
+          placeholder="특이사항이 있다면 입력해주세요"
+          multiline
+          numberOfLines={4}
+          style={[styles.input, styles.memoInput]}
+          disabled={saving}
+        />
+
+        <Divider style={styles.divider} />
+
+        {/* ── 11) 투입 인원 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="account-group" size={18} color="#2E75B6" />
+          <Text style={styles.label}>
+            투입 인원
+            {selectedUserIds.length > 0 && (
+              <Text style={styles.selectedCount}>
+                {' '}
+                ({selectedUserIds.length}명 선택)
+              </Text>
+            )}
+          </Text>
+        </View>
+
+        {loadingMembers ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="small" color="#2E75B6" />
+            <Text style={styles.loadingText}>팀원 목록을 불러오는 중...</Text>
+          </View>
+        ) : members.length === 0 ? (
+          <Text style={styles.hint}>등록된 팀원이 없습니다.</Text>
+        ) : (
+          <View style={styles.chipContainer}>
+            {members.map(member => {
+              const isSelected = selectedUserIds.includes(member.id);
+              return (
+                <Chip
+                  key={member.id}
+                  mode={isSelected ? 'flat' : 'outlined'}
+                  selected={isSelected}
+                  onPress={() => !saving && toggleMember(member.id)}
+                  icon={isSelected ? 'check' : 'account'}
+                  style={[styles.chip, isSelected && styles.chipSelected]}
+                  textStyle={isSelected ? styles.chipTextSelected : undefined}
+                >
+                  {member.name}
+                  <Text style={styles.roleText}>
+                    {' '}
+                    · {ROLE_LABELS[member.role_id] || '사용자'}
+                  </Text>
+                </Chip>
+              );
+            })}
+          </View>
+        )}
+
+        <Divider style={styles.divider} />
+
+        {/* ── 저장/취소 ── */}
+        <View style={styles.btnRow}>
+          <Button
+            mode="outlined"
+            onPress={() => navigation.goBack()}
+            style={styles.btn}
+            icon="close"
             disabled={saving}
           >
-            <Text
-              style={[
-                styles.workTypeText,
-                workType === type && styles.workTypeTextActive,
-              ]}
-            >
-              {type}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Divider style={styles.divider} />
-
-      {/* ── 3) 공정 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="briefcase" size={18} color="#2E75B6" />
-        <Text style={styles.label}>공정 (상세)</Text>
-      </View>
-      <Text style={styles.hint}>
-        공정 선택 시 등록된 단가가 자동 채워집니다
-      </Text>
-      <WorkTypePicker
-        value={workTypeId}
-        onChange={handleWorkTypeChange}
-        disabled={saving}
-        placeholder="공정 선택 (선택사항)"
-      />
-
-      <Divider style={styles.divider} />
-
-      {/* ── 4) 단가 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="currency-krw" size={18} color="#2E75B6" />
-        <Text style={styles.label}>단가 (원)</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={formatMoney(dailyWage)}
-        onChangeText={text => setDailyWage(parseMoney(text))}
-        placeholder="공정 선택 시 자동 입력"
-        keyboardType="numeric"
-        style={styles.input}
-        disabled={saving}
-      />
-
-      {/* ── 5) 공수 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="counter" size={18} color="#2E75B6" />
-        <Text style={styles.label}>공수</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={String(workUnits)}
-        onChangeText={text => {
-          const n = parseFloat(text);
-          setWorkUnits(isNaN(n) ? 0 : n);
-        }}
-        placeholder="예: 1.0, 1.5"
-        keyboardType="decimal-pad"
-        style={styles.input}
-        disabled={saving}
-      />
-
-      <Divider style={styles.divider} />
-
-      {/* ── 6) 경비 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="cash-multiple" size={18} color="#2E75B6" />
-        <Text style={styles.label}>경비 (원)</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={formatMoney(expenses)}
-        onChangeText={text => setExpenses(parseMoney(text))}
-        placeholder="교통비, 자재비 등"
-        keyboardType="numeric"
-        style={styles.input}
-        disabled={saving}
-      />
-
-      {/* ── 7) 경비 메모 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="receipt" size={18} color="#2E75B6" />
-        <Text style={styles.label}>경비 메모 (선택)</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={expensesMemo}
-        onChangeText={setExpensesMemo}
-        placeholder="예: 톨게이트, 주차비"
-        multiline
-        numberOfLines={2}
-        maxLength={255}
-        style={[styles.input, { minHeight: 60 }]}
-        disabled={saving}
-      />
-
-      <Divider style={styles.divider} />
-
-      {/* ── 8) 지역 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="map-marker" size={18} color="#2E75B6" />
-        <Text style={styles.label}>지역</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={district}
-        onChangeText={setDistrict}
-        placeholder="예: 강남구"
-        style={styles.input}
-        disabled={saving}
-      />
-
-      <Divider style={styles.divider} />
-
-      {/* ── 9) 평수 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="ruler-square" size={18} color="#2E75B6" />
-        <Text style={styles.label}>평수 (㎡)</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={areaM2}
-        onChangeText={setAreaM2}
-        placeholder="예: 23.5"
-        keyboardType="numeric"
-        style={styles.input}
-        disabled={saving}
-      />
-
-      <Divider style={styles.divider} />
-
-      {/* ── 10) 메모 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="note-text" size={18} color="#2E75B6" />
-        <Text style={styles.label}>메모</Text>
-      </View>
-      <TextInput
-        mode="outlined"
-        value={memo}
-        onChangeText={setMemo}
-        placeholder="특이사항이 있다면 입력해주세요"
-        multiline
-        numberOfLines={4}
-        style={[styles.input, styles.memoInput]}
-        disabled={saving}
-      />
-
-      <Divider style={styles.divider} />
-
-      {/* ── 11) 투입 인원 ── */}
-      <View style={styles.labelRow}>
-        <Icon name="account-group" size={18} color="#2E75B6" />
-        <Text style={styles.label}>
-          투입 인원
-          {selectedUserIds.length > 0 && (
-            <Text style={styles.selectedCount}>
-              {' '}
-              ({selectedUserIds.length}명 선택)
-            </Text>
-          )}
-        </Text>
-      </View>
-
-      {loadingMembers ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="small" color="#2E75B6" />
-          <Text style={styles.loadingText}>팀원 목록을 불러오는 중...</Text>
+            취소
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleSave}
+            style={styles.btn}
+            icon={isEditMode ? 'content-save-edit' : 'content-save'}
+            loading={saving}
+            disabled={saving}
+          >
+            {saving ? '저장 중...' : isEditMode ? '수정 완료' : '저장'}
+          </Button>
         </View>
-      ) : members.length === 0 ? (
-        <Text style={styles.hint}>등록된 팀원이 없습니다.</Text>
-      ) : (
-        <View style={styles.chipContainer}>
-          {members.map(member => {
-            const isSelected = selectedUserIds.includes(member.id);
-            return (
-              <Chip
-                key={member.id}
-                mode={isSelected ? 'flat' : 'outlined'}
-                selected={isSelected}
-                onPress={() => !saving && toggleMember(member.id)}
-                icon={isSelected ? 'check' : 'account'}
-                style={[styles.chip, isSelected && styles.chipSelected]}
-                textStyle={isSelected ? styles.chipTextSelected : undefined}
-              >
-                {member.name}
-                <Text style={styles.roleText}>
-                  {' '}
-                  · {ROLE_LABELS[member.role_id] || '사용자'}
-                </Text>
-              </Chip>
-            );
-          })}
-        </View>
-      )}
 
-      <Divider style={styles.divider} />
-
-      {/* ── 저장/취소 ── */}
-      <View style={styles.btnRow}>
-        <Button
-          mode="outlined"
-          onPress={() => navigation.goBack()}
-          style={styles.btn}
-          icon="close"
-          disabled={saving}
-        >
-          취소
-        </Button>
-        <Button
-          mode="contained"
-          onPress={handleSave}
-          style={styles.btn}
-          icon={isEditMode ? 'content-save-edit' : 'content-save'}
-          loading={saving}
-          disabled={saving}
-        >
-          {saving ? '저장 중...' : isEditMode ? '수정 완료' : '저장'}
-        </Button>
-      </View>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        {/* ★ v11.1.2 — 폰 제스처 바와 겹치지 않도록 안전 여백 */}
+        <View style={{ height: insets.bottom + 40 }} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  // ★ v11.1.2 — KeyboardAvoidingView가 화면 전체를 차지하도록
+  flex: { flex: 1 },
+
   container: { flex: 1, padding: 16, backgroundColor: '#FAFAFA' },
   centerBox: {
     flex: 1,

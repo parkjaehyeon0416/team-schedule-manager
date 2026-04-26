@@ -30,6 +30,8 @@ class SiteFile extends Model
         'photo_category',  // 'before' | 'during' | 'after' | 'other'
         'description',     // 사진 캡션 (예: '거실 북쪽 벽')
         'sort_order',      // 같은 카테고리 내 정렬 순서
+        // ★ v11.1 추가 (페어 매칭)
+        'paired_with_id',  // 시공 후 사진이 가리키는 시공 전 사진의 id
     ];
 
     /**
@@ -41,6 +43,8 @@ class SiteFile extends Model
     protected $casts = [
         'file_size'  => 'integer',
         'sort_order' => 'integer',
+        // ★ v11.1 추가
+        'paired_with_id' => 'integer',
     ];
 
     /**

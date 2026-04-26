@@ -1,14 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 // 📄 PhotoCompareScreen.tsx
-//   ★ v11 신규 — 시공 전·후 사진 페어 비교 화면
-//   같은 인덱스끼리 매칭 (1번 전 ↔ 1번 후, 2번 전 ↔ 2번 후 ...)
-//
-//   사용 시나리오:
-//   - 고객에게 "비포-애프터" 보고
-//   - 가로 스와이프로 페어 이동
-//   - 전·후 비교가 즉시 시각화 → 앱의 차별화 1순위 기능
+//   ★ v11      신규 — 시공 전·후 사진 페어 비교 화면
+//   ★ v11.1    paired_with_id 기반 페어 매칭
+//   ★ v11.1.1  SafeAreaView 적용
+//   ★ v11.1.2  성능 개선 — 이미지 캐싱·축소·스크롤 최적화
+//              + 메모리 릭 방어 (가상화 ±0, 화면 떠날 때 강제 정리)
 // ═══════════════════════════════════════════════════════════════
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -17,36 +15,27 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
+  StatusBar,
 } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, IconButton, Button } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 import { getSchedulePhotos } from '../api/schedulesApi';
 import type { SiteFile } from '../types/api';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 
-// ─────────────────────────────────────────────────────────────────
-// 화면 가로 = 한 페어의 가로 (스와이프 단위)
-// ─────────────────────────────────────────────────────────────────
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// ─────────────────────────────────────────────────────────────────
-// 페어 데이터 타입
-//  before: 시공 전 사진 (없을 수도)
-//  after:  시공 후 사진 (없을 수도)
-//  index:  몇 번째 페어인지 (0부터)
-// ─────────────────────────────────────────────────────────────────
+// ★ v11.1.2 — 화면 크기에 맞춘 이미지 픽셀 크기 (1.5배수 = 망막 디스플레이 대응)
+const IMG_W = Math.floor(SCREEN_WIDTH * 1.5);
+const IMG_H = Math.floor((SCREEN_HEIGHT / 2) * 1.5);
+
 interface PhotoPair {
-  index: number;
-  before: SiteFile | null;
-  after: SiteFile | null;
+  before: SiteFile;
+  after: SiteFile;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Props (route.params로 들어오는 값)
-//  scheduleId: 어느 일정의 사진을 비교할지
-//  siteName:   상단 헤더에 표시할 현장 이름 (선택)
-// ─────────────────────────────────────────────────────────────────
 export default function PhotoCompareScreen({ route }: any) {
   const { scheduleId, siteName } = route.params || {};
   const navigation = useNavigation<any>();
@@ -55,10 +44,17 @@ export default function PhotoCompareScreen({ route }: any) {
   const [loading, setLoading] = useState<boolean>(true);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
-  // ─── 화면 진입 시 사진 로드 ───
+  // ★ v11.1.2 — 화면 진입 시 fetchAndPair, 떠날 때 메모리 강제 정리
   useFocusEffect(
     useCallback(() => {
       fetchAndPair();
+
+      return () => {
+        // 화면 떠날 때 모든 state 초기화 → Image 컴포넌트 unmount → 비트맵 해제
+        setPairs([]);
+        setCurrentIndex(0);
+        setLoading(true);
+      };
     }, [scheduleId]),
   );
 
@@ -67,23 +63,18 @@ export default function PhotoCompareScreen({ route }: any) {
       setLoading(true);
       const data = await getSchedulePhotos(scheduleId);
 
-      // ★ 페어 매칭 — sort_order 기반 단순 인덱스 매칭
-      //   매뉴얼 v11 9.4절 정책: '같은 인덱스끼리 페어'
-      //   미래에 description 라벨로 의미 매칭으로 확장 가능
-      const before = [...data.before].sort(
-        (a, b) => a.sort_order - b.sort_order,
-      );
-      const after = [...data.after].sort((a, b) => a.sort_order - b.sort_order);
+      const beforeMap = new Map<number, SiteFile>();
+      data.before.forEach(b => beforeMap.set(b.id, b));
 
-      const maxLen = Math.max(before.length, after.length);
       const result: PhotoPair[] = [];
-      for (let i = 0; i < maxLen; i++) {
-        result.push({
-          index: i,
-          before: before[i] || null,
-          after: after[i] || null,
-        });
-      }
+      data.after.forEach(a => {
+        if (a.paired_with_id == null) return;
+        const before = beforeMap.get(a.paired_with_id);
+        if (!before) return;
+        result.push({ before, after: a });
+      });
+
+      result.sort((p1, p2) => p1.before.sort_order - p2.before.sort_order);
       setPairs(result);
     } catch (e: any) {
       console.error('비교 보기 로드 실패:', e);
@@ -97,46 +88,55 @@ export default function PhotoCompareScreen({ route }: any) {
     }
   };
 
-  // ─── 가로 스와이프 시 현재 인덱스 갱신 ───
-  const handleScroll = (e: any) => {
-    const offsetX = e.nativeEvent.contentOffset.x;
-    const idx = Math.round(offsetX / SCREEN_WIDTH);
-    if (idx !== currentIndex) {
-      setCurrentIndex(idx);
-    }
-  };
+  const handleScroll = useCallback(
+    (e: any) => {
+      const offsetX = e.nativeEvent.contentOffset.x;
+      const idx = Math.round(offsetX / SCREEN_WIDTH);
+      if (idx !== currentIndex) {
+        setCurrentIndex(idx);
+      }
+    },
+    [currentIndex],
+  );
 
-  // ─── 로딩 ───
   if (loading) {
     return (
-      <View style={styles.centerBox}>
+      <SafeAreaView style={styles.centerBox}>
         <ActivityIndicator size="large" color="#1F3864" />
         <Text style={styles.loadingText}>비교 사진 준비 중...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  // ─── 페어 0개 ───
   if (pairs.length === 0) {
     return (
-      <View style={styles.centerBox}>
-        <Text style={styles.emptyTitle}>비교할 사진이 없습니다</Text>
+      <SafeAreaView style={styles.centerBox}>
+        <Text style={styles.emptyTitle}>비교할 페어가 없습니다</Text>
         <Text style={styles.emptyText}>
-          시공 전·후 사진을 추가하면 자동으로 비교 화면이 만들어져요
+          시공 후 사진을 업로드할 때 시공 전 사진과 짝지어 주세요.{'\n'}
+          짝지어진 사진만 이 화면에 보여요.
         </Text>
-        <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-      </View>
+        <Button
+          mode="contained"
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: 12 }}
+        >
+          돌아가기
+        </Button>
+      </SafeAreaView>
     );
   }
 
-  // ─── 메인 화면 ───
   return (
-    <View style={styles.container}>
-      {/* ── 상단 헤더 ── */}
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+
+      {/* ── 헤더 ── */}
       <View style={styles.header}>
         <IconButton
           icon="arrow-left"
           size={24}
+          iconColor="#FFF"
           onPress={() => navigation.goBack()}
         />
         <View style={styles.headerCenter}>
@@ -156,66 +156,33 @@ export default function PhotoCompareScreen({ route }: any) {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
+        removeClippedSubviews={true}
+        decelerationRate="fast"
+        scrollEventThrottle={16}
       >
-        {pairs.map(pair => (
-          <View key={pair.index} style={styles.page}>
-            {/* 시공 전 */}
-            <View style={styles.half}>
-              <View style={styles.labelBar}>
-                <Text style={styles.labelText}>시공 전</Text>
-              </View>
-              {pair.before ? (
-                <Image
-                  source={{
-                    uri: `${SERVER_BASE_URL}/storage/${pair.before.file_path}`,
-                  }}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
+        {pairs.map((pair, idx) => {
+          // ★ v11.1.2 — 메모리 릭 방어: 현재 페이지만 실제 렌더 (±0)
+          //   가상화 범위를 0으로 줄여서 동시에 메모리에 올라간 이미지를 최소화
+          //   부작용: 스와이프 시 살짝 흰 화면 → 이미지 순으로 보일 수 있음
+          //          (대신 메모리 누수 위험 차단이 더 중요)
+          const isVisible = idx === currentIndex;
+
+          return (
+            <View
+              key={`${pair.before.id}-${pair.after.id}`}
+              style={styles.page}
+            >
+              {isVisible ? (
+                <ComparePairContent pair={pair} />
               ) : (
-                <View style={styles.imagePlaceholder}>
-                  <Text style={styles.placeholderText}>시공 전 사진 없음</Text>
-                </View>
-              )}
-              {pair.before?.description && (
-                <Text style={styles.caption} numberOfLines={2}>
-                  {pair.before.description}
-                </Text>
+                <View style={styles.placeholder} />
               )}
             </View>
-
-            {/* 구분선 */}
-            <View style={styles.divider} />
-
-            {/* 시공 후 */}
-            <View style={styles.half}>
-              <View style={[styles.labelBar, styles.labelBarAfter]}>
-                <Text style={styles.labelText}>시공 후</Text>
-              </View>
-              {pair.after ? (
-                <Image
-                  source={{
-                    uri: `${SERVER_BASE_URL}/storage/${pair.after.file_path}`,
-                  }}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
-              ) : (
-                <View style={styles.imagePlaceholder}>
-                  <Text style={styles.placeholderText}>시공 후 사진 없음</Text>
-                </View>
-              )}
-              {pair.after?.description && (
-                <Text style={styles.caption} numberOfLines={2}>
-                  {pair.after.description}
-                </Text>
-              )}
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
-      {/* ── 하단 인디케이터 (페이지 점) ── */}
+      {/* ── 하단 인디케이터 ── */}
       {pairs.length > 1 && (
         <View style={styles.indicator}>
           {pairs.map((_, idx) => (
@@ -226,37 +193,100 @@ export default function PhotoCompareScreen({ route }: any) {
           ))}
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// 스타일
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// ★ v11.1.2 — 페어 콘텐츠 (React.memo로 캐싱)
+// ═══════════════════════════════════════════════════════════════
+const ComparePairContent = React.memo(({ pair }: { pair: PhotoPair }) => {
+  const beforeUri = useMemo(
+    () => `${SERVER_BASE_URL}/storage/${pair.before.file_path}`,
+    [pair.before.file_path],
+  );
+  const afterUri = useMemo(
+    () => `${SERVER_BASE_URL}/storage/${pair.after.file_path}`,
+    [pair.after.file_path],
+  );
+
+  return (
+    <>
+      {/* 시공 전 */}
+      <View style={styles.half}>
+        <View style={styles.labelBar}>
+          <Text style={styles.labelText}>시공 전</Text>
+        </View>
+        <Image
+          source={{
+            uri: beforeUri,
+            width: IMG_W, // 축소 디코딩 (메모리 절약 핵심)
+            height: IMG_H,
+            cache: 'force-cache',
+          }}
+          style={styles.image}
+          resizeMode="contain"
+          fadeDuration={0} // 페이드인 제거
+          progressiveRenderingEnabled // 점진적 디코딩
+        />
+        {pair.before.description && (
+          <Text style={styles.caption} numberOfLines={2}>
+            {pair.before.description}
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.divider} />
+
+      {/* 시공 후 */}
+      <View style={styles.half}>
+        <View style={[styles.labelBar, styles.labelBarAfter]}>
+          <Text style={styles.labelText}>시공 후</Text>
+        </View>
+        <Image
+          source={{
+            uri: afterUri,
+            width: IMG_W,
+            height: IMG_H,
+            cache: 'force-cache',
+          }}
+          style={styles.image}
+          resizeMode="contain"
+          fadeDuration={0}
+          progressiveRenderingEnabled
+        />
+        {pair.after.description && (
+          <Text style={styles.caption} numberOfLines={2}>
+            {pair.after.description}
+          </Text>
+        )}
+      </View>
+    </>
+  );
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
 
-  // 헤더
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: 8,
+    paddingBottom: 8,
     backgroundColor: '#000',
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
+  headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: '#FFF' },
   headerSub: { fontSize: 12, color: '#AAA', marginTop: 2 },
-  headerRight: { width: 48 }, // 좌측 IconButton과 균형 맞추는 더미
+  headerRight: { width: 48 },
 
-  // 한 페어 = 화면 한 개
   page: {
     width: SCREEN_WIDTH,
     flex: 1,
     flexDirection: 'column',
   },
+  placeholder: { flex: 1, backgroundColor: '#000' },
+
   half: {
     flex: 1,
     backgroundColor: '#000',
@@ -269,19 +299,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
   },
-  labelBarAfter: {
-    backgroundColor: 'rgba(31, 56, 100, 0.4)', // 네이비 톤 — 시공 후 강조
-  },
+  labelBarAfter: { backgroundColor: 'rgba(31, 56, 100, 0.4)' },
   labelText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
 
   image: { flex: 1, width: '100%' },
-  imagePlaceholder: {
-    flex: 1,
-    backgroundColor: '#222',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: { color: '#666', fontSize: 14 },
 
   caption: {
     color: '#FFF',
@@ -291,7 +312,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
 
-  // 하단 인디케이터
   indicator: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -307,13 +327,13 @@ const styles = StyleSheet.create({
   },
   dotActive: { backgroundColor: '#FFF', width: 18 },
 
-  // 로딩 / 빈 상태
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#FFF',
+    paddingHorizontal: 24,
   },
   loadingText: { color: '#888', fontSize: 14 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
@@ -321,7 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#888',
     textAlign: 'center',
-    paddingHorizontal: 40,
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    lineHeight: 20,
   },
 });

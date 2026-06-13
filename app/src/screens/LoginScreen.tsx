@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
+import { useNavigation } from '@react-navigation/native';
 
 export default function LoginScreen() {
+  const navigation = useNavigation<any>();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,9 +26,6 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      // ★ v9: platform='mobile' 파라미터 추가
-      //   - 백엔드가 user_type과 platform 매칭 검증
-      //   - user_type='operator'(운영자) 는 모바일 로그인 거부됨
       const res = await axiosInstance.post('/auth/login', {
         email,
         password,
@@ -34,14 +33,12 @@ export default function LoginScreen() {
       });
       if (res.data.success) {
         setAuth(res.data.data.user, res.data.data.token);
-        // 로그인 성공 시 Navigation이 자동으로 메인 화면으로 이동
       }
     } catch (error: any) {
       const errCode = error.response?.data?.error_code;
       if (errCode === 'ERR_AUTH_001') {
         Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
       } else if (errCode === 'ERR_AUTH_008') {
-        // ★ v9 신규: 운영자 계정이 모바일 로그인 시도
         Alert.alert(
           '접근 불가',
           '운영자 계정은 모바일 앱 이용이 불가합니다.\n웹 관리자에서 로그인해주세요.',
@@ -60,6 +57,7 @@ export default function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="이메일"
+        placeholderTextColor="#999999"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -68,6 +66,7 @@ export default function LoginScreen() {
       <TextInput
         style={styles.input}
         placeholder="비밀번호"
+        placeholderTextColor="#999999"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -82,6 +81,17 @@ export default function LoginScreen() {
         ) : (
           <Text style={styles.buttonText}>로그인</Text>
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.registerLink}
+        onPress={() => navigation.navigate('Register')}
+        disabled={loading}
+      >
+        <Text style={styles.registerLinkText}>
+          계정이 없으신가요?{' '}
+          <Text style={styles.registerLinkBold}>회원가입</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -107,6 +117,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     fontSize: 16,
+    color: '#222222',
     borderWidth: 1,
     borderColor: '#ddd',
   },
@@ -117,4 +128,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  registerLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  registerLinkText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  registerLinkBold: {
+    color: '#1F3864',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
 });

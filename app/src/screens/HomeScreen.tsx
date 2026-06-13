@@ -1,39 +1,50 @@
 /**
- * 홈 화면 — v9.2 + v10.3
- *
- * 핵심 원칙:
- *  - 홈은 "캘린더가 보고 있는 달"을 따라간다
- *  - 요약 스트립의 데이터는 캘린더의 달 기준
- *  - "이번달 수입" 탭 시 그 달을 MySummary에 params로 전달
- *  - MySummary 화면 변경에 영향 받지 않음
+ * 홈 화면 — v11.6
  */
 
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, {
+  useCallback,
+  useState,
+  useRef,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Dimensions,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import CalendarScreen from './CalendarScreen';
+import CalendarScreen, { CalendarHandle } from './CalendarScreen';
+import YearMonthPicker from '../components/YearMonthPicker';
 import { getMonthlySummary } from '../api/schedulesApi';
 import type { MonthlySummary } from '../types/api';
 import { formatShortKRW } from '../utils/format';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 export default function HomeScreen({ navigation }: any) {
-  // ─── 캘린더가 보고 있는 달을 따라가는 state ──
-  const now = new Date();
-  const [calendarYear, setCalendarYear] = useState<number>(now.getFullYear());
-  const [calendarMonth, setCalendarMonth] = useState<number>(
-    now.getMonth() + 1,
+  const insets = useSafeAreaInsets();
+
+  const RESERVED_HEIGHT = 232 + insets.top + insets.bottom;
+  const CALENDAR_CELL_HEIGHT = Math.max(
+    70,
+    Math.floor((SCREEN_HEIGHT - RESERVED_HEIGHT) / 6),
   );
 
-  // ─── 월별 집계 데이터 ──────────────────────
+  const now = new Date();
+  const [calendarYear, setCalendarYear] = useState<number>(now.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState<number>(now.getMonth() + 1);
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const calendarRef = useRef<CalendarHandle>(null);
 
-  // ─── 캘린더가 월 변경 알리면 즉시 fetch ────
   const handleCalendarMonthChange = useCallback(
     async (newYear: number, newMonth: number) => {
       setCalendarYear(newYear);
       setCalendarMonth(newMonth);
-      // 캘린더 변경 즉시 새 데이터 fetch
       try {
         const data = await getMonthlySummary(newYear, newMonth);
         setSummary(data);
@@ -44,8 +55,6 @@ export default function HomeScreen({ navigation }: any) {
     [],
   );
 
-  // ─── 화면 포커스 시 현재 캘린더 달로 새로고침 ──
-  // (다른 화면 갔다가 돌아왔을 때 데이터 갱신)
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -58,57 +67,126 @@ export default function HomeScreen({ navigation }: any) {
         }
       };
       load();
-      return () => {
-        cancelled = true;
-      };
+      return () => { cancelled = true; };
     }, [calendarYear, calendarMonth]),
   );
 
-  // ─── 안전한 숫자 변환 ──────────────────────
+  const handleGoToday = useCallback(() => {
+    calendarRef.current?.goToday();
+  }, []);
+
+  const handleGoHome = () => {
+    calendarRef.current?.goToday();
+  };
+
+  const handleOpenDrawer = () => {
+    navigation.openDrawer?.();
+  };
+
+  const handleOpenPicker = () => {
+    setPickerVisible(true);
+  };
+
+  const handlePickerSelect = (y: number, m: number) => {
+    setPickerVisible(false);
+    calendarRef.current?.jumpToDate(
+      `${y}-${String(m).padStart(2, '0')}-01`,
+    );
+  };
+
   const workDays = summary?.work_days ?? 0;
   const totalIncome = parseFloat(summary?.total_income || '0');
-  const siteCount = summary?.site_count ?? 0;
+  const totalWorkUnits = parseFloat(summary?.total_work_units || '0');
 
-  // ─── 네비게이션 ─────────────────────────────
-  // ★ 캘린더가 보고 있는 달을 MySummary에 전달
   const goToMySummary = () => {
     navigation.navigate('MySummary', {
       year: calendarYear,
       month: calendarMonth,
-      _ts: Date.now(), // 같은 달 재진입도 인식되게
+      _ts: Date.now(),
     });
   };
 
-  const goToAttendance = () => {
-    navigation.navigate('Attendance');
-  };
-
-  // ─── 라벨 동적 변경 ─────────────────────────
   const isCurrentMonth =
     calendarYear === now.getFullYear() && calendarMonth === now.getMonth() + 1;
-  const incomeLabel = isCurrentMonth
-    ? '이번달 수입'
-    : `${calendarMonth}월 수입`;
+  const incomeLabel = isCurrentMonth ? '수입' : `${calendarMonth}월수입`;
 
   return (
     <View style={styles.container}>
+      {/* 자체 헤더 */}
+      <View
+        style={[
+          styles.customHeader,
+          {
+            paddingTop: insets.top,
+            height: 56 + insets.top,
+          },
+        ]}
+      >
+        <View style={styles.headerLeft}>
+          <Pressable
+            onPress={handleOpenDrawer}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              pressed && { opacity: 0.6 },
+            ]}
+            android_ripple={{ color: '#E8F0FE', borderless: true, radius: 20 }}
+          >
+            <Text style={styles.headerIconText}>☰</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleGoHome}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              pressed && { opacity: 0.6 },
+            ]}
+            android_ripple={{ color: '#E8F0FE', borderless: true, radius: 20 }}
+          >
+            <Text style={styles.headerIconText}>🏠</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          onPress={handleOpenPicker}
+          style={({ pressed }) => [
+            styles.headerTitle,
+            pressed && { opacity: 0.6 },
+          ]}
+          android_ripple={{ color: '#E8F0FE' }}
+        >
+          <Text style={styles.headerTitleText}>
+            {calendarYear}년 {String(calendarMonth).padStart(2, '0')}월
+          </Text>
+          <Text style={styles.headerTitleArrow}>  ▾</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleGoToday}
+          style={({ pressed }) => [
+            styles.headerTodayBtn,
+            pressed && styles.headerTodayBtnPressed,
+          ]}
+        >
+          <Text style={styles.headerTodayBtnText}>오늘</Text>
+        </Pressable>
+      </View>
+
+      {/* 요약 스트립 */}
       <View style={styles.summaryStrip}>
-        {/* 근무일 */}
         <Pressable
           style={({ pressed }) => [
             styles.summaryItem,
             pressed && styles.summaryItemPressed,
           ]}
-          onPress={goToAttendance}
+          onPress={goToMySummary}
           android_ripple={{ color: '#E8F0FE' }}
         >
           <Text style={styles.summaryValue}>{workDays}일</Text>
-          <Text style={styles.summaryLabel}>근무일</Text>
+          <Text style={styles.summaryLabel}>근무</Text>
         </Pressable>
 
         <View style={styles.separator} />
 
-        {/* 수입 — 캘린더 달 기준 */}
         <Pressable
           style={({ pressed }) => [
             styles.summaryItem,
@@ -128,7 +206,6 @@ export default function HomeScreen({ navigation }: any) {
 
         <View style={styles.separator} />
 
-        {/* 현장 수 */}
         <Pressable
           style={({ pressed }) => [
             styles.summaryItem,
@@ -137,55 +214,95 @@ export default function HomeScreen({ navigation }: any) {
           onPress={goToMySummary}
           android_ripple={{ color: '#E8F0FE' }}
         >
-          <Text style={styles.summaryValue}>{siteCount}개</Text>
-          <Text style={styles.summaryLabel}>현장</Text>
+          <Text style={styles.summaryValue}>{totalWorkUnits.toFixed(1)}</Text>
+          <Text style={styles.summaryLabel}>공수</Text>
         </Pressable>
       </View>
 
-      {/* 큰 달력 */}
-      <View style={styles.calendarArea}>
+      <View style={[styles.calendarArea, { paddingBottom: insets.bottom }]}>
         <CalendarScreen
+          ref={calendarRef}
           navigation={navigation}
           onMonthChange={handleCalendarMonthChange}
+          cellHeight={CALENDAR_CELL_HEIGHT}
         />
       </View>
+
+      <YearMonthPicker
+        visible={pickerVisible}
+        year={calendarYear}
+        month={calendarMonth}
+        onClose={() => setPickerVisible(false)}
+        onSelect={handlePickerSelect}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  summaryStrip: {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+
+  customHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderBottomWidth: 0.5,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    paddingHorizontal: 4,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIconBtn: {
+    width: 40, height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+  },
+  headerIconText: {
+    fontSize: 22, color: '#1F3864', fontWeight: '600',
+  },
+  headerTitle: {
+    flex: 1, flexDirection: 'row',
+    alignItems: 'center', justifyContent: 'center',
+    height: 44, paddingHorizontal: 8,
+  },
+  headerTitleText: {
+    fontSize: 17, fontWeight: '700', color: '#1F3864',
+  },
+  headerTitleArrow: { fontSize: 12, color: '#1F3864' },
+  headerTodayBtn: {
+    paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: 6, backgroundColor: '#2E75B6', marginRight: 4,
+  },
+  headerTodayBtnPressed: { backgroundColor: '#1F5A8E' },
+  headerTodayBtnText: {
+    fontSize: 13, color: '#FFFFFF', fontWeight: '700',
+  },
+
+  summaryStrip: {
+    flexDirection: 'row', alignItems: 'center',
+    height: 56, backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
+    paddingHorizontal: 8, paddingVertical: 4,
   },
   summaryItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
+    flex: 1, flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
+    height: '100%', borderRadius: 8, paddingVertical: 4,
   },
-  summaryItemHighlight: { backgroundColor: '#FFF8E1', flex: 1.3 },
+  summaryItemHighlight: { backgroundColor: '#FFF8E1', flex: 1.4 },
   summaryItemPressed: { opacity: 0.6 },
   summaryValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1F3864',
-    marginBottom: 2,
+    fontSize: 18, fontWeight: '700', color: '#1F3864', lineHeight: 22,
   },
-  summaryValueHighlight: { color: '#D48806', fontSize: 17 },
-  summaryLabel: { fontSize: 10, color: '#888' },
+  summaryValueHighlight: { color: '#D48806', fontSize: 19 },
+  summaryLabel: { fontSize: 11, color: '#666', marginTop: 2 },
   summaryLabelHighlight: { color: '#666', fontWeight: '600' },
   separator: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 4,
+    width: 1, height: 32,
+    backgroundColor: '#E0E0E0', marginHorizontal: 6,
   },
   calendarArea: { flex: 1 },
 });

@@ -14,7 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
 import ScheduleCreateScreen from '../screens/ScheduleCreateScreen';
 import WageSettingsScreen from '../screens/WageSettingsScreen';
-import PhotoCompareScreen from '../screens/PhotoCompareScreen'; // ★ v11
+import PhotoCompareScreen from '../screens/PhotoCompareScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -23,10 +23,9 @@ const Drawer = createDrawerNavigator();
  * ═══════════════════════════════════════════
  * Drawer (햄버거 메뉴)
  * ═══════════════════════════════════════════
- * v9.2 변경:
- *  - Bottom Tab Navigator 제거 (공간 확보)
- *  - 홈/내수입/근태를 각각 Drawer.Screen으로 등록
- *  - 헤더 좌측: 햄버거 + 홈 아이콘
+ * v11.6 변경:
+ *  - Home 화면만 headerShown: false
+ *    (자체 헤더로 대체 — 년/월 탭 + 오늘 버튼)
  */
 function DrawerRoot() {
   return (
@@ -40,7 +39,6 @@ function DrawerRoot() {
           backgroundColor: '#FAFAFA',
           width: 280,
         },
-        // ★ v9.2: 헤더 좌측에 햄버거 + 홈 아이콘 병렬 배치
         headerLeft: () => (
           <>
             <IconButton
@@ -59,12 +57,12 @@ function DrawerRoot() {
         ),
       })}
     >
-      {/* 메인 3개 화면 — 바텀 탭 대신 각각 Drawer 항목으로 */}
+      {/* ★ v11.6: Home은 자체 헤더 사용 — Drawer 헤더 끔 */}
       <Drawer.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Team Schedule',
+          headerShown: false,
           drawerLabel: '🏠 홈 (달력)',
         }}
       />
@@ -84,7 +82,6 @@ function DrawerRoot() {
           drawerLabel: '⏰ 근태',
         }}
       />
-      {/* 부가 기능 */}
       <Drawer.Screen
         name="Profile"
         component={ProfileScreen}
@@ -137,7 +134,6 @@ export default function AppNavigator() {
                 presentation: 'modal',
               }}
             />
-            {/* ★ v10.2 추가 — 내 단가 설정 화면 */}
             <Stack.Screen
               name="WageSettings"
               component={WageSettingsScreen}
@@ -149,17 +145,16 @@ export default function AppNavigator() {
                 headerBackTitle: '뒤로',
               }}
             />
-            {/* ★ v11 추가 — 사진 비교 보기 (시공 전·후 페어) */}
             <Stack.Screen
               name="PhotoCompare"
               component={PhotoCompareScreen}
-              options={{
-                headerShown: false, // 화면 자체에 커스텀 헤더가 있음 (검정 배경)
-              }}
+              options={{ headerShown: false }}
             />
           </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

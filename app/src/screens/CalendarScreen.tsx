@@ -289,11 +289,17 @@ const CalendarScreen = forwardRef<CalendarHandle, Props>(
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         <Calendar
           current={currentMonth}
+          // ★ initialDate — react-native-calendars는 'current'를 마운트 시
+          //   초기값으로만 읽고 이후 변경은 무시한다. 헤더의 연/월 선택으로
+          //   점프할 때 캘린더가 실제로 이동하려면 'initialDate'가 필요하다.
+          initialDate={currentMonth}
           onMonthChange={m => {
             setCurrentMonth(m.dateString);
             if (onMonthChange) { onMonthChange(m.year, m.month); }
           }}
-          markedDates={markedDates}
+          // dayComponent가 marking.schedules를 직접 읽는 커스텀 구조라
+          // 라이브러리의 MarkingProps 타입과는 형태가 다름 (런타임은 정상)
+          markedDates={markedDates as any}
           enableSwipeMonths={true}
           renderArrow={(direction: 'left' | 'right') => (
             <View style={styles.arrowBtn}>
@@ -322,11 +328,13 @@ const CalendarScreen = forwardRef<CalendarHandle, Props>(
             textDayFontWeight: '600',
             textSectionTitleColor: '#555555',
             textDisabledColor: '#CCCCCC',
+            // 'stylesheet.calendar.header'는 라이브러리 Theme 타입에 없는
+            // 런타임 전용 스타일 오버라이드 키라 캐스팅이 필요함
             'stylesheet.calendar.header': {
               dayTextAtIndex0: { color: '#E74C3C', fontWeight: '600' },
               dayTextAtIndex6: { color: '#2E75B6', fontWeight: '600' },
             },
-          }}
+          } as any}
         />
 
         {modalVisible && (

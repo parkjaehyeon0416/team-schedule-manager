@@ -38,6 +38,7 @@ import { formatMoney } from '../utils/format';
 import PhotoCategoryTabs from '../components/PhotoCategoryTabs';
 import PhotoGrid from '../components/PhotoGrid';
 import PhotoPairPicker from '../components/PhotoPairPicker';
+import AppHeader from '../components/AppHeader';
 
 const ROLE_LABELS: Record<number, string> = {
   1: '관리자',
@@ -308,9 +309,12 @@ export default function ScheduleDetailScreen({ route }: any) {
 
   if (loading || !schedule) {
     return (
-      <View style={styles.centerBox}>
-        <ActivityIndicator size="large" color="#1F3864" />
-        <Text style={styles.loadingText}>불러오는 중...</Text>
+      <View style={styles.screen}>
+        <AppHeader leftType="back" title="일정 상세" />
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color="#1F3864" />
+          <Text style={styles.loadingText}>불러오는 중...</Text>
+        </View>
       </View>
     );
   }
@@ -348,7 +352,8 @@ export default function ScheduleDetailScreen({ route }: any) {
     photos.counts.other;
 
   return (
-    <>
+    <View style={styles.screen}>
+      <AppHeader leftType="back" title="일정 상세" />
       <ScrollView style={styles.container}>
         {/* ── 헤더 ── */}
         <View style={styles.header}>
@@ -561,11 +566,12 @@ export default function ScheduleDetailScreen({ route }: any) {
         onSelect={handlePairSelect}
         onCancel={handlePairCancel}
       />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
   centerBox: {
     flex: 1,

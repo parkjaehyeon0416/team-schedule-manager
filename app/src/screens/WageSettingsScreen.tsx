@@ -26,6 +26,7 @@ import type { WageSetting } from '../types/api';
 import { formatMoney } from '../utils/format';
 import WorkTypePicker from '../components/WorkTypePicker';
 import WageInputForm from '../components/WageInputForm';
+import AppHeader from '../components/AppHeader';
 
 export default function WageSettingsScreen() {
   // ─────────────────────────────────────────────────────────
@@ -170,9 +171,12 @@ export default function WageSettingsScreen() {
   // ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <View style={styles.centerBox}>
-        <ActivityIndicator size="large" color="#2E75B6" />
-        <Text style={styles.loadingText}>단가 목록 불러오는 중...</Text>
+      <View style={styles.screen}>
+        <AppHeader leftType="back" title="내 단가 설정" />
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color="#2E75B6" />
+          <Text style={styles.loadingText}>단가 목록 불러오는 중...</Text>
+        </View>
       </View>
     );
   }
@@ -181,7 +185,9 @@ export default function WageSettingsScreen() {
   // [7] 렌더 — 메인
   // ─────────────────────────────────────────────────────────
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
+      <AppHeader leftType="back" title="내 단가 설정" />
+      <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 빈 상태 안내 */}
         {settings.length === 0 && (
@@ -325,11 +331,13 @@ export default function WageSettingsScreen() {
           </View>
         </View>
       </Modal>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, backgroundColor: '#F7F7F9' },
 
   centerBox: {

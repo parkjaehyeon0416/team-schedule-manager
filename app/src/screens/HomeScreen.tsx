@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CalendarScreen, { CalendarHandle } from './CalendarScreen';
 import YearMonthPicker from '../components/YearMonthPicker';
+import AppHeader from '../components/AppHeader';
 import { getMonthlySummary } from '../api/schedulesApi';
 import type { MonthlySummary } from '../types/api';
 import { formatShortKRW } from '../utils/format';
@@ -112,64 +113,37 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* 자체 헤더 */}
-      <View
-        style={[
-          styles.customHeader,
-          {
-            paddingTop: insets.top,
-            height: 56 + insets.top,
-          },
-        ]}
-      >
-        <View style={styles.headerLeft}>
+      <AppHeader
+        leftType="menu"
+        onMenuPress={handleOpenDrawer}
+        onHomePress={handleGoHome}
+        centerContent={
           <Pressable
-            onPress={handleOpenDrawer}
+            onPress={handleOpenPicker}
             style={({ pressed }) => [
-              styles.headerIconBtn,
+              styles.monthTabBtn,
               pressed && { opacity: 0.6 },
             ]}
-            android_ripple={{ color: '#E8F0FE', borderless: true, radius: 20 }}
+            android_ripple={{ color: '#E8F0FE' }}
           >
-            <Text style={styles.headerIconText}>☰</Text>
+            <Text style={styles.monthTabText}>
+              {calendarYear}년 {String(calendarMonth).padStart(2, '0')}월
+            </Text>
+            <Text style={styles.monthTabArrow}>  ▾</Text>
           </Pressable>
-
+        }
+        rightContent={
           <Pressable
-            onPress={handleGoHome}
+            onPress={handleGoToday}
             style={({ pressed }) => [
-              styles.headerIconBtn,
-              pressed && { opacity: 0.6 },
+              styles.todayBtn,
+              pressed && styles.todayBtnPressed,
             ]}
-            android_ripple={{ color: '#E8F0FE', borderless: true, radius: 20 }}
           >
-            <Text style={styles.headerIconText}>🏠</Text>
+            <Text style={styles.todayBtnText}>오늘</Text>
           </Pressable>
-        </View>
-
-        <Pressable
-          onPress={handleOpenPicker}
-          style={({ pressed }) => [
-            styles.headerTitle,
-            pressed && { opacity: 0.6 },
-          ]}
-          android_ripple={{ color: '#E8F0FE' }}
-        >
-          <Text style={styles.headerTitleText}>
-            {calendarYear}년 {String(calendarMonth).padStart(2, '0')}월
-          </Text>
-          <Text style={styles.headerTitleArrow}>  ▾</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleGoToday}
-          style={({ pressed }) => [
-            styles.headerTodayBtn,
-            pressed && styles.headerTodayBtnPressed,
-          ]}
-        >
-          <Text style={styles.headerTodayBtnText}>오늘</Text>
-        </Pressable>
-      </View>
+        }
+      />
 
       {/* 요약 스트립 */}
       <View style={styles.summaryStrip}>
@@ -242,42 +216,21 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
 
-  customHeader: {
+  monthTabBtn: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    paddingHorizontal: 4,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIconBtn: {
-    width: 40, height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 22,
-  },
-  headerIconText: {
-    fontSize: 22, color: '#1F3864', fontWeight: '600',
-  },
-  headerTitle: {
-    flex: 1, flexDirection: 'row',
     alignItems: 'center', justifyContent: 'center',
     height: 44, paddingHorizontal: 8,
   },
-  headerTitleText: {
+  monthTabText: {
     fontSize: 17, fontWeight: '700', color: '#1F3864',
   },
-  headerTitleArrow: { fontSize: 12, color: '#1F3864' },
-  headerTodayBtn: {
+  monthTabArrow: { fontSize: 12, color: '#1F3864' },
+  todayBtn: {
     paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 6, backgroundColor: '#2E75B6', marginRight: 4,
+    borderRadius: 6, backgroundColor: '#2E75B6',
   },
-  headerTodayBtnPressed: { backgroundColor: '#1F5A8E' },
-  headerTodayBtnText: {
+  todayBtnPressed: { backgroundColor: '#1F5A8E' },
+  todayBtnText: {
     fontSize: 13, color: '#FFFFFF', fontWeight: '700',
   },
 

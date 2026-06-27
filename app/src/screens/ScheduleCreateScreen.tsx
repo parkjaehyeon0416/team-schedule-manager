@@ -31,6 +31,7 @@ import {
 } from '../api/schedulesApi';
 import { getWageSettings } from '../api/wageSettingsApi';
 import WorkTypePicker from '../components/WorkTypePicker';
+import AppHeader from '../components/AppHeader';
 import { formatMoney, parseMoney } from '../utils/format';
 import type { TeamMember, WageSetting, WorkType } from '../types/api';
 
@@ -251,17 +252,22 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   // ─── 데이터 로딩 중 ───
   if (loadingData) {
     return (
-      <View style={styles.centerBox}>
-        <ActivityIndicator size="large" color="#2E75B6" />
-        <Text style={styles.loadingText}>일정 정보 불러오는 중...</Text>
+      <View style={styles.screen}>
+        <AppHeader leftType="back" title={isEditMode ? '일정 수정' : '일정 등록'} />
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color="#2E75B6" />
+          <Text style={styles.loadingText}>일정 정보 불러오는 중...</Text>
+        </View>
       </View>
     );
   }
 
   return (
-    // ★ v11.1.2 — KeyboardAvoidingView로 감싸서 키보드 올라올 때 화면 자동 조정
-    //   안드로이드: padding 모드 — 키보드 높이만큼 화면 자체가 위로 올라감
-    //   iOS:       그대로
+    <View style={styles.screen}>
+      <AppHeader leftType="back" title={isEditMode ? '일정 수정' : '일정 등록'} />
+    {/* ★ v11.1.2 — KeyboardAvoidingView로 감싸서 키보드 올라올 때 화면 자동 조정
+        안드로이드: padding 모드 — 키보드 높이만큼 화면 자체가 위로 올라감
+        iOS:       그대로 */}
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -551,10 +557,12 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
   // ★ v11.1.2 — KeyboardAvoidingView가 화면 전체를 차지하도록
   flex: { flex: 1 },
 

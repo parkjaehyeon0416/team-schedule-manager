@@ -18,6 +18,7 @@ import { getMonthlySummary } from '../api/schedulesApi';
 import type { MonthlySummary } from '../types/api';
 import { formatMoney, formatLastCalculated } from '../utils/format';
 import YearMonthPicker from '../components/YearMonthPicker';
+import AppHeader from '../components/AppHeader';
 
 const formatKRW = (value: number | string): string => {
   return `₩${formatMoney(value)}`;
@@ -104,9 +105,12 @@ export default function MySummaryScreen({ route }: any) {
 
   if (loading) {
     return (
-      <View style={styles.centerBox}>
-        <ActivityIndicator size="large" color="#1F3864" />
-        <Text style={styles.loadingText}>불러오는 중...</Text>
+      <View style={styles.screen}>
+        <AppHeader leftType="menu" title="내 수입 현황" />
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color="#1F3864" />
+          <Text style={styles.loadingText}>불러오는 중...</Text>
+        </View>
       </View>
     );
   }
@@ -120,7 +124,8 @@ export default function MySummaryScreen({ route }: any) {
   const siteCount = data?.site_count ?? 0;
 
   return (
-    <>
+    <View style={styles.screen}>
+      <AppHeader leftType="menu" title="내 수입 현황" />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -226,11 +231,12 @@ export default function MySummaryScreen({ route }: any) {
         onClose={() => setPickerVisible(false)}
         onSelect={handlePickerSelect}
       />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, backgroundColor: '#F5F5F5' },
   content: { padding: 12 },
   centerBox: {

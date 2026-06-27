@@ -8,10 +8,13 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { List, Divider } from 'react-native-paper';
+import AppHeader from '../components/AppHeader';
 
 export default function SettingsScreen() {
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.screen}>
+      <AppHeader leftType="menu" title="설정" />
+      <ScrollView style={styles.container}>
       <List.Section>
         <List.Subheader>앱 설정</List.Subheader>
         <List.Item
@@ -57,11 +60,13 @@ export default function SettingsScreen() {
           left={props => <List.Icon {...props} icon="information-outline" />}
         />
       </List.Section>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',

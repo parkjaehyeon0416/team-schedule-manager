@@ -11,6 +11,7 @@ import { Card, Text, Button, Avatar, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
+import AppHeader from '../components/AppHeader';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -32,7 +33,9 @@ export default function ProfileScreen() {
   if (!user) return null;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
+      <AppHeader leftType="menu" title="프로필" />
+      <View style={styles.container}>
       {/* ── 1) 프로필 카드 ── */}
       <Card style={styles.profileCard}>
         <Card.Content style={styles.profileContent}>
@@ -87,11 +90,13 @@ export default function ProfileScreen() {
       >
         로그아웃
       </Button>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: {
     flex: 1,
     padding: 16,

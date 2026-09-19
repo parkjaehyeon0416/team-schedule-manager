@@ -13,7 +13,7 @@ import { formatMoney } from '../utils/format';
 import AppHeader from '../components/AppHeader';
 
 const STATUS_LABEL: Record<Quote['status'], { text: string; color: string }> = {
-  draft: { text: '작성중', color: '#999' },
+  draft: { text: '작성중', color: '#999999' },
   sent: { text: '전달됨', color: '#1E88E5' },
   approved: { text: '승인됨', color: '#43A047' },
   rejected: { text: '반려', color: '#D32F2F' },

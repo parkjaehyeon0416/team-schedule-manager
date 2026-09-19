@@ -43,8 +43,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // 근태는 본인 것만 CRUD (member 이상)
     Route::apiResource('attendances', AttendanceController::class);
 
-    // 팀 가입
+    // 팀 조회/가입/생성 (아직 팀이 없는 사용자도 자기 팀 여부를 확인해야 하므로 member 이상 전체 허용.
+    // index/show는 컨트롤러 내부에서 본인 team_id로 스코프 처리, superadmin만 전체 조회)
+    Route::get('/teams',           [TeamController::class, 'index']);
+    Route::get('/teams/{id}',      [TeamController::class, 'show']);
     Route::post('/teams/join',     [TeamController::class, 'join']);
+    Route::post('/teams',          [TeamController::class, 'store']);
 
     // 평수 계산
     Route::post('calculate/area',  [CalculateController::class, 'area']);
@@ -88,9 +92,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/sites/{id}',    [SiteController::class, 'update']);
         Route::delete('/sites/{id}', [SiteController::class, 'destroy']);
 
-        // 팀 관리
-        Route::apiResource('teams', TeamController::class)
-            ->only(['index', 'show', 'update', 'destroy']);
+        // 팀 관리 — 수정/삭제만 manager 이상 (조회/생성/가입은 위 member+ 그룹으로 이동됨)
+        Route::put('/teams/{id}',    [TeamController::class, 'update']);
+        Route::delete('/teams/{id}', [TeamController::class, 'destroy']);
 
         // ★ v11 변경: 사진 라우트는 member 그룹으로 이동됨 (위)
     });

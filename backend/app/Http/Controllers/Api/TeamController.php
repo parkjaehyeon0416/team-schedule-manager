@@ -2,71 +2,158 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TeamController extends Controller
 {
     /**
      * ─── ① 팀 목록 조회 ───
-     *   superadmin 전용 (모든 팀 보기)
-     *   ※ v7 후반부에서 구현 예정
+     *   superadmin: 전체 팀 목록
+     *   manager/member: 본인 소속 팀만 (없으면 빈 배열)
      */
-    public function index()
+    public function index(Request $request)
     {
-        return ApiResponse::error('아직 구현되지 않았습니다.', 'ERR_NOT_IMPLEMENTED', 501);
+        $user = $request->user();
+
+        if ($user->role_id === 1) {
+            $teams = Team::orderByDesc('id')->get();
+            return ApiResponse::success($teams, '전체 팀 목록 조회 성공');
+        }
+
+        $teams = $user->team_id
+            ? Team::where('id', $user->team_id)->get()
+            : collect();
+
+        return ApiResponse::success($teams, '팀 목록 조회 성공');
     }
 
     /**
      * ─── ② 팀 생성 ───
-     *   superadmin 전용
-     *   ※ v7 후반부에서 구현 예정
+     *   member 이상 누구나 호출 가능 — 아직 팀이 없는 사용자가 새 팀을 만들면
+     *   그 사용자를 팀장(manager)으로 승격하고 해당 팀에 소속시킴.
+     *   이미 팀이 있는 사용자는 새 팀을 만들 수 없음(탈퇴 후 재생성 정책은 추후 결정).
      */
     public function store(Request $request)
     {
-        return ApiResponse::error('아직 구현되지 않았습니다.', 'ERR_NOT_IMPLEMENTED', 501);
+        $user = $request->user();
+
+        if ($user->team_id) {
+            return ApiResponse::error('이미 소속된 팀이 있습니다.', ErrorCode::TEAM_ALREADY_JOINED, 409);
+        }
+
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+        ]);
+
+        $team = Team::create([
+            'name'        => $data['name'],
+            'invite_code' => $this->generateInviteCode(),
+            'created_by'  => $user->id,
+        ]);
+
+        $user->team_id = $team->id;
+        // superadmin은 그대로 유지, member는 팀 생성과 동시에 manager로 승격
+        if ($user->role_id > 2) {
+            $user->role_id = 2;
+        }
+        $user->save();
+
+        return ApiResponse::success($team, '팀이 생성되었습니다.', 201);
     }
 
     /**
      * ─── ③ 팀 상세 조회 ───
-     *   ※ v7 후반부에서 구현 예정
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        return ApiResponse::error('아직 구현되지 않았습니다.', 'ERR_NOT_IMPLEMENTED', 501);
+        $user = $request->user();
+
+        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))
+            ->find($id);
+
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        return ApiResponse::success($team, '팀 조회 성공');
     }
 
     /**
      * ─── ④ 팀 정보 수정 ───
-     *   manager 이상 전용
-     *   ※ v7 후반부에서 구현 예정
+     *   manager 이상 전용(라우트 미들웨어에서 이미 검증). 본인 팀만 수정 가능(superadmin 제외).
      */
     public function update(Request $request, string $id)
     {
-        return ApiResponse::error('아직 구현되지 않았습니다.', 'ERR_NOT_IMPLEMENTED', 501);
+        $user = $request->user();
+
+        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))
+            ->find($id);
+
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:100',
+        ]);
+
+        $team->update($data);
+
+        return ApiResponse::success($team, '팀 정보가 수정되었습니다.');
     }
 
     /**
      * ─── ⑤ 팀 삭제 ───
-     *   superadmin 전용
-     *   ※ v7 후반부에서 구현 예정
+     *   manager 이상 전용(라우트 미들웨어). 본인 팀만 삭제 가능(superadmin 제외).
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        return ApiResponse::error('아직 구현되지 않았습니다.', 'ERR_NOT_IMPLEMENTED', 501);
+        $user = $request->user();
+
+        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))
+            ->find($id);
+
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        $team->delete();
+
+        return ApiResponse::success(null, '팀이 삭제되었습니다.');
     }
 
     /**
      * ─── ⑥ 팀 가입 ───
      *   초대코드로 팀에 합류
-     *   ※ v7 후반부에서 구현 예정
      */
     public function join(Request $request)
     {
-        return ApiResponse::error('아직 구현되지 않았습니다.', 'ERR_NOT_IMPLEMENTED', 501);
+        $user = $request->user();
+
+        if ($user->team_id) {
+            return ApiResponse::error('이미 팀에 소속된 사용자입니다.', ErrorCode::TEAM_ALREADY_JOINED, 409);
+        }
+
+        $data = $request->validate([
+            'invite_code' => 'required|string',
+        ]);
+
+        $team = Team::where('invite_code', $data['invite_code'])->first();
+
+        if (!$team) {
+            return ApiResponse::error('초대 코드가 유효하지 않습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        $user->team_id = $team->id;
+        $user->save();
+
+        return ApiResponse::success($user->fresh(), '팀에 가입되었습니다.');
     }
 
     /**
@@ -100,5 +187,14 @@ class TeamController extends Controller
             ->get();
 
         return ApiResponse::success($members, '팀원 목록 조회 성공');
+    }
+
+    private function generateInviteCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(6));
+        } while (Team::where('invite_code', $code)->exists());
+
+        return $code;
     }
 }

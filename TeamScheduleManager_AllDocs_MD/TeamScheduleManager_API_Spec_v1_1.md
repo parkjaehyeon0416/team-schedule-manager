@@ -43,13 +43,14 @@ API 명세서 v1.1 (2026-09-19 현행화)
 | DELETE | /api/schedules/{scheduleId}/photos/{photoId} | member+ | 사진 삭제 | ✅ 구현됨 |
 | **근태(Attendance)** |
 | GET/POST/PUT/DELETE | /api/attendances | member+ | 본인 근태 CRUD | ⏳ 스텁 (로드맵 v2.3 이후 후순위 보류, 의도된 상태) |
-| **팀(Team)** |
+| **팀(Team) — ★ v11.8 전체 재구현 (2026-09-19)** |
 | GET | /api/team/members | member+ | 내 팀 팀원 목록 조회 (일정 투입 인원 선택용, v9 신규) | ✅ 구현됨 |
-| POST | /api/teams/join | member+ | 초대 코드로 팀 가입 | ⏳ 스텁 |
-| GET | /api/teams | manager+ | 팀 목록 조회 | ⏳ 스텁 |
-| GET | /api/teams/{id} | manager+ | 팀 단건 조회 | ⏳ 스텁 |
-| PUT | /api/teams/{id} | manager+ | 팀 수정 | ⏳ 스텁 |
-| DELETE | /api/teams/{id} | manager+ | 팀 삭제 | ⏳ 스텁 |
+| GET | /api/teams | member+ | 팀 조회 (superadmin은 전체, 그 외는 본인 팀만) | ✅ 구현됨 (v11.8, manager+ → member+로 권한 완화) |
+| GET | /api/teams/{id} | member+ | 팀 단건 조회 (본인 팀만) | ✅ 구현됨 (v11.8, manager+ → member+로 권한 완화) |
+| POST | /api/teams | member+ (팀 없는 사용자만) | 팀 생성 — 생성자를 manager로 자동 승격 | ✅ 구현됨 (v11.8 신규 라우트) |
+| POST | /api/teams/join | member+ (팀 없는 사용자만) | 초대 코드로 팀 가입 | ✅ 구현됨 (v11.8) |
+| PUT | /api/teams/{id} | manager+ | 팀 수정 (본인 팀만) | ✅ 구현됨 (v11.8) |
+| DELETE | /api/teams/{id} | manager+ | 팀 삭제 (본인 팀만) | ✅ 구현됨 (v11.8) |
 | **공수·급여 자동 계산 — ★ v10.1 신규** |
 | POST | /api/calculate/area | member+ | 평수·자재 자동 계산 (도배/타일/필름) | ✅ 구현됨 |
 | GET | /api/work-types | member+ | 공정 목록 조회 | ✅ 구현됨 |
@@ -86,5 +87,6 @@ v1.0에 있던 ERR_SITE_001(현장 없음), ERR_TEAM_001/002, ERR_ATTEND_001~003
 | --- | --- | --- | --- |
 | v1.0 | 2026-04-19 | — | 최초 작성 — 인증 API 4종 명세 완성, 전체 라우트 목록 및 에러 코드 초안 정리 |
 | v1.1 | 2026-09-19 | Claude Sonnet 5 | v11.6 기준 3장(라우트 목록)·4장(에러코드) 현행화 — 사진/공수급여/현장 API 반영, 근태·팀CRUD 스텁 상태 명시 |
+| v1.1 (같은 날 갱신) | 2026-09-19 | Claude Sonnet 5 | v11.8 팀 기능 전체 구현 반영 — 팀 CRUD/가입/생성 전부 ✅ 구현됨으로 갱신, index/show 권한을 manager+ → member+로 정정 |
 
 © 2026 Team Schedule Manager

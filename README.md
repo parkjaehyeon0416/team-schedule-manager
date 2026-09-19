@@ -51,9 +51,11 @@
 
 - 손실률(로스율)을 직접 입력하지 않으면 공정별 기본값(도배 10%, 타일 15%, 필름 10%)이 자동 적용됩니다.
 
-### 👥 팀 관리 (일부만 동작 — CRUD는 개발 예정)
-- 팀원 목록 조회(`/api/team/members`)만 실제로 동작합니다.
-- 팀 생성 · 조회 · 수정 · 삭제, 초대를 통한 팀원 가입(`/api/teams`, `/api/teams/join`) API는 라우트만 존재하며 아직 `ERR_NOT_IMPLEMENTED(501)`를 반환하는 스텁입니다.
+### 👥 팀 관리
+- 팀 생성 · 조회 · 수정 · 삭제, 초대 코드를 통한 팀원 가입
+- 아직 팀이 없는 사용자가 팀을 생성하면 자동으로 관리자(manager) 권한으로 승격되고 해당 팀에 소속됩니다.
+- 이미 존재하는 팀은 초대 코드로 가입할 수 있습니다. 한 사용자는 하나의 팀에만 소속됩니다.
+- 팀 수정·삭제는 관리자(manager) 이상만 가능합니다.
 
 ---
 
@@ -158,8 +160,12 @@ npm run ios
 | 급여 | GET | `/api/wage-settings` | 내 단가 설정 조회/등록/삭제 | member+ |
 | 급여 | GET | `/api/monthly-summary` | 월별 수입 집계 조회 | member+ |
 | 팀 | GET | `/api/team/members` | 내 팀 팀원 목록 조회 | member+ |
-| 팀 | POST | `/api/teams/join` | (⏳ 스텁, 미구현) | member+ |
-| 팀 | GET/PUT/DELETE | `/api/teams` | (⏳ 스텁, 미구현) | manager+ |
+| 팀 | GET | `/api/teams` | 내 팀 조회 (superadmin은 전체) | member+ |
+| 팀 | GET | `/api/teams/{id}` | 팀 상세 조회 (본인 팀만) | member+ |
+| 팀 | POST | `/api/teams` | 팀 생성 — 생성자는 manager로 자동 승격 | member+ (팀 없는 사용자) |
+| 팀 | POST | `/api/teams/join` | 초대 코드로 팀 가입 | member+ (팀 없는 사용자) |
+| 팀 | PUT | `/api/teams/{id}` | 팀 정보 수정 | manager+ |
+| 팀 | DELETE | `/api/teams/{id}` | 팀 삭제 | manager+ |
 
 > 전체 라우트 정의는 [`backend/routes/api.php`](./backend/routes/api.php) 에서 확인할 수 있습니다.
 > `member+`는 로그인한 모든 사용자, `manager+`는 관리자 권한이 필요함을 의미합니다.
@@ -169,9 +175,9 @@ npm run ios
 
 ## 🔒 역할(Role) 정책
 
-- **member (작업자)**: 일정/현장 조회, 현장 사진 업로드, 팀원 목록 조회, 급여 계산 결과 조회
-- **manager (관리자)**: member의 모든 권한 + 일정/현장 등록·수정·삭제
-- 근태 CRUD, 팀 생성/관리/가입은 API 스텁만 존재하며 아직 권한 정책이 확정되지 않았습니다.
+- **member (작업자)**: 일정/현장 조회, 현장 사진 업로드, 팀원 목록 조회, 급여 계산 결과 조회, 팀이 없을 경우 팀 생성/가입 가능(생성 시 manager로 자동 승격)
+- **manager (관리자)**: member의 모든 권한 + 일정/현장 등록·수정·삭제, 소속 팀 정보 수정·삭제
+- 근태 CRUD는 API 스텁만 존재하며 아직 권한 정책이 확정되지 않았습니다(로드맵상 의도된 보류).
 
 ---
 

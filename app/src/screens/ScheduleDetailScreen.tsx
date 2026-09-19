@@ -275,6 +275,11 @@ export default function ScheduleDetailScreen({ route }: any) {
     navigation.navigate('ScheduleCreate', { scheduleId: id });
   };
 
+  // ★ 이번 작업 추가 — 자동 보고서 화면 이동
+  const handleReportsPress = () => {
+    navigation.navigate('ScheduleReports', { scheduleId: id });
+  };
+
   const handleDelete = () => {
     Alert.alert(
       '일정 삭제',
@@ -527,6 +532,17 @@ export default function ScheduleDetailScreen({ route }: any) {
             <Text style={styles.memo}>{schedule.memo}</Text>
           </>
         )}
+
+        <Divider style={styles.divider} />
+
+        {/* ── 자동 보고서 (★ 이번 작업 추가) ── */}
+        <Button
+          mode="outlined"
+          icon="file-pdf-box"
+          onPress={handleReportsPress}
+        >
+          자동 보고서 관리
+        </Button>
 
         <Divider style={styles.divider} />
 

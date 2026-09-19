@@ -14,6 +14,13 @@ import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
 import ScheduleCreateScreen from '../screens/ScheduleCreateScreen';
 import WageSettingsScreen from '../screens/WageSettingsScreen';
 import PhotoCompareScreen from '../screens/PhotoCompareScreen';
+// ★ 이번 작업 추가 — 팀/견적서/자동보고서/명함/세무자료 (백엔드·웹은 v11.8~v17에서 이미 구현됨)
+import TeamScreen from '../screens/TeamScreen';
+import QuoteListScreen from '../screens/QuoteListScreen';
+import QuoteCreateScreen from '../screens/QuoteCreateScreen';
+import ScheduleReportsScreen from '../screens/ScheduleReportsScreen';
+import BusinessCardScreen from '../screens/BusinessCardScreen';
+import TaxSummaryScreen from '../screens/TaxSummaryScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -53,6 +60,27 @@ function DrawerRoot() {
         component={AttendanceScreen}
         options={{ drawerLabel: '⏰ 근태' }}
       />
+      {/* ★ 이번 작업 추가 */}
+      <Drawer.Screen
+        name="Team"
+        component={TeamScreen}
+        options={{ drawerLabel: '👥 팀 관리' }}
+      />
+      <Drawer.Screen
+        name="QuoteList"
+        component={QuoteListScreen}
+        options={{ drawerLabel: '💵 견적서 관리' }}
+      />
+      <Drawer.Screen
+        name="BusinessCard"
+        component={BusinessCardScreen}
+        options={{ drawerLabel: '🪪 내 명함' }}
+      />
+      <Drawer.Screen
+        name="TaxSummary"
+        component={TaxSummaryScreen}
+        options={{ drawerLabel: '🧾 세무 자료' }}
+      />
       <Drawer.Screen
         name="Profile"
         component={ProfileScreen}
@@ -90,6 +118,9 @@ export default function AppNavigator() {
             />
             <Stack.Screen name="WageSettings" component={WageSettingsScreen} />
             <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} />
+            {/* ★ 이번 작업 추가 */}
+            <Stack.Screen name="QuoteCreate" component={QuoteCreateScreen} />
+            <Stack.Screen name="ScheduleReports" component={ScheduleReportsScreen} />
           </>
         ) : (
           <>

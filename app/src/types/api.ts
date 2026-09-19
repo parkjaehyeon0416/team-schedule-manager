@@ -169,3 +169,111 @@ export interface PhotoListResponse {
     other: number;
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v11.8 추가 — 팀
+// ═══════════════════════════════════════════════════════════════
+export interface Team {
+  id: number;
+  name: string;
+  invite_code: string;
+  created_by: number | null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v12~v13 추가 — 견적서
+// ═══════════════════════════════════════════════════════════════
+export interface QuoteLine {
+  id?: number;
+  name: string;
+  spec: string | null;
+  quantity: string | number;
+  unit: string;
+  unit_price: string | number;
+  amount?: string | number;
+}
+
+export interface Quote {
+  id: number;
+  user_id: number;
+  team_id: number | null;
+  site_id: number | null;
+  work_type_id: number | null;
+  client_name: string | null;
+  client_contact: string | null;
+  address: string | null;
+  desired_date: string | null;
+  memo: string | null;
+  subtotal_amount: string;
+  discount_amount: string;
+  total_amount: string;
+  status: 'draft' | 'sent' | 'approved' | 'rejected';
+  approved_schedule_id: number | null;
+  created_at: string;
+  lines?: QuoteLine[];
+  site?: Site | null;
+}
+
+export interface UserMaterial {
+  id: number;
+  name: string;
+  unit: string;
+  default_unit_price: string | null;
+  usage_count: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v12~v13 추가 — 자동 보고서
+// ═══════════════════════════════════════════════════════════════
+export interface SiteReport {
+  id: number;
+  schedule_id: number;
+  title: string;
+  client_name: string | null;
+  client_contact: string | null;
+  greeting_message: string | null;
+  share_token: string;
+  view_count: number;
+  last_viewed_at: string | null;
+  created_at: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v14 추가 — 모바일 명함
+// ═══════════════════════════════════════════════════════════════
+export interface BusinessCard {
+  id: number;
+  user_id: number;
+  share_code: string;
+  display_name: string | null;
+  contact_phone: string | null;
+  job_title: string | null;
+  years_experience: number | null;
+  service_area: string | null;
+  specialty: string | null;
+  tagline: string | null;
+  is_public: boolean;
+  view_count: number;
+  monthly_view_count: number;
+  last_viewed_at: string | null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ★ v17 추가 — 세무 자료
+// ═══════════════════════════════════════════════════════════════
+export interface TaxMonthRow {
+  year_month: string;
+  month: number;
+  total_work_units: number;
+  total_income: number;
+  total_expenses: number;
+  estimated_tax: number;
+  net_income: number;
+  work_days: number;
+}
+
+export interface TaxSummary {
+  year: number;
+  months: TaxMonthRow[];
+  totals: Omit<TaxMonthRow, 'year_month' | 'month'>;
+}

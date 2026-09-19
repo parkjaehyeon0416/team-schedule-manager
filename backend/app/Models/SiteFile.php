@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class SiteFile extends Model
 {
@@ -59,5 +60,20 @@ class SiteFile extends Model
     public function scopeOfCategory(Builder $query, string $category): Builder
     {
         return $query->where('photo_category', $category);
+    }
+
+    /**
+     * ★ v12 추가 — PDF(DomPDF) 렌더링용 로컬 절대 경로.
+     *
+     * DomPDF는 HTTP URL을 직접 불러오지 못하므로(원격 이미지 로딩 비활성 기본값),
+     * <img src="..."> 에 서버 로컬 파일 경로를 그대로 넣어줍니다.
+     */
+    public function getAbsolutePathAttribute(): ?string
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->path($this->file_path);
     }
 }

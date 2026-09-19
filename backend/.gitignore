@@ -18,6 +18,9 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# ★ v12 — DomPDF 폰트 메트릭 캐시(런타임에 자동 생성됨, .gitkeep만 추적)
+/storage/fonts/*
+!/storage/fonts/.gitkeep
 /vendor
 _ide_helper.php
 Homestead.json

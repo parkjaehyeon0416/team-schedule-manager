@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Typography, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message } from "antd";
+import { Typography, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, List, Popconfirm, Empty, Divider } from "antd";
+import { DownloadOutlined, DeleteOutlined } from "@ant-design/icons";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -9,6 +10,8 @@ import dayjs from "dayjs";
 import { getSchedules, createSchedule } from "../api/schedule";
 import type { ScheduleInput } from "../api/schedule";
 import { getTeamMembers } from "../api/team";
+import { getReports, createReport, deleteReport, downloadReport } from "../api/report";
+import type { ReportInput } from "../api/report";
 
 const WORK_TYPE_COLOR: Record<string, string> = {
   도배: "#1E88E5",
@@ -22,6 +25,8 @@ export default function Schedule() {
   const [month, setMonth] = useState(dayjs().month() + 1);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [detailScheduleId, setDetailScheduleId] = useState<number | null>(null);
+  const [reportForm] = Form.useForm();
   const [form] = Form.useForm();
 
   const { data: scheduleRes, isLoading } = useQuery({
@@ -66,6 +71,43 @@ export default function Schedule() {
     setModalOpen(true);
   };
 
+  const { data: reportRes, isLoading: reportsLoading } = useQuery({
+    queryKey: ["reports", detailScheduleId],
+    queryFn: () => getReports(detailScheduleId!),
+    enabled: detailScheduleId !== null,
+  });
+
+  const createReportMutation = useMutation({
+    mutationFn: (data: ReportInput) => createReport(detailScheduleId!, data),
+    onSuccess: () => {
+      message.success("보고서가 생성되었습니다.");
+      queryClient.invalidateQueries({ queryKey: ["reports", detailScheduleId] });
+      reportForm.resetFields();
+    },
+    onError: (e: any) => {
+      message.error(e?.response?.data?.message ?? "보고서 생성에 실패했습니다.");
+    },
+  });
+
+  const deleteReportMutation = useMutation({
+    mutationFn: (id: number) => deleteReport(id),
+    onSuccess: () => {
+      message.success("보고서가 삭제되었습니다.");
+      queryClient.invalidateQueries({ queryKey: ["reports", detailScheduleId] });
+    },
+  });
+
+  const detailSchedule = (scheduleRes?.data ?? []).find((s) => s.id === detailScheduleId);
+
+  const handleEventClick = (scheduleId: number) => {
+    setDetailScheduleId(scheduleId);
+  };
+
+  const handleCreateReport = async () => {
+    const values = await reportForm.validateFields();
+    createReportMutation.mutate(values);
+  };
+
   const handleSubmit = async () => {
     const values = await form.validateFields();
     createMutation.mutate({
@@ -99,6 +141,7 @@ export default function Schedule() {
           setMonth(mid.month() + 1);
         }}
         dateClick={(info) => handleDateClick(info.dateStr)}
+        eventClick={(info) => handleEventClick(Number(info.event.id))}
         height="auto"
       />
       {isLoading && <div style={{ marginTop: 8, color: "#999" }}>불러오는 중...</div>}
@@ -152,6 +195,82 @@ export default function Schedule() {
             <Input.TextArea rows={2} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={
+          detailSchedule
+            ? `${detailSchedule.date} ${detailSchedule.site ? `${detailSchedule.site.apt_name} ${detailSchedule.site.dong}동 ${detailSchedule.site.ho}호` : detailSchedule.district ?? "일정"}`
+            : "일정 상세"
+        }
+        open={detailScheduleId !== null}
+        onCancel={() => setDetailScheduleId(null)}
+        footer={null}
+        width={520}
+      >
+        <Divider orientation="left" plain>보고서 생성</Divider>
+        <Form form={reportForm} layout="vertical">
+          <Form.Item name="title" label="보고서 제목" rules={[{ required: true, message: "제목을 입력해주세요." }]}>
+            <Input placeholder="예: 2026년 9월 역삼동 도배 작업 보고" />
+          </Form.Item>
+          <Form.Item name="client_name" label="고객명">
+            <Input />
+          </Form.Item>
+          <Form.Item name="client_contact" label="고객 연락처">
+            <Input />
+          </Form.Item>
+          <Form.Item name="greeting_message" label="인사말">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Button
+            type="primary"
+            loading={createReportMutation.isPending}
+            onClick={handleCreateReport}
+            disabled={!detailSchedule?.site}
+          >
+            PDF 보고서 생성
+          </Button>
+          {!detailSchedule?.site && (
+            <Typography.Text type="secondary" style={{ marginLeft: 8 }}>
+              현장이 연결된 일정만 보고서를 생성할 수 있습니다.
+            </Typography.Text>
+          )}
+        </Form>
+
+        <Divider orientation="left" plain>생성된 보고서</Divider>
+        <List
+          loading={reportsLoading}
+          dataSource={reportRes?.data ?? []}
+          locale={{ emptyText: <Empty description="아직 생성된 보고서가 없습니다." /> }}
+          renderItem={(r) => (
+            <List.Item
+              actions={[
+                <Button
+                  key="download"
+                  icon={<DownloadOutlined />}
+                  size="small"
+                  onClick={() => downloadReport(r.id, r.title)}
+                >
+                  다운로드
+                </Button>,
+                <Popconfirm
+                  key="delete"
+                  title="이 보고서를 삭제하시겠습니까?"
+                  onConfirm={() => deleteReportMutation.mutate(r.id)}
+                  okText="삭제"
+                  cancelText="취소"
+                >
+                  <Button icon={<DeleteOutlined />} size="small" danger />
+                </Popconfirm>,
+              ]}
+            >
+              <List.Item.Meta
+                title={r.title}
+                description={`${r.client_name ?? "고객명 미입력"} · ${dayjs(r.created_at).format("YYYY-MM-DD HH:mm")}`}
+              />
+            </List.Item>
+          )}
+        />
       </Modal>
     </div>
   );

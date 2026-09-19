@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\CalculateController;
 use App\Http\Controllers\Api\PhotoController;
+use App\Http\Controllers\Api\SiteReportController;               // ★ v12
 use App\Http\Controllers\Api\WorkTypeController;                // ★ v10.1
 use App\Http\Controllers\Api\UserWageSettingController;         // ★ v10.1
 use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
@@ -62,6 +63,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ★ v11.1.1 추가 — 사진 부분 수정 (현재는 paired_with_id만 지원)
     Route::patch('schedules/{scheduleId}/photos/{photoId}',    [PhotoController::class, 'update']);
+
+    // ═══════════════════════════════════════════════════════════
+    // ── ★ v12 자동 보고서 (PDF) — member 이상 (작업자 본인도 보고서 작성 가능) ──
+    // ═══════════════════════════════════════════════════════════
+    Route::get('schedules/{scheduleId}/reports',   [SiteReportController::class, 'index']);
+    Route::post('schedules/{scheduleId}/reports',  [SiteReportController::class, 'store']);
+    Route::get('reports/{id}',                     [SiteReportController::class, 'show']);
+    Route::get('reports/{id}/download',            [SiteReportController::class, 'download']);
+    Route::delete('reports/{id}',                  [SiteReportController::class, 'destroy']);
 
     // ═══════════════════════════════════════════════════════════
     // ── ★ v10.1 공수·급여 자동 계산 API (member 이상) ──

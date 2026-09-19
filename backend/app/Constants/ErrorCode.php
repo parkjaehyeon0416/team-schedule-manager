@@ -70,4 +70,11 @@ class ErrorCode
     public const PHOTO_PAIR_INVALID         = 'ERR_PHOTO_003'; // 시공 전 사진에서 paired 지정
     public const PHOTO_PAIR_TARGET_NOT_FOUND = 'ERR_PHOTO_004'; // 짝 시공 전 사진 없음
     public const PHOTO_PAIR_DUPLICATE       = 'ERR_PHOTO_005'; // 이미 다른 짝이 지정됨
+
+    // ═══════════════════════════════════════════════
+    // ★ v12 자동 보고서 (PDF) ★
+    // ═══════════════════════════════════════════════
+    public const REPORT_NOT_FOUND        = 'ERR_REPORT_001';
+    public const REPORT_NO_SITE_LINKED   = 'ERR_REPORT_002'; // 현장이 연결되지 않은 일정은 보고서 생성 불가
+    public const REPORT_PDF_FAILED       = 'ERR_REPORT_003'; // PDF 생성 실패
 }

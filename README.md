@@ -110,6 +110,7 @@ php artisan key:generate
 
 # .env 파일에서 DB_DATABASE, DB_USERNAME, DB_PASSWORD 등 DB 접속 정보 설정 후
 php artisan migrate
+php artisan db:seed   # roles(권한) 등 기본 데이터 필수 — 생략 시 manager 권한 체크에서 500 에러 발생
 php artisan serve
 ```
 

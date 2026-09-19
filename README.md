@@ -63,6 +63,13 @@
 - 웹 대시보드의 일정 상세(캘린더에서 일정 클릭)에서 생성 · 다운로드 · 삭제할 수 있습니다.
 - 고객은 로그인 없이 공유 링크(`/api/report/{share_token}`) 하나로 PDF를 브라우저에서 바로 열람할 수 있으며, 열람 횟수 · 마지막 열람 시각이 자동으로 기록되어 웹 대시보드에서 확인할 수 있습니다.
 
+### 🪪 모바일 명함 + QR 공유
+- 이름 · 직함 · 경력 · 활동 지역 · 전문 분야 · 연락처 · 한 줄 소개로 나만의 명함을 만들 수 있습니다.
+- 최근 업로드한 시공 사진 최대 3장이 포트폴리오로 자동 노출됩니다(수동 선택은 미지원).
+- 앱 설치 없이 누구나 볼 수 있는 공개 링크(`/c/{share_code}`)가 자동 생성되며, 전화 걸기 버튼과 카카오톡 미리보기(Open Graph)를 지원합니다.
+- 자동 보고서(PDF)에 명함으로 연결되는 QR코드가 자동으로 삽입됩니다.
+- 조회수(누적/이번 달)를 웹 대시보드에서 확인할 수 있습니다. (⚠️ 현재는 웹 대시보드에서만 관리 가능 — 모바일 앱 화면은 미구현)
+
 ---
 
 ## 🛠 기술 스택
@@ -178,6 +185,10 @@ npm run ios
 | 보고서 | GET | `/api/reports/{id}/download` | PDF 다운로드 | member+ |
 | 보고서 | DELETE | `/api/reports/{id}` | 보고서 삭제 | member+ |
 | 보고서 | GET | `/api/report/{share_token}` | 공유 링크 공개 열람 (인라인 PDF, 열람 추적) | 없음 (공개) |
+| 명함 | GET | `/api/business-card` | 내 명함 조회 | member+ |
+| 명함 | PUT | `/api/business-card` | 명함 생성/수정 | member+ |
+| 명함 | DELETE | `/api/business-card` | 명함 삭제 | member+ |
+| 명함 | GET | `/c/{share_code}` | 명함 공개 페이지 (HTML, 조회수 추적) — `/api` 프리픽스 없음(`routes/web.php`) | 없음 (공개) |
 
 > 전체 라우트 정의는 [`backend/routes/api.php`](./backend/routes/api.php) 에서 확인할 수 있습니다.
 > `member+`는 로그인한 모든 사용자, `manager+`는 관리자 권한이 필요함을 의미합니다.

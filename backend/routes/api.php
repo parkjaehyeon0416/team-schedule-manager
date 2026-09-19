@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\Api\CalculateController;
 use App\Http\Controllers\Api\PhotoController;
 use App\Http\Controllers\Api\SiteReportController;               // ★ v12
+use App\Http\Controllers\Api\BusinessCardController;              // ★ v14
 use App\Http\Controllers\Api\WorkTypeController;                // ★ v10.1
 use App\Http\Controllers\Api\UserWageSettingController;         // ★ v10.1
 use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
@@ -75,6 +76,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reports/{id}',                     [SiteReportController::class, 'show']);
     Route::get('reports/{id}/download',            [SiteReportController::class, 'download']);
     Route::delete('reports/{id}',                  [SiteReportController::class, 'destroy']);
+
+    // ═══════════════════════════════════════════════════════════
+    // ── ★ v14 모바일 명함 (member 이상, 공개 열람은 web.php의 /c/{code}) ──
+    // ═══════════════════════════════════════════════════════════
+    Route::get('/business-card',    [BusinessCardController::class, 'show']);
+    Route::put('/business-card',    [BusinessCardController::class, 'store']);
+    Route::delete('/business-card', [BusinessCardController::class, 'destroy']);
 
     // ═══════════════════════════════════════════════════════════
     // ── ★ v10.1 공수·급여 자동 계산 API (member 이상) ──

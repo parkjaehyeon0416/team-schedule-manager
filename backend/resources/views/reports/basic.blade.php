@@ -106,6 +106,14 @@
     @endif
 @endforeach
 
+@if($cardQrDataUri ?? null)
+<h2>담당 기사 명함</h2>
+<div style="text-align:center; margin: 12px 0;">
+    <img src="{{ $cardQrDataUri }}" style="width:120px; height:120px;">
+    <div style="font-size:11px; color:#888; margin-top:4px;">QR을 스캔하면 담당 기사의 명함(연락처·포트폴리오)을 볼 수 있어요.</div>
+</div>
+@endif
+
 <div class="footer">
     본 보고서는 Team Schedule Manager에서 자동 생성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
 </div>

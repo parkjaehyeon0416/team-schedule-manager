@@ -77,4 +77,11 @@ class ErrorCode
     public const REPORT_NOT_FOUND        = 'ERR_REPORT_001';
     public const REPORT_NO_SITE_LINKED   = 'ERR_REPORT_002'; // 현장이 연결되지 않은 일정은 보고서 생성 불가
     public const REPORT_PDF_FAILED       = 'ERR_REPORT_003'; // PDF 생성 실패
+
+    // ═══════════════════════════════════════════════
+    // ★ v14 모바일 명함 ★
+    // ═══════════════════════════════════════════════
+    public const CARD_NOT_FOUND       = 'ERR_CARD_001';
+    public const CARD_ALREADY_EXISTS  = 'ERR_CARD_002'; // 사용자당 1개 제한
+    public const CARD_PRIVATE         = 'ERR_CARD_003'; // is_public=false인 명함 공개 접근 시도
 }

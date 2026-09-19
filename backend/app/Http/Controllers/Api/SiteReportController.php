@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\BusinessCard;
 use App\Models\Schedule;
 use App\Models\SiteFile;
 use App\Models\SiteReport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -229,11 +232,38 @@ class SiteReportController extends Controller
             'site'             => $site,
             'photosByCategory' => $photosByCategory,
             'pairs'            => $pairs,
+            'cardQrDataUri'    => $this->buildCardQrDataUri($report),
         ]);
 
         $relativePath = 'reports/' . $report->share_token . '.pdf';
         Storage::disk('public')->put($relativePath, $pdf->output());
 
         return $relativePath;
+    }
+
+    /**
+     * ★ v14 연동 — 보고서 작성자가 명함을 만들어뒀다면 명함 페이지로 연결되는 QR코드를
+     * data URI(base64 PNG)로 만들어 PDF에 삽입한다. 명함이 없거나 비공개면 null(QR 생략).
+     *
+     * 기획서 BusinessCardFeature_v1.0 6-2절("보고서에도 명함 QR 자동 삽입")을
+     * 견적서(QuotePdfService, 미구현) 없이 이 자동보고서 PDF에 적용한 것.
+     */
+    private function buildCardQrDataUri(SiteReport $report): ?string
+    {
+        $card = BusinessCard::where('user_id', $report->user_id)
+            ->where('is_public', true)
+            ->first();
+
+        if (!$card) {
+            return null;
+        }
+
+        // ⚠️ .env의 APP_URL이 실제 접속 가능한 주소와 다르면(예: 포트 누락) QR이 잘못된 곳을 가리킬 수 있음.
+        $cardUrl = rtrim(config('app.url'), '/') . '/c/' . $card->share_code;
+
+        $qrCode = new QrCode($cardUrl);
+        $png = (new PngWriter())->write($qrCode)->getString();
+
+        return 'data:image/png;base64,' . base64_encode($png);
     }
 }

@@ -28,6 +28,12 @@
 - 웹은 FullCalendar, 앱은 react-native-calendars 기반 캘린더 UI
 - 일정에 투입 인원(팀원) 배정
 
+### 💵 견적 작성 + PDF
+- 고객 정보 + 항목(자재/인건비 등)을 입력해 견적서를 작성하고 PDF로 다운로드할 수 있습니다.
+- 한 번 입력한 항목은 "내 자재 목록"에 자동으로 쌓여 다음 견적 작성 시 자동완성됩니다.
+- 견적을 승인하면 현장(없으면 자동 생성)과 일정이 자동으로 등록됩니다.
+- 명함을 만들어뒀다면 견적서 PDF에도 명함 QR코드가 자동 삽입됩니다.
+
 ### 🏗 현장(Site) 관리
 - 현장 등록 · 조회 · 수정 · 삭제 (관리자), 일정(Schedule)에서 `site_id`로 참조
 - 현장별 작업 사진 업로드 · 비교 · 수정 · 삭제(시공 전/중/후/기타)
@@ -170,6 +176,15 @@ npm run ios
 | 인증 | GET | `/api/me` | 내 정보 조회 | member+ |
 | 일정 | GET | `/api/schedules` | 일정 목록/상세 조회 | member+ |
 | 일정 | POST/PUT/DELETE | `/api/schedules` | 일정 등록·수정·삭제 | manager+ |
+| 견적 | GET | `/api/quotes` | 내 견적 목록 조회 | member+ |
+| 견적 | POST | `/api/quotes` | 견적서 생성 | member+ |
+| 견적 | GET | `/api/quotes/{id}` | 견적서 상세 조회 | member+ |
+| 견적 | PATCH | `/api/quotes/{id}/status` | 견적 상태 변경 (draft/sent/rejected) | member+ |
+| 견적 | POST | `/api/quotes/{id}/approve` | 견적 승인 → 현장/일정 자동 생성 | member+ |
+| 견적 | GET | `/api/quotes/{id}/pdf` | 견적서 PDF 다운로드 | member+ |
+| 견적 | DELETE | `/api/quotes/{id}` | 견적서 삭제 | member+ |
+| 자재 | GET | `/api/materials` | 내 자재 목록 조회 (`?work_type_id=`) | member+ |
+| 자재 | DELETE | `/api/materials/{id}` | 자재 숨김 처리 | member+ |
 | 현장 | GET | `/api/sites` | 현장 목록/상세 조회 | member+ |
 | 현장 | POST/PUT/DELETE | `/api/sites` | 현장 등록·수정·삭제 | manager+ |
 | 근태 | GET/POST/PUT/DELETE | `/api/attendances` | (⏳ 스텁, 미구현) | member+ |

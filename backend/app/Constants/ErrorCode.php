@@ -84,4 +84,13 @@ class ErrorCode
     public const CARD_NOT_FOUND       = 'ERR_CARD_001';
     public const CARD_ALREADY_EXISTS  = 'ERR_CARD_002'; // 사용자당 1개 제한
     public const CARD_PRIVATE         = 'ERR_CARD_003'; // is_public=false인 명함 공개 접근 시도
+
+    // ═══════════════════════════════════════════════
+    // ★ v12~v13 견적서 ★
+    // ═══════════════════════════════════════════════
+    public const QUOTE_NOT_FOUND         = 'ERR_QUOTE_001';
+    public const QUOTE_ALREADY_APPROVED  = 'ERR_QUOTE_002'; // 이미 승인된 견적을 다시 승인 시도
+    public const QUOTE_MISSING_DATE      = 'ERR_QUOTE_003'; // 승인하려는데 희망 시공일 없음
+    public const QUOTE_PDF_FAILED        = 'ERR_QUOTE_004';
+    public const MATERIAL_NOT_FOUND      = 'ERR_MATERIAL_001';
 }

@@ -10,6 +10,7 @@ import Teams from "./pages/Teams";
 import Attendance from "./pages/Attendance";
 import BusinessCard from "./pages/BusinessCard";
 import TaxSummary from "./pages/TaxSummary";
+import Quotes from "./pages/Quotes";
 import { useAuthStore } from "./store/authStore";
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="attendance" element={<Attendance />} />
             <Route path="business-card" element={<BusinessCard />} />
             <Route path="tax-summary" element={<TaxSummary />} />
+            <Route path="quotes" element={<Quotes />} />
           </Route>
         </Routes>
       </BrowserRouter>

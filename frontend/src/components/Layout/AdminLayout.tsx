@@ -9,6 +9,7 @@ import {
   LogoutOutlined,
   IdcardOutlined,
   FileTextOutlined,
+  FileDoneOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../../store/authStore";
 
@@ -27,6 +28,7 @@ export default function AdminLayout() {
   const menuItems = [
     { key: "/", icon: <HomeOutlined />, label: "대시보드" },
     { key: "/schedule", icon: <CalendarOutlined />, label: "스케줄 관리" },
+    { key: "/quotes", icon: <FileDoneOutlined />, label: "견적서 관리" },
     { key: "/sites", icon: <ShopOutlined />, label: "현장 목록" },
     { key: "/teams", icon: <TeamOutlined />, label: "팀/팀원 관리" },
     { key: "/attendance", icon: <ClockCircleOutlined />, label: "근태 현황" },

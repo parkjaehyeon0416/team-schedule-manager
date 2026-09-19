@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\WorkTypeController;                // ★ v10.1
 use App\Http\Controllers\Api\UserWageSettingController;         // ★ v10.1
 use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
 use App\Http\Controllers\Api\TaxSummaryController;              // ★ v17
+use App\Http\Controllers\Api\QuoteController;                   // ★ v12~v13
+use App\Http\Controllers\Api\UserMaterialController;            // ★ v12
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -77,6 +79,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reports/{id}',                     [SiteReportController::class, 'show']);
     Route::get('reports/{id}/download',            [SiteReportController::class, 'download']);
     Route::delete('reports/{id}',                  [SiteReportController::class, 'destroy']);
+
+    // ═══════════════════════════════════════════════════════════
+    // ── ★ v12~v13 견적서 (member 이상 — 작업자 본인도 견적 작성 가능) ──
+    // ═══════════════════════════════════════════════════════════
+    Route::get('/quotes',              [QuoteController::class, 'index']);
+    Route::post('/quotes',             [QuoteController::class, 'store']);
+    Route::get('/quotes/{id}',         [QuoteController::class, 'show']);
+    Route::patch('/quotes/{id}/status', [QuoteController::class, 'updateStatus']);
+    Route::post('/quotes/{id}/approve', [QuoteController::class, 'approve']);
+    Route::get('/quotes/{id}/pdf',     [QuoteController::class, 'downloadPdf']);
+    Route::delete('/quotes/{id}',      [QuoteController::class, 'destroy']);
+
+    // 내 자재 목록 (견적 라인 자동완성용)
+    Route::get('/materials',      [UserMaterialController::class, 'index']);
+    Route::delete('/materials/{id}', [UserMaterialController::class, 'destroy']);
 
     // ═══════════════════════════════════════════════════════════
     // ── ★ v14 모바일 명함 (member 이상, 공개 열람은 web.php의 /c/{code}) ──

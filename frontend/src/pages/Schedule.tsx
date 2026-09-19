@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Typography, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, List, Popconfirm, Empty, Divider } from "antd";
-import { DownloadOutlined, DeleteOutlined } from "@ant-design/icons";
+import { DownloadOutlined, DeleteOutlined, LinkOutlined } from "@ant-design/icons";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import { getSchedules, createSchedule } from "../api/schedule";
 import type { ScheduleInput } from "../api/schedule";
 import { getTeamMembers } from "../api/team";
-import { getReports, createReport, deleteReport, downloadReport } from "../api/report";
+import { getReports, createReport, deleteReport, downloadReport, getPublicReportUrl } from "../api/report";
 import type { ReportInput } from "../api/report";
 
 const WORK_TYPE_COLOR: Record<string, string> = {
@@ -106,6 +106,16 @@ export default function Schedule() {
   const handleCreateReport = async () => {
     const values = await reportForm.validateFields();
     createReportMutation.mutate(values);
+  };
+
+  const handleCopyShareLink = async (shareToken: string) => {
+    const url = getPublicReportUrl(shareToken);
+    try {
+      await navigator.clipboard.writeText(url);
+      message.success("공유 링크가 복사되었습니다.");
+    } catch {
+      message.info(url);
+    }
   };
 
   const handleSubmit = async () => {
@@ -246,6 +256,14 @@ export default function Schedule() {
             <List.Item
               actions={[
                 <Button
+                  key="share"
+                  icon={<LinkOutlined />}
+                  size="small"
+                  onClick={() => handleCopyShareLink(r.share_token)}
+                >
+                  공유 링크 복사
+                </Button>,
+                <Button
                   key="download"
                   icon={<DownloadOutlined />}
                   size="small"
@@ -266,7 +284,14 @@ export default function Schedule() {
             >
               <List.Item.Meta
                 title={r.title}
-                description={`${r.client_name ?? "고객명 미입력"} · ${dayjs(r.created_at).format("YYYY-MM-DD HH:mm")}`}
+                description={
+                  <>
+                    {r.client_name ?? "고객명 미입력"} · {dayjs(r.created_at).format("YYYY-MM-DD HH:mm")}
+                    <br />
+                    열람 {r.view_count}회
+                    {r.last_viewed_at && ` · 마지막 열람 ${dayjs(r.last_viewed_at).format("YYYY-MM-DD HH:mm")}`}
+                  </>
+                }
               />
             </List.Item>
           )}

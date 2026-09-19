@@ -21,6 +21,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
 });
 
+// ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.
+Route::get('/report/{token}', [SiteReportController::class, 'publicView']);
+
 // ═══════════════════════════════════════════════════════════════
 // ─── 로그인 필수 라우트 ──
 // ═══════════════════════════════════════════════════════════════

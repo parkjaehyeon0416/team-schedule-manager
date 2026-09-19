@@ -10,6 +10,9 @@ export type SiteReport = {
   client_contact: string | null;
   greeting_message: string | null;
   template_id: string;
+  share_token: string;
+  view_count: number;
+  last_viewed_at: string | null;
   pdf_path: string | null;
   created_at: string;
 };
@@ -39,6 +42,11 @@ export const createReport = async (scheduleId: number, data: ReportInput) => {
 export const deleteReport = async (id: number) => {
   const res = await axiosInstance.delete<ApiResponse<null>>(`/api/reports/${id}`);
   return res.data;
+};
+
+export const getPublicReportUrl = (shareToken: string) => {
+  const base = axiosInstance.defaults.baseURL ?? "";
+  return `${base}/api/report/${shareToken}`;
 };
 
 export const downloadReport = async (id: number, filename: string) => {

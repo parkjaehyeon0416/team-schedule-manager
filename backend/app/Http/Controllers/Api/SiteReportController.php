@@ -14,10 +14,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * 자동 보고서(PDF) 생성 컨트롤러 — ★ v12 신규
+ * 자동 보고서(PDF) 생성 컨트롤러
  *
- * 로드맵 v2.3 기준 v12 1순위 작업: 기본 템플릿 1종으로 PDF 생성.
- * 공유 URL(share_token 활용) + 열람 추적은 v13에서 다룬다 (이 컨트롤러는 로그인 사용자 전용 다운로드만 지원).
+ * v12: 기본 템플릿 1종으로 PDF 생성 (로그인 사용자 전용 다운로드).
+ * ★ v13 추가: share_token 기반 공개 열람(publicView) — 고객은 로그인 없이 URL만으로 열람 가능,
+ *             열람할 때마다 view_count 증가 + last_viewed_at 갱신.
  */
 class SiteReportController extends Controller
 {
@@ -118,6 +119,36 @@ class SiteReportController extends Controller
         return response()->download(
             Storage::disk('public')->path($report->pdf_path),
             $report->title . '.pdf'
+        );
+    }
+
+    /**
+     * ★ v13 신규 — 공유 링크를 통한 공개 열람 (인증 불필요)
+     * GET /report/{token}
+     *
+     * 고객이 로그인 없이 URL 하나만으로 PDF를 볼 수 있도록 브라우저에 인라인으로 스트리밍한다.
+     * 접근할 때마다 view_count를 증가시키고 last_viewed_at을 갱신한다(열람 추적).
+     */
+    public function publicView(string $token)
+    {
+        $report = SiteReport::where('share_token', $token)->first();
+
+        if (!$report || !$report->pdf_path || !Storage::disk('public')->exists($report->pdf_path)) {
+            // ★ 주의 — 이 프로젝트의 전역 예외 핸들러(bootstrap/app.php)는
+            //   api/* 경로의 모든 Throwable을 500 + ERR_SERVER_001로 뭉개버린다.
+            //   abort(404, ...)를 쓰면 실제로는 500이 나가므로, 다른 컨트롤러들처럼
+            //   ApiResponse::error()를 직접 return해서 올바른 상태코드를 보장한다.
+            return ApiResponse::error('존재하지 않거나 만료된 보고서 링크입니다.', ErrorCode::REPORT_NOT_FOUND, 404);
+        }
+
+        // 열람 추적 — 조회수 +1, 마지막 열람 시각 갱신
+        $report->increment('view_count');
+        $report->last_viewed_at = now();
+        $report->save();
+
+        return response()->file(
+            Storage::disk('public')->path($report->pdf_path),
+            ['Content-Disposition' => 'inline; filename="' . $report->title . '.pdf"']
         );
     }
 

@@ -9,6 +9,7 @@ import SiteDetail from "./pages/SiteDetail";
 import Teams from "./pages/Teams";
 import Attendance from "./pages/Attendance";
 import BusinessCard from "./pages/BusinessCard";
+import TaxSummary from "./pages/TaxSummary";
 import { useAuthStore } from "./store/authStore";
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="teams" element={<Teams />} />
             <Route path="attendance" element={<Attendance />} />
             <Route path="business-card" element={<BusinessCard />} />
+            <Route path="tax-summary" element={<TaxSummary />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -8,6 +8,7 @@ import {
   ClockCircleOutlined,
   LogoutOutlined,
   IdcardOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../../store/authStore";
 
@@ -30,6 +31,7 @@ export default function AdminLayout() {
     { key: "/teams", icon: <TeamOutlined />, label: "팀/팀원 관리" },
     { key: "/attendance", icon: <ClockCircleOutlined />, label: "근태 현황" },
     { key: "/business-card", icon: <IdcardOutlined />, label: "내 명함" },
+    { key: "/tax-summary", icon: <FileTextOutlined />, label: "세무 자료" },
   ];
 
   return (

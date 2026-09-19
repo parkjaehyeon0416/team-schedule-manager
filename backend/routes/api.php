@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\BusinessCardController;              // ★ v14
 use App\Http\Controllers\Api\WorkTypeController;                // ★ v10.1
 use App\Http\Controllers\Api\UserWageSettingController;         // ★ v10.1
 use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
+use App\Http\Controllers\Api\TaxSummaryController;              // ★ v17
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -98,6 +99,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 월별 수입 집계 조회
     Route::get('/monthly-summary', [MonthlySummaryController::class, 'show']);
+
+    // ═══════════════════════════════════════════════════════════
+    // ── ★ v17 수입·경비 정리 (세무사용, member 이상 — 본인 자료 조회) ──
+    // ═══════════════════════════════════════════════════════════
+    Route::get('/tax-summary',     [TaxSummaryController::class, 'show']);
+    Route::get('/tax-summary/pdf', [TaxSummaryController::class, 'downloadPdf']);
 
     // ═══════════════════════════════════════════════════════════
     // ── 등록·수정·삭제 (manager 이상) ──

@@ -23,3 +23,9 @@ export const formatTime = (datetime: string): string => {
 export const formatMonth = (date: string): string => {
   return dayjs(date).format("YYYY년 M월");
 };
+
+// 금액 표시 (천 단위 콤마 + 원)
+// 사용 예: formatCurrency(1234567) → '1,234,567원'
+export const formatCurrency = (amount: number | string): string => {
+  return `${Number(amount).toLocaleString("ko-KR")}원`;
+};

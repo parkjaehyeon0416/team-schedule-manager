@@ -1,7 +1,7 @@
 # 팀 일정 관리 시스템 (Team Schedule Manager)
 
-인테리어 시공(도배·타일·필름) 현장 팀을 위한 **일정 · 근태 · 급여 통합 관리 시스템**입니다.
-현장 관리자(manager)는 웹 대시보드에서 일정과 팀원을 관리하고, 현장 작업자(member)는 모바일 앱으로 출퇴근을 기록하고 현장 사진을 업로드합니다.
+인테리어 시공(도배·타일·필름) 현장 팀을 위한 **일정 · 급여 · 현장 사진 통합 관리 시스템**입니다. (근태 자동 집계는 로드맵상 후순위로 개발 예정)
+현장 관리자(manager)는 웹 대시보드에서 일정과 현장을 관리하고, 현장 작업자(member)는 모바일 앱으로 일정을 확인하고 현장 사진을 업로드하며 공수 단가를 등록해 월 수입을 확인합니다.
 
 ---
 
@@ -29,11 +29,12 @@
 - 일정에 투입 인원(팀원) 배정
 
 ### 🏗 현장(Site) 관리
-- 현장 등록 및 상세 정보 조회
-- 현장별 작업 사진 업로드 · 비교 · 수정 · 삭제 (작업 전/후 비교 등)
+- 현장 등록 · 조회 · 수정 · 삭제 (관리자), 일정(Schedule)에서 `site_id`로 참조
+- 현장별 작업 사진 업로드 · 비교 · 수정 · 삭제(시공 전/중/후/기타)
 
-### 🕒 근태 관리
-- 본인 출퇴근 기록 CRUD (작업자 본인 데이터만 접근 가능)
+### 🕒 근태 관리 (개발 예정 — 로드맵상 후순위 보류)
+- `/api/attendances` 라우트는 존재하지만 `AttendanceController`는 현재 빈 스텁 상태입니다.
+- 서비스 기획 v2.3 이후 "현장 사진 구조화" 기능이 우선순위로 채택되면서 근태 자동 집계는 후순위로 미뤄졌습니다.
 
 ### 💰 공수 · 급여 자동 계산
 - 공정(도배 / 타일 / 필름)별 개인 단가 설정
@@ -50,9 +51,9 @@
 
 - 손실률(로스율)을 직접 입력하지 않으면 공정별 기본값(도배 10%, 타일 15%, 필름 10%)이 자동 적용됩니다.
 
-### 👥 팀 관리
-- 팀 생성 · 조회 · 수정 · 삭제 (관리자)
-- 초대를 통한 팀원 가입
+### 👥 팀 관리 (일부만 동작 — CRUD는 개발 예정)
+- 팀원 목록 조회(`/api/team/members`)만 실제로 동작합니다.
+- 팀 생성 · 조회 · 수정 · 삭제, 초대를 통한 팀원 가입(`/api/teams`, `/api/teams/join`) API는 라우트만 존재하며 아직 `ERR_NOT_IMPLEMENTED(501)`를 반환하는 스텁입니다.
 
 ---
 
@@ -150,23 +151,26 @@ npm run ios
 | 일정 | POST/PUT/DELETE | `/api/schedules` | 일정 등록·수정·삭제 | manager+ |
 | 현장 | GET | `/api/sites` | 현장 목록/상세 조회 | member+ |
 | 현장 | POST/PUT/DELETE | `/api/sites` | 현장 등록·수정·삭제 | manager+ |
-| 근태 | GET/POST/PUT/DELETE | `/api/attendances` | 본인 근태 CRUD | member+ |
+| 근태 | GET/POST/PUT/DELETE | `/api/attendances` | (⏳ 스텁, 미구현) | member+ |
 | 계산기 | POST | `/api/calculate/area` | 평수·자재 자동 계산 | member+ |
-| 사진 | GET/POST/PATCH/DELETE | `/api/schedules/{id}/photos` | 현장 사진 관리 | member+ |
+| 사진 | GET/POST/PATCH/DELETE | `/api/schedules/{id}/photos` | 현장 사진 관리 (시공 전/중/후/기타) | member+ |
 | 급여 | GET | `/api/wage-settings` | 내 단가 설정 조회/등록/삭제 | member+ |
 | 급여 | GET | `/api/monthly-summary` | 월별 수입 집계 조회 | member+ |
-| 팀 | POST | `/api/teams/join` | 팀 가입 | member+ |
-| 팀 | GET/PUT/DELETE | `/api/teams` | 팀 관리 | manager+ |
+| 팀 | GET | `/api/team/members` | 내 팀 팀원 목록 조회 | member+ |
+| 팀 | POST | `/api/teams/join` | (⏳ 스텁, 미구현) | member+ |
+| 팀 | GET/PUT/DELETE | `/api/teams` | (⏳ 스텁, 미구현) | manager+ |
 
 > 전체 라우트 정의는 [`backend/routes/api.php`](./backend/routes/api.php) 에서 확인할 수 있습니다.
 > `member+`는 로그인한 모든 사용자, `manager+`는 관리자 권한이 필요함을 의미합니다.
+> ⏳ 표시된 항목은 라우트/컨트롤러 메서드는 존재하지만 실제 로직 없이 `501 ERR_NOT_IMPLEMENTED`를 반환하는 상태입니다.
 
 ---
 
 ## 🔒 역할(Role) 정책
 
-- **member (작업자)**: 일정/현장 조회, 본인 근태 CRUD, 현장 사진 업로드, 팀 가입, 급여 계산 결과 조회
-- **manager (관리자)**: member의 모든 권한 + 일정/현장 등록·수정·삭제, 팀 관리
+- **member (작업자)**: 일정/현장 조회, 현장 사진 업로드, 팀원 목록 조회, 급여 계산 결과 조회
+- **manager (관리자)**: member의 모든 권한 + 일정/현장 등록·수정·삭제
+- 근태 CRUD, 팀 생성/관리/가입은 API 스텁만 존재하며 아직 권한 정책이 확정되지 않았습니다.
 
 ---
 

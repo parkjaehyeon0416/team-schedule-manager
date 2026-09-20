@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -101,7 +102,19 @@ function DrawerRoot() {
  * ═══════════════════════════════════════════
  */
 export default function AppNavigator() {
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, isLoading, restoreAuth } = useAuthStore();
+
+  useEffect(() => {
+    restoreAuth();
+  }, [restoreAuth]);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2E75B6" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>

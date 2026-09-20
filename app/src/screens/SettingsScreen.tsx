@@ -45,13 +45,13 @@ export default function SettingsScreen() {
         <List.Item
           title="이용약관"
           left={props => <List.Icon {...props} icon="file-document-outline" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('LegalDocument', { type: 'terms' })}
         />
         <Divider />
         <List.Item
           title="개인정보 처리방침"
           left={props => <List.Icon {...props} icon="shield-account-outline" />}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('LegalDocument', { type: 'privacy' })}
         />
         <Divider />
         <List.Item

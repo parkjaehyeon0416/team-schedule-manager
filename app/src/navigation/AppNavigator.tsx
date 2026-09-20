@@ -25,6 +25,7 @@ import TaxSummaryScreen from '../screens/TaxSummaryScreen';
 // ★ v18.1 추가 — 설정 화면 스텁 실구현 (알림 설정 / 현장 목록)
 import SiteListScreen from '../screens/SiteListScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import LegalDocumentScreen from '../screens/LegalDocumentScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -143,6 +144,7 @@ export default function AppNavigator() {
               name="NotificationSettings"
               component={NotificationSettingsScreen}
             />
+            <Stack.Screen name="LegalDocument" component={LegalDocumentScreen} />
           </>
         ) : (
           <>

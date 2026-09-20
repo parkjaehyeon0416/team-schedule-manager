@@ -22,6 +22,9 @@ import QuoteCreateScreen from '../screens/QuoteCreateScreen';
 import ScheduleReportsScreen from '../screens/ScheduleReportsScreen';
 import BusinessCardScreen from '../screens/BusinessCardScreen';
 import TaxSummaryScreen from '../screens/TaxSummaryScreen';
+// ★ v18.1 추가 — 설정 화면 스텁 실구현 (알림 설정 / 현장 목록)
+import SiteListScreen from '../screens/SiteListScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -134,6 +137,12 @@ export default function AppNavigator() {
             {/* ★ 이번 작업 추가 */}
             <Stack.Screen name="QuoteCreate" component={QuoteCreateScreen} />
             <Stack.Screen name="ScheduleReports" component={ScheduleReportsScreen} />
+            {/* ★ v18.1 추가 */}
+            <Stack.Screen name="SiteList" component={SiteListScreen} />
+            <Stack.Screen
+              name="NotificationSettings"
+              component={NotificationSettingsScreen}
+            />
           </>
         ) : (
           <>

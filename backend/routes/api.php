@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
 use App\Http\Controllers\Api\TaxSummaryController;              // ★ v17
 use App\Http\Controllers\Api\QuoteController;                   // ★ v12~v13
 use App\Http\Controllers\Api\UserMaterialController;            // ★ v12
+use App\Http\Controllers\Api\NotificationSettingController;     // ★ v18.1
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -113,6 +114,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/wage-settings',         [UserWageSettingController::class, 'index']);
     Route::post('/wage-settings',        [UserWageSettingController::class, 'store']);
     Route::delete('/wage-settings/{id}', [UserWageSettingController::class, 'destroy']);
+
+    // ★ v18.1 — 내 알림 설정 조회/수정
+    Route::get('/notification-settings', [NotificationSettingController::class, 'show']);
+    Route::put('/notification-settings', [NotificationSettingController::class, 'update']);
 
     // 월별 수입 집계 조회
     Route::get('/monthly-summary', [MonthlySummaryController::class, 'show']);

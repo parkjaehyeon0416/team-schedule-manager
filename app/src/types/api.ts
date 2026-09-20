@@ -78,13 +78,36 @@ export interface TeamMember {
 }
 
 /**
+ * 알림 설정 (notification_settings 테이블)
+ * GET/PUT /api/notification-settings
+ */
+export interface NotificationSetting {
+  id: number;
+  user_id: number;
+  schedule_reminder: boolean;
+  team_activity: boolean;
+  quote_update: boolean;
+  report_view: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * 현장 (sites 테이블)
+ * GET/POST/PUT/DELETE /api/sites
  */
 export interface Site {
   id: number;
-  apt_name: string;
-  dong: string;
-  ho: string;
+  team_id: number | null;
+  address: string;
+  apt_name: string | null;
+  dong: string | null;
+  ho: string | null;
+  area_m2: string | null;
+  memo: string | null;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
 }
 
 /**

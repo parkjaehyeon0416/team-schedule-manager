@@ -54,9 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ★ 추가 — 내 팀 멤버 목록 조회 (일정 등록 시 투입 인원 선택용)
     Route::get('/team/members',    [TeamController::class, 'members']);
 
-    // 근태는 본인 것만 CRUD (member 이상)
-    Route::apiResource('attendances', AttendanceController::class);
-
     // 팀 조회/가입/생성 (아직 팀이 없는 사용자도 자기 팀 여부를 확인해야 하므로 member 이상 전체 허용.
     // index/show는 컨트롤러 내부에서 본인 team_id로 스코프 처리, superadmin만 전체 조회)
     Route::get('/teams',           [TeamController::class, 'index']);
@@ -151,6 +148,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // 팀 관리 — 수정/삭제만 manager 이상 (조회/생성/가입은 위 member+ 그룹으로 이동됨)
         Route::put('/teams/{id}',    [TeamController::class, 'update']);
         Route::delete('/teams/{id}', [TeamController::class, 'destroy']);
+
+        // ★ 근태 현황 — 팀장이 팀원들의 그 달 출근일(=일정 배정일)을 조회.
+        //   팀원 개인은 본인 근무일을 이미 MySummaryScreen에서 보므로 접근 불필요.
+        Route::get('/attendance', [AttendanceController::class, 'index']);
 
         // ★ v11 변경: 사진 라우트는 member 그룹으로 이동됨 (위)
     });

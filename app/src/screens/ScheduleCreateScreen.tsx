@@ -22,6 +22,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // ★ v11.1.2
 import dayjs from 'dayjs';
+import { useAuthStore } from '../store/authStore';
 
 import {
   getTeamMembers,
@@ -58,7 +59,14 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   // ★ v11.1.2 — 안전 영역 정보 (하단 제스처 바 회피용)
   const insets = useSafeAreaInsets();
 
+  // 팀 소속 여부 — 팀이 있어야만 '개인/팀' 선택지가 의미가 있음(팀 없으면 항상 개인)
+  const user = useAuthStore(s => s.user);
+  const hasTeam = !!user?.team_id;
+
   // ─── 폼 상태 ───
+  // ★ 팀에 있어도 개인용으로 등록하고 싶을 수 있음 — 기본은 팀(공유), 수정 모드에선
+  // 로드된 일정의 team_id 유무로 결정
+  const [isPersonal, setIsPersonal] = useState<boolean>(false);
   const [date, setDate] = useState<Date>(
     route.params?.date ? new Date(route.params.date) : new Date(),
   );
@@ -127,6 +135,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
       const data = await getScheduleById(id);
 
       // 기본 필드 채우기
+      setIsPersonal(!data.team_id);
       setDate(new Date(data.date));
       setWorkType((data.work_type as WorkTypeEnum) || null);
       setDistrict(data.district || '');
@@ -214,6 +223,8 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         work_units: workUnits,
         expenses: expenses,
         expenses_memo: expensesMemo.trim() || null,
+        // 팀이 없으면 항상 개인 취급되므로 굳이 안 보내도 되지만, 명시적으로 보냄
+        is_personal: hasTeam ? isPersonal : true,
       };
 
       console.log('📤 요청:', JSON.stringify(payload, null, 2));
@@ -283,6 +294,46 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
             <Icon name="pencil" size={14} color="#FFF" />
             <Text style={styles.modeBadgeText}>수정 모드</Text>
           </View>
+        )}
+
+        {/* ── 0) 등록 범위 (팀 소속일 때만 노출) ── */}
+        {hasTeam && (
+          <>
+            <View style={styles.labelRow}>
+              <Icon name="account-multiple-outline" size={18} color="#2E75B6" />
+              <Text style={styles.label}>등록 범위</Text>
+            </View>
+            <View style={styles.workTypeRow}>
+              <TouchableOpacity
+                onPress={() => setIsPersonal(false)}
+                style={[
+                  styles.workTypeBtn,
+                  !isPersonal && { backgroundColor: '#1F3864', borderColor: '#1F3864' },
+                ]}
+                disabled={saving}
+              >
+                <Text style={[styles.workTypeText, !isPersonal && styles.workTypeTextActive]}>
+                  👥 팀 (공유)
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setIsPersonal(true)}
+                style={[
+                  styles.workTypeBtn,
+                  isPersonal && { backgroundColor: '#1F3864', borderColor: '#1F3864' },
+                ]}
+                disabled={saving}
+              >
+                <Text style={[styles.workTypeText, isPersonal && styles.workTypeTextActive]}>
+                  👤 개인
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.hint}>
+              개인으로 등록하면 팀원들에게 공유되지 않고 나에게만 보여요.
+            </Text>
+            <Divider style={styles.divider} />
+          </>
         )}
 
         {/* ── 1) 날짜 ── */}

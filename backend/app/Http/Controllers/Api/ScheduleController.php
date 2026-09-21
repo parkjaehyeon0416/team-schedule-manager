@@ -14,11 +14,17 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
+        // ★ 전체/개인/팀 토글 필터 — 기본은 전체
+        $scope = $request->query('scope', 'all');
+        if (!in_array($scope, ['all', 'personal', 'team'], true)) {
+            $scope = 'all';
+        }
+
         $query = Schedule::with([
             'users:id,name',
             'site:id,apt_name,dong,ho',
         ])
-            ->forUser($user)
+            ->forUser($user, $scope)
             ->orderBy('date');
 
         if ($year = $request->query('year')) {
@@ -55,11 +61,14 @@ class ScheduleController extends Controller
             'user_ids'      => 'nullable|array',
             'user_ids.*'    => 'integer|exists:users,id',
             'site_id'       => 'nullable|integer|exists:sites,id',
+            // ★ 팀 소속이어도 개인용으로 등록하고 싶을 때 true — team_id 없이 owner_id로 감
+            'is_personal'   => 'nullable|boolean',
         ]);
 
-        // 팀/프리랜서 소유권 자동 주입 — 팀 소속이면 team_id, 아니면(프리랜서) owner_id
-        $data['team_id']  = $user->team_id;
-        $data['owner_id'] = $user->team_id ? null : $user->id;
+        // 팀 소속이면서 개인으로 명시하지 않은 경우에만 team_id를 부여, 그 외엔 전부 개인(owner_id)
+        $wantsPersonal = $request->boolean('is_personal') || !$user->team_id;
+        $data['team_id']    = $wantsPersonal ? null : $user->team_id;
+        $data['owner_id']   = $wantsPersonal ? $user->id : null;
         $data['created_by'] = $user->id;
 
         // 1) 기본 정보 생성 (v9.0 신규 필드 포함)
@@ -119,7 +128,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::forUser($user)
+        $schedule = Schedule::editableBy($user)
             ->find($id);
 
         if (!$schedule) {
@@ -165,7 +174,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::forUser($user)
+        $schedule = Schedule::editableBy($user)
             ->find($id);
 
         if (!$schedule) {

@@ -183,14 +183,19 @@ export interface CalendarHandle {
   jumpToDate: (date: string) => void;
 }
 
+export type ScheduleScope = 'all' | 'personal' | 'team';
+
 interface Props {
   navigation: any;
   onMonthChange?: (year: number, month: number) => void;
   cellHeight?: number;
+  // ★ 전체/개인/팀 토글 필터 — 팀에 있어도 개인용 일정을 따로 만들 수 있어서
+  //   홈 화면에서 어느 범위를 볼지 고를 수 있음 (기본: 전체)
+  scope?: ScheduleScope;
 }
 
 const CalendarScreen = forwardRef<CalendarHandle, Props>(
-  ({ navigation, onMonthChange, cellHeight = 90 }, ref) => {
+  ({ navigation, onMonthChange, cellHeight = 90, scope = 'all' }, ref) => {
     const [currentMonth, setCurrentMonth] = useState(
       dayjs().format('YYYY-MM-DD'),
     );
@@ -203,13 +208,13 @@ const CalendarScreen = forwardRef<CalendarHandle, Props>(
 
     const fetchSchedules = useCallback(async () => {
       try {
-        const res = await axios.get('/schedules');
+        const res = await axios.get('/schedules', { params: { scope } });
         const list: ScheduleItem[] = res.data?.data || [];
         setSchedules(list);
       } catch (e: any) {
         console.error('스케줄 조회 실패:', e);
       }
-    }, []);
+    }, [scope]);
 
     useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
 

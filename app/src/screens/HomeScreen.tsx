@@ -17,7 +17,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import CalendarScreen, { CalendarHandle } from './CalendarScreen';
+import CalendarScreen, { CalendarHandle, ScheduleScope } from './CalendarScreen';
 import YearMonthPicker from '../components/YearMonthPicker';
 import AppHeader from '../components/AppHeader';
 import { getMonthlySummary } from '../api/schedulesApi';
@@ -29,7 +29,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function HomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
 
-  const RESERVED_HEIGHT = 232 + insets.top + insets.bottom;
+  const RESERVED_HEIGHT = 232 + 44 + insets.top + insets.bottom; // +44: 전체/개인/팀 토글 행
   const CALENDAR_CELL_HEIGHT = Math.max(
     70,
     Math.floor((SCREEN_HEIGHT - RESERVED_HEIGHT) / 6),
@@ -40,6 +40,7 @@ export default function HomeScreen({ navigation }: any) {
   const [calendarMonth, setCalendarMonth] = useState<number>(now.getMonth() + 1);
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [scope, setScope] = useState<ScheduleScope>('all');
   const calendarRef = useRef<CalendarHandle>(null);
 
   const handleCalendarMonthChange = useCallback(
@@ -193,12 +194,43 @@ export default function HomeScreen({ navigation }: any) {
         </Pressable>
       </View>
 
+      {/* ★ 전체/개인/팀 토글 — 팀에 있어도 개인용 일정을 따로 만들 수 있고,
+          팀을 나간 뒤에도 '팀' 필터로 그때 일했던 기록을 볼 수 있음 */}
+      <View style={styles.scopeRow}>
+        {(
+          [
+            { key: 'all', label: '전체' },
+            { key: 'personal', label: '👤 개인' },
+            { key: 'team', label: '👥 팀' },
+          ] as { key: ScheduleScope; label: string }[]
+        ).map(opt => (
+          <Pressable
+            key={opt.key}
+            onPress={() => setScope(opt.key)}
+            style={[
+              styles.scopeChip,
+              scope === opt.key && styles.scopeChipActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.scopeChipText,
+                scope === opt.key && styles.scopeChipTextActive,
+              ]}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <View style={[styles.calendarArea, { paddingBottom: insets.bottom }]}>
         <CalendarScreen
           ref={calendarRef}
           navigation={navigation}
           onMonthChange={handleCalendarMonthChange}
           cellHeight={CALENDAR_CELL_HEIGHT}
+          scope={scope}
         />
       </View>
 
@@ -258,4 +290,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0', marginHorizontal: 6,
   },
   calendarArea: { flex: 1 },
+
+  scopeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  scopeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F0F2F5',
+  },
+  scopeChipActive: { backgroundColor: '#1F3864' },
+  scopeChipText: { fontSize: 12.5, fontWeight: '700', color: '#666' },
+  scopeChipTextActive: { color: '#FFFFFF' },
 });

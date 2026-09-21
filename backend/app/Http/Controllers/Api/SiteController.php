@@ -15,7 +15,12 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $sites = Site::forUser($user)
+        $scope = $request->query('scope', 'all');
+        if (!in_array($scope, ['all', 'personal', 'team'], true)) {
+            $scope = 'all';
+        }
+
+        $sites = Site::forUser($user, $scope)
             ->orderByDesc('id')
             ->get();
 
@@ -34,12 +39,16 @@ class SiteController extends Controller
             'ho'       => 'nullable|string|max:50',
             'area_m2'  => 'nullable|numeric|min:0',
             'memo'     => 'nullable|string',
+            'is_personal' => 'nullable|boolean',
         ]);
+
+        $wantsPersonal = $request->boolean('is_personal') || !$user->team_id;
+        unset($data['is_personal']);
 
         $site = Site::create([
             ...$data,
-            'team_id'    => $user->team_id,
-            'owner_id'   => $user->team_id ? null : $user->id,
+            'team_id'    => $wantsPersonal ? null : $user->team_id,
+            'owner_id'   => $wantsPersonal ? $user->id : null,
             'created_by' => $user->id,
         ]);
 
@@ -66,7 +75,7 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $site = Site::forUser($user)
+        $site = Site::editableBy($user)
             ->find($id);
 
         if (!$site) {
@@ -92,7 +101,7 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $site = Site::forUser($user)
+        $site = Site::editableBy($user)
             ->find($id);
 
         if (!$site) {

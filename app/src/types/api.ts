@@ -115,7 +115,8 @@ export interface Site {
  */
 export interface Schedule {
   id: number;
-  team_id: number;
+  team_id: number | null;
+  owner_id: number | null;
   site_id: number | null;
   date: string; // "2026-04-15"
   work_type: string | null; // 기존 ENUM (도배/타일/필름)

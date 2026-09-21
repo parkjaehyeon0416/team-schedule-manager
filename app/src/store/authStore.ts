@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   role_id: number;
+  team_id: number | null;
   role?: { id: number; name: string };
   team?: { id: number; name: string };
 }

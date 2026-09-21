@@ -34,7 +34,7 @@ class PhotoController extends Controller
         $user = $request->user();
 
         // ① 일정 존재 + 같은 팀 확인
-        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $schedule = Schedule::forUser($user)
             ->find($scheduleId);
 
         if (!$schedule) {
@@ -109,7 +109,7 @@ class PhotoController extends Controller
         ]);
 
         // ② 일정 존재 + 같은 팀 확인
-        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $schedule = Schedule::forUser($user)
             ->find($scheduleId);
 
         if (!$schedule) {
@@ -186,7 +186,7 @@ class PhotoController extends Controller
         ]);
 
         // ② 일정 + 팀 확인
-        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $schedule = Schedule::forUser($user)
             ->find($scheduleId);
 
         if (!$schedule) {
@@ -280,7 +280,7 @@ class PhotoController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $schedule = Schedule::forUser($user)
             ->find($scheduleId);
 
         if (!$schedule) {

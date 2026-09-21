@@ -18,7 +18,7 @@ class ScheduleController extends Controller
             'users:id,name',
             'site:id,apt_name,dong,ho',
         ])
-            ->when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+            ->forUser($user)
             ->orderBy('date');
 
         if ($year = $request->query('year')) {
@@ -57,8 +57,10 @@ class ScheduleController extends Controller
             'site_id'       => 'nullable|integer|exists:sites,id',
         ]);
 
-        // 팀 ID 자동 주입
-        $data['team_id'] = $user->team_id;
+        // 팀/프리랜서 소유권 자동 주입 — 팀 소속이면 team_id, 아니면(프리랜서) owner_id
+        $data['team_id']  = $user->team_id;
+        $data['owner_id'] = $user->team_id ? null : $user->id;
+        $data['created_by'] = $user->id;
 
         // 1) 기본 정보 생성 (v9.0 신규 필드 포함)
         $schedule = Schedule::create([
@@ -75,6 +77,8 @@ class ScheduleController extends Controller
             'area_m2'       => $data['area_m2']      ?? null,
             'memo'          => $data['memo']         ?? null,
             'team_id'       => $data['team_id'],
+            'owner_id'      => $data['owner_id'],
+            'created_by'    => $data['created_by'],
             'site_id'       => $data['site_id']      ?? null,
             'status'        => 'pending',
         ]);
@@ -100,7 +104,7 @@ class ScheduleController extends Controller
         $user = $request->user();
 
         $schedule = Schedule::with(['users:id,name', 'site:id,apt_name,dong,ho'])
-            ->when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+            ->forUser($user)
             ->find($id);
 
         if (!$schedule) {
@@ -115,7 +119,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $schedule = Schedule::forUser($user)
             ->find($id);
 
         if (!$schedule) {
@@ -161,7 +165,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $schedule = Schedule::forUser($user)
             ->find($id);
 
         if (!$schedule) {

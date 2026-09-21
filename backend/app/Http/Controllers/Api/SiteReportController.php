@@ -182,7 +182,7 @@ class SiteReportController extends Controller
     {
         $user = $request->user();
 
-        return Schedule::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        return Schedule::forUser($user)
             ->find($scheduleId);
     }
 
@@ -191,7 +191,7 @@ class SiteReportController extends Controller
         $user = $request->user();
 
         return SiteReport::whereHas('schedule', function ($q) use ($user) {
-            $q->when($user->team_id, fn($q2) => $q2->where('team_id', $user->team_id));
+            $q->forUser($user);
         })->find($id);
     }
 

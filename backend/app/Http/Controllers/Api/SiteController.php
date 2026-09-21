@@ -15,7 +15,7 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $sites = Site::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $sites = Site::forUser($user)
             ->orderByDesc('id')
             ->get();
 
@@ -38,7 +38,9 @@ class SiteController extends Controller
 
         $site = Site::create([
             ...$data,
-            'team_id' => $user->team_id,
+            'team_id'    => $user->team_id,
+            'owner_id'   => $user->team_id ? null : $user->id,
+            'created_by' => $user->id,
         ]);
 
         return ApiResponse::success($site, '현장이 등록되었습니다.', 201);
@@ -49,7 +51,7 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $site = Site::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $site = Site::forUser($user)
             ->find($id);
 
         if (!$site) {
@@ -64,7 +66,7 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $site = Site::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $site = Site::forUser($user)
             ->find($id);
 
         if (!$site) {
@@ -90,7 +92,7 @@ class SiteController extends Controller
     {
         $user = $request->user();
 
-        $site = Site::when($user->team_id, fn($q) => $q->where('team_id', $user->team_id))
+        $site = Site::forUser($user)
             ->find($id);
 
         if (!$site) {

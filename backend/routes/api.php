@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/teams/{id}',      [TeamController::class, 'show']);
     Route::post('/teams/join',     [TeamController::class, 'join']);
     Route::post('/teams',          [TeamController::class, 'store']);
+    Route::post('/teams/leave',    [TeamController::class, 'leave']);
 
     // 평수 계산
     Route::post('calculate/area',  [CalculateController::class, 'area']);

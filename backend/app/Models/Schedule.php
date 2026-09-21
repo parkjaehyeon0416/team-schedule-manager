@@ -14,6 +14,8 @@ class Schedule extends Model
     protected $fillable = [
         'site_id',
         'team_id',
+        'owner_id',
+        'created_by',
         'date',
         // 공정 (v7 ENUM + v9.0 외래키 둘 다 지원)
         'work_type',
@@ -76,5 +78,19 @@ class Schedule extends Model
     public function workType()
     {
         return $this->belongsTo(WorkType::class, 'work_type_id');
+    }
+
+    // ────────────────────────────────────────────────
+    // [스코프] 로그인 사용자 기준 접근 가능 범위로 필터링
+    //   - 팀 소속: 같은 team_id
+    //   - 프리랜서(team_id 없음): 본인이 만든(owner_id) 것만
+    // ────────────────────────────────────────────────
+    public function scopeForUser($query, $user)
+    {
+        if ($user->team_id) {
+            return $query->where('team_id', $user->team_id);
+        }
+
+        return $query->where('owner_id', $user->id);
     }
 }

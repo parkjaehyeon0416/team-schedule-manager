@@ -6,6 +6,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useAuthStore } from '../store/authStore';
 
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MySummaryScreen from '../screens/MySummaryScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
@@ -149,6 +150,7 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         )}
       </Stack.Navigator>

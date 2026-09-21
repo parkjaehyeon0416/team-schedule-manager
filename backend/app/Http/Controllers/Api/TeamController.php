@@ -7,7 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
+use App\Models\Schedule;
+use App\Models\Site;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TeamController extends Controller
@@ -109,8 +112,13 @@ class TeamController extends Controller
     }
 
     /**
-     * ─── ⑤ 팀 삭제 ───
+     * ─── ⑤ 팀 삭제(해체) ───
      *   manager 이상 전용(라우트 미들웨어). 본인 팀만 삭제 가능(superadmin 제외).
+     *
+     *   해체 시 데이터는 삭제하지 않고 팀원 전원을 개인(프리랜서) 상태로 전환함:
+     *     - 팀 소속 일정/현장: team_id → null, owner_id → created_by(만든 사람)
+     *       (created_by가 없는 과거 데이터는 해체를 요청한 사용자에게 귀속)
+     *     - 팀원 전원: team_id → null, role_id → 3(member 기본값)
      */
     public function destroy(Request $request, string $id)
     {
@@ -123,9 +131,56 @@ class TeamController extends Controller
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
-        $team->delete();
+        DB::transaction(function () use ($team, $user) {
+            foreach ([Schedule::class, Site::class] as $model) {
+                $model::where('team_id', $team->id)->get()->each(function ($row) use ($user) {
+                    $row->update([
+                        'team_id'  => null,
+                        'owner_id' => $row->created_by ?? $user->id,
+                    ]);
+                });
+            }
 
-        return ApiResponse::success(null, '팀이 삭제되었습니다.');
+            User::where('team_id', $team->id)->update([
+                'team_id' => null,
+                'role_id' => 3,
+            ]);
+
+            $team->delete();
+        });
+
+        return ApiResponse::success(null, '팀이 해체되었습니다. 팀원들의 일정과 현장은 각자의 개인 데이터로 전환되었습니다.');
+    }
+
+    /**
+     * ─── ⑧ 팀 탈퇴 ───  ★ 신규 추가
+     *   본인이 스스로 팀을 나감. 본인이 만든 일정/현장은 개인 데이터로 전환하고,
+     *   본인이 만들지 않고 배정만 되어있던 팀 일정은 그대로 팀에 남김.
+     */
+    public function leave(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->team_id) {
+            return ApiResponse::error('소속된 팀이 없습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        DB::transaction(function () use ($user) {
+            foreach ([Schedule::class, Site::class] as $model) {
+                $model::where('team_id', $user->team_id)
+                    ->where('created_by', $user->id)
+                    ->update([
+                        'team_id'  => null,
+                        'owner_id' => $user->id,
+                    ]);
+            }
+
+            $user->team_id = null;
+            $user->role_id = 3;
+            $user->save();
+        });
+
+        return ApiResponse::success($user->fresh(), '팀에서 탈퇴했습니다. 회원님이 만든 일정과 현장은 개인 데이터로 전환되었습니다.');
     }
 
     /**

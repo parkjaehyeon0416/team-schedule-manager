@@ -111,7 +111,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // ═══════════════════════════════════════════════════════════
 
     // 공정 목록 조회
-    Route::get('/work-types', [WorkTypeController::class, 'index']);
+    Route::get('/work-types',           [WorkTypeController::class, 'index']);
+    // ★ 커스텀 공정 추가/수정/삭제 — 개인용은 누구나, 팀 공용은 컨트롤러 내부에서 manager 이상으로 제한
+    Route::post('/work-types',          [WorkTypeController::class, 'store']);
+    Route::put('/work-types/{id}',      [WorkTypeController::class, 'update']);
+    Route::delete('/work-types/{id}',   [WorkTypeController::class, 'destroy']);
 
     // 내 단가 프로파일 CRUD
     Route::get('/wage-settings',         [UserWageSettingController::class, 'index']);

@@ -7,6 +7,8 @@ import { useAuthStore } from '../store/authStore';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import FindEmailScreen from '../screens/FindEmailScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MySummaryScreen from '../screens/MySummaryScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
@@ -145,14 +147,20 @@ export default function AppNavigator() {
               name="NotificationSettings"
               component={NotificationSettingsScreen}
             />
-            <Stack.Screen name="LegalDocument" component={LegalDocumentScreen} />
           </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="FindEmail" component={FindEmailScreen} />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
+            />
           </>
         )}
+        {/* 로그인 여부와 무관하게 접근 가능 (약관/개인정보 — 가입 화면에서도 열람) */}
+        <Stack.Screen name="LegalDocument" component={LegalDocumentScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

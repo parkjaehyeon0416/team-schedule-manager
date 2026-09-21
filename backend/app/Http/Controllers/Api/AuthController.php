@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
+use App\Notifications\PasswordResetCodeNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -42,11 +46,15 @@ class AuthController extends Controller
     {
         // 1. 입력값 검증
         $validated = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed',
+            'name'         => 'required|string|max:100',
+            'email'        => 'required|email|unique:users,email',
+            // ★ 아이디(이메일) 찾기를 이름+전화번호로 지원하기 위해 필수로 수집
+            'phone'        => 'required|string|max:20|unique:users,phone',
+            'password'     => 'required|min:6|confirmed',
             // ★ platform 필드 추가 — 'web' 또는 'mobile'
-            'platform' => 'required|in:web,mobile',
+            'platform'     => 'required|in:web,mobile',
+            // ★ 이용약관/개인정보처리방침 동의 — 체크 안 하면 가입 자체가 안 됨
+            'agree_terms'  => 'required|accepted',
         ]);
 
         // 2. web으로 가입은 허용하지 않음 (운영자는 콘솔에서 수동 생성)
@@ -66,6 +74,7 @@ class AuthController extends Controller
         $user = User::create([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
+            'phone'     => $validated['phone'],
             'password'  => Hash::make($validated['password']),
             'role_id'   => 2,
             'user_type' => 'freelancer',
@@ -133,6 +142,123 @@ class AuthController extends Controller
             'user'  => $user,
             'token' => $token,
         ], '로그인 성공');
+    }
+
+    // ────────────────────────────────────
+    // 아이디(이메일) 찾기 — 이름 + 전화번호로 조회
+    // POST /api/auth/find-email
+    // ────────────────────────────────────
+    public function findEmail(Request $request)
+    {
+        $data = $request->validate([
+            'name'  => 'required|string|max:100',
+            'phone' => 'required|string|max:20',
+        ]);
+
+        $user = User::where('name', $data['name'])
+            ->where('phone', $data['phone'])
+            ->first();
+
+        if (!$user) {
+            return ApiResponse::error(
+                '일치하는 계정을 찾을 수 없습니다.',
+                ErrorCode::AUTH_ACCOUNT_NOT_FOUND,
+                404
+            );
+        }
+
+        return ApiResponse::success([
+            'email' => $this->maskEmail($user->email),
+        ], '계정을 찾았습니다.');
+    }
+
+    // ────────────────────────────────────
+    // 비밀번호 재설정 — 1단계: 인증코드 발송
+    // POST /api/auth/forgot-password
+    // ────────────────────────────────────
+    public function forgotPassword(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        // 계정 존재 여부를 노출하지 않기 위해, 없어도 항상 같은 성공 응답을 줌
+        // (실제 코드 발송/저장은 계정이 있을 때만)
+        if ($user) {
+            $code = (string) random_int(100000, 999999);
+
+            DB::table('password_reset_codes')->updateOrInsert(
+                ['email' => $user->email],
+                [
+                    'code'       => $code,
+                    'expires_at' => now()->addMinutes(10),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+
+            // ★ 실제 발송 채널은 .env MAIL_MAILER 설정을 따름 — 지금은 'log'라
+            //   storage/logs/laravel.log에 코드가 찍힘. 나중에 SMTP/SES로 바꿔도
+            //   이 코드는 그대로 둔 채 .env만 바꾸면 됨.
+            $user->notify(new PasswordResetCodeNotification($code));
+        }
+
+        return ApiResponse::success(null, '입력하신 이메일로 인증코드를 발송했습니다.');
+    }
+
+    // ────────────────────────────────────
+    // 비밀번호 재설정 — 2단계: 인증코드 확인 + 비밀번호 변경
+    // POST /api/auth/reset-password
+    // ────────────────────────────────────
+    public function resetPassword(Request $request)
+    {
+        $data = $request->validate([
+            'email'    => 'required|email',
+            'code'     => 'required|string|size:6',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $reset = DB::table('password_reset_codes')
+            ->where('email', $data['email'])
+            ->first();
+
+        if (!$reset || $reset->code !== $data['code'] || now()->greaterThan($reset->expires_at)) {
+            return ApiResponse::error(
+                '인증코드가 올바르지 않거나 만료되었습니다.',
+                ErrorCode::AUTH_RESET_CODE_INVALID,
+                422
+            );
+        }
+
+        $user = User::where('email', $data['email'])->first();
+        if (!$user) {
+            return ApiResponse::error(
+                '인증코드가 올바르지 않거나 만료되었습니다.',
+                ErrorCode::AUTH_RESET_CODE_INVALID,
+                422
+            );
+        }
+
+        $user->update(['password' => Hash::make($data['password'])]);
+
+        // 사용한 코드 + 기존 로그인 세션(토큰) 전부 무효화
+        DB::table('password_reset_codes')->where('email', $data['email'])->delete();
+        $user->tokens()->delete();
+
+        return ApiResponse::success(null, '비밀번호가 재설정되었습니다. 다시 로그인해주세요.');
+    }
+
+    /**
+     * 이메일 마스킹 — 예: test1234@example.com → te****@example.com
+     */
+    private function maskEmail(string $email): string
+    {
+        [$local, $domain] = explode('@', $email);
+        $visible = Str::substr($local, 0, min(2, strlen($local)));
+
+        return $visible . str_repeat('*', max(strlen($local) - strlen($visible), 2)) . '@' . $domain;
     }
 
     // ────────────────────────────────────

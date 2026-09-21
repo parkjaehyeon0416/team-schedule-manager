@@ -93,6 +93,22 @@ export default function LoginScreen() {
           <Text style={styles.registerLinkBold}>회원가입</Text>
         </Text>
       </TouchableOpacity>
+
+      <View style={styles.findRow}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('FindEmail')}
+          disabled={loading}
+        >
+          <Text style={styles.findLinkText}>아이디 찾기</Text>
+        </TouchableOpacity>
+        <Text style={styles.findDivider}>|</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ForgotPassword')}
+          disabled={loading}
+        >
+          <Text style={styles.findLinkText}>비밀번호 찾기</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -140,5 +156,18 @@ const styles = StyleSheet.create({
     color: '#1F3864',
     fontWeight: 'bold',
     textDecorationLine: 'underline',
+  },
+  findRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  findLinkText: {
+    color: '#666',
+    fontSize: 13,
+  },
+  findDivider: {
+    color: '#ccc',
+    marginHorizontal: 10,
   },
 });

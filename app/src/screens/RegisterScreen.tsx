@@ -21,12 +21,14 @@ export default function RegisterScreen() {
   const { setAuth } = useAuthStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name || !email || !password || !passwordConfirm) {
+    if (!name || !email || !phone || !password || !passwordConfirm) {
       Alert.alert('오류', '모든 항목을 입력해주세요.');
       return;
     }
@@ -34,14 +36,20 @@ export default function RegisterScreen() {
       Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
       return;
     }
+    if (!agreeTerms) {
+      Alert.alert('오류', '이용약관 및 개인정보 처리방침에 동의해주세요.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await axiosInstance.post('/auth/register', {
         name,
         email,
+        phone,
         password,
         password_confirmation: passwordConfirm,
         platform: 'mobile',
+        agree_terms: true,
       });
       if (res.data.success) {
         await setAuth(res.data.data.user, res.data.data.token);
@@ -86,6 +94,14 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
+        placeholder="전화번호 ('-' 없이 숫자만, 예: 01012345678)"
+        placeholderTextColor="#999999"
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+      />
+      <TextInput
+        style={styles.input}
         placeholder="비밀번호 (6자 이상)"
         placeholderTextColor="#999999"
         value={password}
@@ -100,6 +116,36 @@ export default function RegisterScreen() {
         onChangeText={setPasswordConfirm}
         secureTextEntry
       />
+
+      <TouchableOpacity
+        style={styles.agreeRow}
+        onPress={() => setAgreeTerms(v => !v)}
+        disabled={loading}
+      >
+        <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
+          {agreeTerms && <Text style={styles.checkboxMark}>✓</Text>}
+        </View>
+        <Text style={styles.agreeText}>
+          <Text
+            style={styles.agreeLink}
+            onPress={() =>
+              navigation.navigate('LegalDocument', { type: 'terms' })
+            }
+          >
+            이용약관
+          </Text>
+          {' 및 '}
+          <Text
+            style={styles.agreeLink}
+            onPress={() =>
+              navigation.navigate('LegalDocument', { type: 'privacy' })
+            }
+          >
+            개인정보 처리방침
+          </Text>
+          에 동의합니다.
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
@@ -149,6 +195,42 @@ const styles = StyleSheet.create({
     color: '#222222',
     borderWidth: 1,
     borderColor: '#ddd',
+  },
+  agreeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#aaa',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  checkboxChecked: {
+    backgroundColor: '#1F3864',
+    borderColor: '#1F3864',
+  },
+  checkboxMark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  agreeText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#444',
+  },
+  agreeLink: {
+    color: '#1F3864',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: '#1F3864',

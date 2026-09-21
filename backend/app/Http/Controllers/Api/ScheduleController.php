@@ -22,7 +22,7 @@ class ScheduleController extends Controller
 
         $query = Schedule::with([
             'users:id,name',
-            'site:id,apt_name,dong,ho',
+            'site:id,address,apt_name,dong,ho',
         ])
             ->forUser($user, $scope)
             ->orderBy('date');
@@ -102,7 +102,7 @@ class ScheduleController extends Controller
         }
 
         // 3) 응답에 관계 데이터 포함
-        $schedule->load(['users:id,name', 'site:id,apt_name,dong,ho']);
+        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho']);
 
         return ApiResponse::success($schedule, '일정이 등록되었습니다.', 201);
     }
@@ -112,7 +112,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::with(['users:id,name', 'site:id,apt_name,dong,ho'])
+        $schedule = Schedule::with(['users:id,name', 'site:id,address,apt_name,dong,ho'])
             ->forUser($user)
             ->find($id);
 
@@ -164,7 +164,7 @@ class ScheduleController extends Controller
             $schedule->touch();
         }
 
-        $schedule->load(['users:id,name', 'site:id,apt_name,dong,ho']);
+        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho']);
 
         return ApiResponse::success($schedule, '일정이 수정되었습니다.');
     }

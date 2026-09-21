@@ -32,9 +32,10 @@ import {
 } from '../api/schedulesApi';
 import { getWageSettings } from '../api/wageSettingsApi';
 import WorkTypePicker from '../components/WorkTypePicker';
+import SitePickerModal from '../components/SitePickerModal';
 import AppHeader from '../components/AppHeader';
 import { formatMoney, parseMoney } from '../utils/format';
-import type { TeamMember, WageSetting, WorkType } from '../types/api';
+import type { TeamMember, WageSetting, WorkType, Site } from '../types/api';
 
 // ─── 타입 ───
 type WorkTypeEnum = '도배' | '타일' | '필름';
@@ -67,6 +68,8 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
   // ★ 팀에 있어도 개인용으로 등록하고 싶을 수 있음 — 기본은 팀(공유), 수정 모드에선
   // 로드된 일정의 team_id 유무로 결정
   const [isPersonal, setIsPersonal] = useState<boolean>(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [sitePickerVisible, setSitePickerVisible] = useState<boolean>(false);
   const [date, setDate] = useState<Date>(
     route.params?.date ? new Date(route.params.date) : new Date(),
   );
@@ -136,6 +139,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
 
       // 기본 필드 채우기
       setIsPersonal(!data.team_id);
+      setSelectedSite(data.site ?? null);
       setDate(new Date(data.date));
       setWorkType((data.work_type as WorkTypeEnum) || null);
       setDistrict(data.district || '');
@@ -217,6 +221,7 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         area_m2: areaM2 ? parseFloat(areaM2) : null,
         memo: memo.trim() || null,
         user_ids: selectedUserIds,
+        site_id: selectedSite?.id ?? null,
         // v9.0 / v10.2
         work_type_id: workTypeId,
         daily_wage: dailyWage > 0 ? dailyWage : null,
@@ -335,6 +340,30 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
             <Divider style={styles.divider} />
           </>
         )}
+
+        {/* ── 현장 ── */}
+        <View style={styles.labelRow}>
+          <Icon name="home-city-outline" size={18} color="#2E75B6" />
+          <Text style={styles.label}>현장</Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setSitePickerVisible(true)}
+          style={styles.dateButton}
+          disabled={saving}
+        >
+          <Text
+            style={[
+              selectedSite ? styles.dateButtonText : styles.sitePlaceholder,
+              styles.siteButtonTextFlex,
+            ]}
+            numberOfLines={1}
+          >
+            {selectedSite ? selectedSite.address : '현장 선택 (선택사항)'}
+          </Text>
+          <Icon name="magnify" size={20} color="#2E75B6" />
+        </TouchableOpacity>
+
+        <Divider style={styles.divider} />
 
         {/* ── 1) 날짜 ── */}
         <View style={styles.labelRow}>
@@ -608,6 +637,12 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
+
+    <SitePickerModal
+      visible={sitePickerVisible}
+      onClose={() => setSitePickerVisible(false)}
+      onSelect={setSelectedSite}
+    />
     </View>
   );
 }
@@ -668,6 +703,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   dateButtonText: { fontSize: 16, color: '#333', fontWeight: '500' },
+  sitePlaceholder: { fontSize: 16, color: '#999', fontWeight: '500' },
+  siteButtonTextFlex: { flex: 1, marginRight: 8 },
   workTypeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -368,6 +368,24 @@ export default function ScheduleDetailScreen({ route }: any) {
           )}
         </View>
 
+        {/* ── 현장 ── */}
+        {schedule.site && (
+          <View style={styles.row}>
+            <Icon name="home-city-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>
+              {schedule.site.address}
+              {(schedule.site.apt_name || schedule.site.dong || schedule.site.ho) &&
+                ` (${[
+                  schedule.site.apt_name,
+                  schedule.site.dong && `${schedule.site.dong}동`,
+                  schedule.site.ho && `${schedule.site.ho}호`,
+                ]
+                  .filter(Boolean)
+                  .join(' ')})`}
+            </Text>
+          </View>
+        )}
+
         {/* ── 공정 ── */}
         {schedule.work_type_relation && (
           <View style={styles.row}>

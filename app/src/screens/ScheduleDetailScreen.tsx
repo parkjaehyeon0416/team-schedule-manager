@@ -13,9 +13,11 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { Text, Chip, Button, Divider, Avatar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; // ★ v11.1.2
@@ -275,6 +277,13 @@ export default function ScheduleDetailScreen({ route }: any) {
     navigation.navigate('ScheduleCreate', { scheduleId: id });
   };
 
+  // ★ 현장 주소 복사 — 네비게이션 앱(카카오내비/티맵 등)에 바로 붙여넣을 수 있게
+  const handleCopyAddress = () => {
+    if (!schedule?.site?.address) return;
+    Clipboard.setString(schedule.site.address);
+    Alert.alert('복사 완료', '주소가 복사되었습니다. 내비게이션 앱에 붙여넣기 해주세요.');
+  };
+
   // ★ 이번 작업 추가 — 자동 보고서 화면 이동
   const handleReportsPress = () => {
     navigation.navigate('ScheduleReports', { scheduleId: id });
@@ -370,9 +379,9 @@ export default function ScheduleDetailScreen({ route }: any) {
 
         {/* ── 현장 ── */}
         {schedule.site && (
-          <View style={styles.row}>
+          <View style={[styles.row, styles.addressRow]}>
             <Icon name="home-city-outline" size={16} color="#666" />
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, styles.addressText]}>
               {schedule.site.address}
               {(schedule.site.apt_name || schedule.site.dong || schedule.site.ho) &&
                 ` (${[
@@ -383,6 +392,14 @@ export default function ScheduleDetailScreen({ route }: any) {
                   .filter(Boolean)
                   .join(' ')})`}
             </Text>
+            <TouchableOpacity
+              onPress={handleCopyAddress}
+              hitSlop={8}
+              style={styles.copyBtn}
+            >
+              <Icon name="content-copy" size={15} color="#2E75B6" />
+              <Text style={styles.copyBtnText}>복사</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -632,6 +649,20 @@ const styles = StyleSheet.create({
   dot: { width: 12, height: 12, borderRadius: 6 },
   workTypeText: { fontSize: 16, fontWeight: '600', color: '#333' },
   infoText: { fontSize: 14, color: '#555' },
+  addressRow: { alignItems: 'flex-start' },
+  addressText: { flex: 1, flexShrink: 1 },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#2E75B6',
+  },
+  copyBtnText: { fontSize: 11.5, color: '#2E75B6', fontWeight: '600' },
   divider: { marginVertical: 14 },
   section: {
     fontSize: 15,

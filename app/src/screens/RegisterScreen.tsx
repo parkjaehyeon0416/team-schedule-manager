@@ -13,12 +13,12 @@ import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
 
-type UserType = 'freelancer' | 'team';
-
+// ★ 가입 시점엔 '팀 없는 개인'으로 시작 — 팀 소속 여부는 회원가입 후
+//   팀을 만들거나(TeamScreen) 초대코드로 가입하면 그때 바뀌는 상태값이라
+//   여기서 미리 고를 필요가 없음.
 export default function RegisterScreen() {
   const navigation = useNavigation<any>();
   const { setAuth } = useAuthStore();
-  const [userType, setUserType] = useState<UserType>('freelancer');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +42,6 @@ export default function RegisterScreen() {
         password,
         password_confirmation: passwordConfirm,
         platform: 'mobile',
-        user_type: userType,
       });
       if (res.data.success) {
         await setAuth(res.data.data.user, res.data.data.token);
@@ -68,44 +67,6 @@ export default function RegisterScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.title}>📋 회원가입</Text>
-
-      <Text style={styles.sectionLabel}>가입 유형</Text>
-      <View style={styles.typeRow}>
-        <TouchableOpacity
-          style={[
-            styles.typeButton,
-            userType === 'freelancer' && styles.typeButtonActive,
-          ]}
-          onPress={() => setUserType('freelancer')}
-          disabled={loading}
-        >
-          <Text
-            style={[
-              styles.typeButtonText,
-              userType === 'freelancer' && styles.typeButtonTextActive,
-            ]}
-          >
-            혼자 사용 (프리랜서)
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.typeButton,
-            userType === 'team' && styles.typeButtonActive,
-          ]}
-          onPress={() => setUserType('team')}
-          disabled={loading}
-        >
-          <Text
-            style={[
-              styles.typeButtonText,
-              userType === 'team' && styles.typeButtonTextActive,
-            ]}
-          >
-            팀과 함께 사용
-          </Text>
-        </TouchableOpacity>
-      </View>
 
       <TextInput
         style={styles.input}
@@ -178,37 +139,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     color: '#1F3864',
-  },
-  sectionLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  typeRow: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    gap: 8,
-  },
-  typeButton: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  typeButtonActive: {
-    backgroundColor: '#1F3864',
-    borderColor: '#1F3864',
-  },
-  typeButtonText: {
-    color: '#666',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  typeButtonTextActive: {
-    color: '#fff',
   },
   input: {
     backgroundColor: '#fff',

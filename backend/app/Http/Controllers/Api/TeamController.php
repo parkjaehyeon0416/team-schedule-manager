@@ -61,7 +61,8 @@ class TeamController extends Controller
         ]);
 
         $user->team_id = $team->id;
-        // superadmin은 그대로 유지, member는 팀 생성과 동시에 manager로 승격
+        $user->user_type = 'team';
+        // superadmin은 그대로 유지, 그 외는 팀 생성과 동시에 manager로 승격
         if ($user->role_id > 2) {
             $user->role_id = 2;
         }
@@ -115,10 +116,11 @@ class TeamController extends Controller
      * ─── ⑤ 팀 삭제(해체) ───
      *   manager 이상 전용(라우트 미들웨어). 본인 팀만 삭제 가능(superadmin 제외).
      *
-     *   해체 시 데이터는 삭제하지 않고 팀원 전원을 개인(프리랜서) 상태로 전환함:
+     *   해체 시 데이터는 삭제하지 않고 팀원 전원을 "팀 없는 개인" 상태로 전환함:
      *     - 팀 소속 일정/현장: team_id → null, owner_id → created_by(만든 사람)
      *       (created_by가 없는 과거 데이터는 해체를 요청한 사용자에게 귀속)
-     *     - 팀원 전원: team_id → null, role_id → 3(member 기본값)
+     *     - 팀원 전원: team_id → null, role_id → 2(팀 없는 개인은 스스로 manager),
+     *       user_type → freelancer
      */
     public function destroy(Request $request, string $id)
     {
@@ -142,8 +144,9 @@ class TeamController extends Controller
             }
 
             User::where('team_id', $team->id)->update([
-                'team_id' => null,
-                'role_id' => 3,
+                'team_id'   => null,
+                'role_id'   => 2,
+                'user_type' => 'freelancer',
             ]);
 
             $team->delete();
@@ -175,8 +178,10 @@ class TeamController extends Controller
                     ]);
             }
 
-            $user->team_id = null;
-            $user->role_id = 3;
+            // 팀을 나가면 다시 '팀 없는 개인' — 스스로가 manager이므로 role_id=2
+            $user->team_id   = null;
+            $user->role_id   = 2;
+            $user->user_type = 'freelancer';
             $user->save();
         });
 
@@ -205,7 +210,11 @@ class TeamController extends Controller
             return ApiResponse::error('초대 코드가 유효하지 않습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
-        $user->team_id = $team->id;
+        // 초대코드로 들어온 사람은 팀장이 아니라 팀원 — manager 등급을 유지한 채
+        // 남의 팀에 들어가면 권한 상승이 되므로 반드시 member로 강등해야 함
+        $user->team_id   = $team->id;
+        $user->role_id   = 3;
+        $user->user_type = 'team';
         $user->save();
 
         return ApiResponse::success($user->fresh(), '팀에 가입되었습니다.');

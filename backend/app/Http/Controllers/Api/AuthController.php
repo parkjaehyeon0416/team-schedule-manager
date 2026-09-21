@@ -42,18 +42,14 @@ class AuthController extends Controller
     {
         // 1. 입력값 검증
         $validated = $request->validate([
-            'name'      => 'required|string|max:100',
-            'email'     => 'required|email|unique:users,email',
-            'password'  => 'required|min:6|confirmed',
+            'name'     => 'required|string|max:100',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:6|confirmed',
             // ★ platform 필드 추가 — 'web' 또는 'mobile'
-            'platform'  => 'required|in:web,mobile',
-            // ★ 모바일 가입자가 선택하는 가입 유형 — team(팀 소속) 또는 freelancer(단독)
-            'user_type' => 'required_if:platform,mobile|in:team,freelancer',
+            'platform' => 'required|in:web,mobile',
         ]);
 
-        // 2. ★ platform에 따른 user_type과 role_id 결정
-        //    - web으로 가입은 허용하지 않음 (운영자는 콘솔에서 수동 생성)
-        //    - mobile로 가입은 team 또는 freelancer 선택 가능
+        // 2. web으로 가입은 허용하지 않음 (운영자는 콘솔에서 수동 생성)
         if ($validated['platform'] === 'web') {
             return ApiResponse::error(
                 '웹 관리자에서는 회원가입이 지원되지 않습니다. 모바일 앱을 이용해주세요.',
@@ -62,15 +58,17 @@ class AuthController extends Controller
             );
         }
 
-        // freelancer는 팀이 없어 자신을 승격시켜줄 manager가 존재하지 않음.
-        // '일정/현장 CUD는 manager 이상'이라는 권한 체계상, freelancer는 가입 시점부터
-        // manager(2) 등급을 줘야 본인 일정을 스스로 등록/수정/삭제할 수 있음.
+        // 모든 모바일 가입자는 일단 '팀 없는 개인'으로 시작함 — team/freelancer는
+        // 가입 시점에 고르는 게 아니라, 이후 팀을 만들거나(store) 가입하면(join)
+        // 자연스럽게 바뀌는 상태값일 뿐임.
+        // '팀 없는 개인'은 스스로가 자기 데이터의 manager이므로 role_id=2를 줘야
+        // 일정/현장 CUD(manager 이상 전용)를 본인 힘으로 할 수 있음.
         $user = User::create([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
             'password'  => Hash::make($validated['password']),
-            'role_id'   => $validated['user_type'] === 'freelancer' ? 2 : 3,
-            'user_type' => $validated['user_type'],
+            'role_id'   => 2,
+            'user_type' => 'freelancer',
         ]);
 
         // 3. 가입 즉시 로그인 처리 — 로그인 화면 재진입 없이 바로 앱 사용 가능

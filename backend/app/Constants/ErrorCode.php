@@ -59,9 +59,13 @@ class ErrorCode
     public const WORKTYPE_NOT_FOUND      = 'ERR_WORKTYPE_001';
 
     // ═══════════════════════════════════════════════
-    // 서버 일반
+    // 서버 일반 / 전역 예외처리기 (v18.13)
     // ═══════════════════════════════════════════════
     public const SERVER_ERROR            = 'ERR_SERVER_001';
+    public const ROUTE_NOT_FOUND         = 'ERR_SERVER_003'; // 존재하지 않는 라우트/URL
+    public const METHOD_NOT_ALLOWED      = 'ERR_SERVER_004'; // GET/POST 등 허용되지 않은 HTTP 메서드
+    public const TOO_MANY_REQUESTS       = 'ERR_SERVER_005'; // rate limit(throttle) 초과
+    public const RESOURCE_NOT_FOUND      = 'ERR_SERVER_006'; // findOrFail 등으로 못 찾은 모델 (도메인별 코드가 없는 경우의 기본값)
 
     // ═══════════════════════════════════════════════
     // ★ v11 현장 사진 ★

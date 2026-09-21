@@ -1,15 +1,15 @@
-Team Schedule Manager  |  오류 코드 정의서  v1.1  |  Confidential
+Team Schedule Manager  |  오류 코드 정의서  v1.2  |  Confidential
 
 **오류 코드 정의서**
 
 Error Code Definition
 
-Team Schedule Manager  |  v1.1  |  Confidential (2026-09-19 현행화)
+Team Schedule Manager  |  v1.2  |  Confidential (2026-09-22 현행화)
 
-| **문서명** | 오류 코드 정의서 (Error Code Definition) | **버전** | v1.1 |
+| **문서명** | 오류 코드 정의서 (Error Code Definition) | **버전** | v1.2 |
 | --- | --- | --- | --- |
-| **프로젝트** | Team Schedule Manager | **작성일** | 2026-09-19 |
-| **작성 기준** | v11.6 시점 실제 코드(`backend/app/Constants/ErrorCode.php`) | **다음 갱신** | 개발 진행에 따라 수시 업데이트 |
+| **프로젝트** | Team Schedule Manager | **작성일** | 2026-09-22 |
+| **작성 기준** | v18.13 시점 실제 코드(`backend/app/Constants/ErrorCode.php`, `backend/bootstrap/app.php`) | **다음 갱신** | 개발 진행에 따라 수시 업데이트 |
 
 **■ v1.0 대비 변경 요약**
 
@@ -60,8 +60,12 @@ AUTH · VALID · SCHEDULE · SITE · FILE · ATTEND · TEAM · SERVER (v1.0부�
 | ERR_TEAM_002 | 409 | 이미 팀 소속 | 코드 상수만 존재, 미사용 |
 | ERR_TEAM_003 | — | 팀 관리 권한 없음 | 미구현 |
 | **■ SERVER** |
-| ERR_SERVER_001 | 500 | 서버 내부 오류 | 구현됨 |
+| ERR_SERVER_001 | 500 | 서버 내부 오류 (예상 못한 예외 / DB 쿼리 오류) | 구현됨 |
 | ERR_SERVER_002 | — | 점검 모드 | 미구현 |
+| ERR_SERVER_003 | 404 | 존재하지 않는 라우트/URL (v18.13 신규) | 구현됨 |
+| ERR_SERVER_004 | 405 | 허용되지 않은 HTTP 메서드 (v18.13 신규) | 구현됨 |
+| ERR_SERVER_005 | 429 | rate limit(throttle) 초과 (v18.13 신규) | 구현됨 |
+| ERR_SERVER_006 | 404 | findOrFail 등으로 못 찾은 모델 — 도메인별 코드가 없을 때의 기본값 (v18.13 신규) | 구현됨 |
 | **■ WAGE (★ v10.1 신규)** |
 | ERR_WAGE_001 | 404 | 존재하지 않는 단가 설정 | 구현됨 |
 | ERR_WAGE_002 | 409 | 단가 중복 등록 | 구현됨 |
@@ -78,12 +82,35 @@ AUTH · VALID · SCHEDULE · SITE · FILE · ATTEND · TEAM · SERVER (v1.0부�
 | ERR_PHOTO_004 | 404 | 페어 대상 시공 전 사진 없음 (v11.1) | 구현됨 |
 | ERR_PHOTO_005 | 409 | 이미 다른 페어가 지정됨 (v11.1) | 구현됨 |
 
-# **3. 변경 이력**
+# **3. 전역 예외처리기 (v18.13, `bootstrap/app.php`)**
+
+이전까지 `bootstrap/app.php`의 `withExceptions()`에 `Throwable` 캐치올 하나만 있어서, **예외 종류와 무관하게 전부 500 + ERR_SERVER_001로 응답**하고 있었습니다. 대표적으로 컨트롤러에서 `$request->validate()`가 실패해도 422가 아니라 500으로 나가는 실제 버그였습니다(공정 커스텀 추가 기능 검증 중 발견).
+
+v18.13에서 예외 타입별로 먼저 잡아 정확한 상태코드를 반환하도록 정리했습니다. 처리 순서(위에서부터 먼저 매치):
+
+| 예외 타입 | HTTP | error_code |
+| --- | --- | --- |
+| `AuthenticationException` | 401 | ERR_AUTH_003 |
+| `AuthorizationException` | 403 | ERR_AUTH_002 |
+| `ValidationException` | 422 | ERR_VALID_001 (필드별 오류는 `errors` 키에 포함) |
+| `ModelNotFoundException` | 404 | ERR_SERVER_006 |
+| `NotFoundHttpException` (라우트 없음) | 404 | ERR_SERVER_003 |
+| `MethodNotAllowedHttpException` | 405 | ERR_SERVER_004 |
+| `TooManyRequestsHttpException` (throttle) | 429 | ERR_SERVER_005 |
+| `QueryException` (DB 오류) | 500 | ERR_SERVER_001 (SQL 내용은 로그에만, 클라이언트엔 미노출) |
+| 그 외 모든 `Throwable` | 500 | ERR_SERVER_001 (운영에서는 내부 메시지 미노출, `APP_DEBUG=true`일 때만 실제 메시지 노출) |
+
+부수적으로, 인증 미들웨어가 `Accept: application/json` 헤더 없는 요청에서 존재하지 않는 `login` 명명 라우트로 리다이렉트를 시도하다 별도의 500(`RouteNotFoundException`)을 내던 문제도 `redirectGuestsTo(fn () => null)`로 같이 수정했습니다(이 프로젝트는 순수 API 서버라 웹 로그인 페이지가 없음).
+
+컨트롤러에서 개별적으로 `ApiResponse::error()`를 직접 반환하는 기존 도메인별 에러 코드(ERR_WAGE_*, ERR_SCHEDULE_* 등)는 이 예외처리기를 거치지 않으므로 영향 없습니다. 이 표는 **컨트롤러가 예외를 던지거나 Laravel이 자동으로 던지는 경우**에만 적용됩니다.
+
+# **4. 변경 이력**
 
 | **버전** | **작성일** | **작성자** | **변경 내용** |
 | --- | --- | --- | --- |
 | v1.0 | 2026-04 | — | 최초 작성 — 개발 매뉴얼 v2 기반 오류 코드 체계 확립 (8개 도메인, 28개 코드) |
 | v1.1 | 2026-09-19 | Claude Sonnet 5 | v11.6 기준 실제 코드 대조 현행화 — WAGE/SUMMARY/WORKTYPE/PHOTO 4개 도메인 추가, v1.0 "예정" 항목의 미구현 상태 확정, FILE 도메인이 PHOTO로 대체됐음을 명시 |
+| v1.2 | 2026-09-22 | Claude Sonnet 5 | 전역 예외처리기 룰 정리 (v18.13) — 예외 타입별 정확한 상태코드 반환하도록 수정, SERVER_003~006 신규 추가, `$request->validate()` 실패가 500으로 나가던 실제 버그 수정 |
 
 *— 문서 끝 —*
 

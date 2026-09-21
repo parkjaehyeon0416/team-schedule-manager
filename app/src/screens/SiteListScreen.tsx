@@ -21,12 +21,16 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getSites, createSite, updateSite, deleteSite } from '../api/siteApi';
 import type { Site } from '../types/api';
 import AppHeader from '../components/AppHeader';
+import AddressSearchModal, {
+  DaumAddressResult,
+} from '../components/AddressSearchModal';
 
 export default function SiteListScreen() {
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [addressSearchVisible, setAddressSearchVisible] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
 
@@ -77,6 +81,14 @@ export default function SiteListScreen() {
     setAreaM2(s.area_m2 ?? '');
     setMemo(s.memo ?? '');
     setModalVisible(true);
+  };
+
+  // ★ 다음(카카오) 우편번호 API로 검색한 주소를 선택했을 때 — 수기 입력 대체
+  const handleAddressSelect = (result: DaumAddressResult) => {
+    setAddress(result.roadAddress || result.jibunAddress);
+    if (result.buildingName) {
+      setAptName(result.buildingName);
+    }
   };
 
   const handleSave = async () => {
@@ -239,14 +251,23 @@ export default function SiteListScreen() {
                 style={styles.modalScroll}
                 keyboardShouldPersistTaps="handled"
               >
-                <TextInput
-                  mode="outlined"
-                  label="주소 *"
-                  value={address}
-                  onChangeText={setAddress}
-                  style={styles.input}
+                <TouchableOpacity
+                  activeOpacity={0.7}
                   disabled={saving}
-                />
+                  onPress={() => setAddressSearchVisible(true)}
+                >
+                  <TextInput
+                    mode="outlined"
+                    label="주소 *"
+                    value={address}
+                    placeholder="눌러서 주소 검색"
+                    editable={false}
+                    pointerEvents="none"
+                    right={<TextInput.Icon icon="magnify" />}
+                    style={styles.input}
+                    disabled={saving}
+                  />
+                </TouchableOpacity>
                 <TextInput
                   mode="outlined"
                   label="아파트/건물명"
@@ -316,6 +337,12 @@ export default function SiteListScreen() {
             </View>
           </View>
         </Modal>
+
+        <AddressSearchModal
+          visible={addressSearchVisible}
+          onClose={() => setAddressSearchVisible(false)}
+          onSelect={handleAddressSelect}
+        />
       </View>
     </View>
   );

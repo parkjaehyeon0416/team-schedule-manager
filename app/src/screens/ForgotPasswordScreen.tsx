@@ -11,26 +11,32 @@ import {
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
 
-// 2단계: ① 이메일로 인증코드 발송 → ② 코드+새 비밀번호 입력
+// 2단계: ① 이메일+이름+전화번호 일치 확인 후 인증번호 발송 → ② 인증번호+새 비밀번호 입력
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<any>();
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSendCode = async () => {
-    if (!email) {
-      Alert.alert('오류', '이메일을 입력해주세요.');
+    if (!email || !name || !phone) {
+      Alert.alert('오류', '이메일, 이름, 전화번호를 모두 입력해주세요.');
       return;
     }
     setLoading(true);
     try {
-      const res = await axiosInstance.post('/auth/forgot-password', { email });
+      const res = await axiosInstance.post('/auth/forgot-password', {
+        email,
+        name,
+        phone,
+      });
       if (res.data.success) {
-        Alert.alert('발송 완료', '입력하신 이메일로 인증코드를 발송했습니다.');
+        Alert.alert('발송 완료', '입력하신 전화번호로 인증번호를 발송했습니다.');
         setStep(2);
       }
     } catch (error: any) {
@@ -52,7 +58,7 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const res = await axiosInstance.post('/auth/reset-password', {
-        email,
+        phone,
         code,
         password,
         password_confirmation: passwordConfirm,
@@ -64,7 +70,7 @@ export default function ForgotPasswordScreen() {
       }
     } catch (error: any) {
       const message = error.response?.data?.message;
-      Alert.alert('재설정 실패', message ?? '인증코드를 확인해주세요.');
+      Alert.alert('재설정 실패', message ?? '인증번호를 확인해주세요.');
     } finally {
       setLoading(false);
     }
@@ -77,7 +83,7 @@ export default function ForgotPasswordScreen() {
       {step === 1 ? (
         <>
           <Text style={styles.subtitle}>
-            가입한 이메일로 인증코드를 보내드립니다.
+            가입 시 등록한 이메일, 이름, 전화번호를 입력해주세요.
           </Text>
           <TextInput
             style={styles.input}
@@ -88,6 +94,21 @@ export default function ForgotPasswordScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          <TextInput
+            style={styles.input}
+            placeholder="이름"
+            placeholderTextColor="#999999"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="전화번호 ('-' 없이 숫자만)"
+            placeholderTextColor="#999999"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
           <TouchableOpacity
             style={styles.button}
             onPress={handleSendCode}
@@ -96,18 +117,18 @@ export default function ForgotPasswordScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>인증코드 받기</Text>
+              <Text style={styles.buttonText}>인증번호 받기</Text>
             )}
           </TouchableOpacity>
         </>
       ) : (
         <>
           <Text style={styles.subtitle}>
-            {email}로 발송된 인증코드(10분간 유효)와 새 비밀번호를 입력해주세요.
+            {phone}로 발송된 인증번호(10분간 유효)와 새 비밀번호를 입력해주세요.
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="인증코드 6자리"
+            placeholder="인증번호 6자리"
             placeholderTextColor="#999999"
             value={code}
             onChangeText={setCode}
@@ -146,7 +167,7 @@ export default function ForgotPasswordScreen() {
             onPress={handleSendCode}
             disabled={loading}
           >
-            <Text style={styles.backLinkText}>인증코드 다시 받기</Text>
+            <Text style={styles.backLinkText}>인증번호 다시 받기</Text>
           </TouchableOpacity>
         </>
       )}

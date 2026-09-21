@@ -21,7 +21,7 @@ class ErrorCode
     public const AUTH_WEB_ONLY           = 'ERR_AUTH_007';   // v9.1
     public const AUTH_MOBILE_ONLY        = 'ERR_AUTH_008';   // v9.1
     public const AUTH_ACCOUNT_NOT_FOUND  = 'ERR_AUTH_009';   // v18.5 — 아이디 찾기: 이름+전화번호 불일치
-    public const AUTH_RESET_CODE_INVALID = 'ERR_AUTH_010';   // v18.5 — 비밀번호 재설정: 인증코드 불일치/만료
+    public const AUTH_CODE_INVALID       = 'ERR_AUTH_010';   // v18.5 — 인증코드 불일치/만료 (find-email·reset-password 공용)
 
     // ═══════════════════════════════════════════════
     // 입력 검증 (v6)

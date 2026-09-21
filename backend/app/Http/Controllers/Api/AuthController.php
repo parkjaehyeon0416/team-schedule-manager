@@ -7,11 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
-use App\Notifications\PasswordResetCodeNotification;
+use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -37,6 +36,10 @@ class AuthController extends Controller
         'team'       => 'mobile',
         'freelancer' => 'mobile',
     ];
+
+    public function __construct(private readonly SmsServiceInterface $sms)
+    {
+    }
 
     // ────────────────────────────────────
     // 회원가입
@@ -144,20 +147,69 @@ class AuthController extends Controller
         ], '로그인 성공');
     }
 
+    // ════════════════════════════════════════════════════════
+    // 아이디(이메일) 찾기 / 비밀번호 재설정 — 공용 전화번호 인증코드 발급·검증
+    // ════════════════════════════════════════════════════════
+
+    /**
+     * verification_codes에 6자리 코드를 upsert하고 SMS로 발송(지금은 log 드라이버).
+     */
+    private function issueVerificationCode(string $phone, string $purpose, ?string $payload = null): void
+    {
+        $code = (string) random_int(100000, 999999);
+
+        DB::table('verification_codes')->updateOrInsert(
+            ['phone' => $phone, 'purpose' => $purpose],
+            [
+                'code'       => $code,
+                'payload'    => $payload,
+                'expires_at' => now()->addMinutes(10),
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        // ★ 실제 발송은 config('sms.driver')로 결정됨 — 지금은 'log'라 실제 문자
+        //   대신 storage/logs/laravel.log에 코드가 찍힘. 나중에 다이렉트샌드 등
+        //   실제 SMS 서비스를 붙일 땐 SmsServiceInterface 구현체 하나 추가하고
+        //   .env의 SMS_DRIVER만 바꾸면 되고, 여기(AuthController)는 손댈 필요 없음.
+        $this->sms->send($phone, "[Team Schedule] 인증번호는 {$code} 입니다. (10분간 유효)");
+    }
+
+    /**
+     * @return string|null 코드가 유효하면 payload(없으면 빈 문자열), 아니면 null
+     */
+    private function consumeVerificationCode(string $phone, string $purpose, string $code): ?string
+    {
+        $record = DB::table('verification_codes')
+            ->where('phone', $phone)
+            ->where('purpose', $purpose)
+            ->first();
+
+        if (!$record || $record->code !== $code || now()->greaterThan($record->expires_at)) {
+            return null;
+        }
+
+        DB::table('verification_codes')
+            ->where('phone', $phone)
+            ->where('purpose', $purpose)
+            ->delete();
+
+        return $record->payload ?? '';
+    }
+
     // ────────────────────────────────────
-    // 아이디(이메일) 찾기 — 이름 + 전화번호로 조회
-    // POST /api/auth/find-email
+    // 아이디 찾기 — 1단계: 이름+전화번호로 계정 확인 후 인증코드 발송
+    // POST /api/auth/find-email/request
     // ────────────────────────────────────
-    public function findEmail(Request $request)
+    public function findEmailRequest(Request $request)
     {
         $data = $request->validate([
             'name'  => 'required|string|max:100',
             'phone' => 'required|string|max:20',
         ]);
 
-        $user = User::where('name', $data['name'])
-            ->where('phone', $data['phone'])
-            ->first();
+        $user = User::where('name', $data['name'])->where('phone', $data['phone'])->first();
 
         if (!$user) {
             return ApiResponse::error(
@@ -167,45 +219,60 @@ class AuthController extends Controller
             );
         }
 
-        return ApiResponse::success([
-            'email' => $this->maskEmail($user->email),
-        ], '계정을 찾았습니다.');
+        $this->issueVerificationCode($data['phone'], 'find_email');
+
+        return ApiResponse::success(null, '입력하신 전화번호로 인증번호를 발송했습니다.');
     }
 
     // ────────────────────────────────────
-    // 비밀번호 재설정 — 1단계: 인증코드 발송
+    // 아이디 찾기 — 2단계: 인증코드 확인 후 이메일 공개
+    // POST /api/auth/find-email/verify
+    // ────────────────────────────────────
+    public function findEmailVerify(Request $request)
+    {
+        $data = $request->validate([
+            'name'  => 'required|string|max:100',
+            'phone' => 'required|string|max:20',
+            'code'  => 'required|string|size:6',
+        ]);
+
+        if ($this->consumeVerificationCode($data['phone'], 'find_email', $data['code']) === null) {
+            return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
+        }
+
+        $user = User::where('name', $data['name'])->where('phone', $data['phone'])->first();
+        if (!$user) {
+            return ApiResponse::error('일치하는 계정을 찾을 수 없습니다.', ErrorCode::AUTH_ACCOUNT_NOT_FOUND, 404);
+        }
+
+        // 전화번호 인증까지 마친 본인이므로 마스킹 없이 전체 이메일 반환
+        return ApiResponse::success(['email' => $user->email], '계정을 찾았습니다.');
+    }
+
+    // ────────────────────────────────────
+    // 비밀번호 재설정 — 1단계: 이메일+이름+전화번호 일치 확인 후 인증코드 발송
     // POST /api/auth/forgot-password
     // ────────────────────────────────────
     public function forgotPassword(Request $request)
     {
         $data = $request->validate([
             'email' => 'required|email',
+            'name'  => 'required|string|max:100',
+            'phone' => 'required|string|max:20',
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', $data['email'])
+            ->where('name', $data['name'])
+            ->where('phone', $data['phone'])
+            ->first();
 
-        // 계정 존재 여부를 노출하지 않기 위해, 없어도 항상 같은 성공 응답을 줌
-        // (실제 코드 발송/저장은 계정이 있을 때만)
+        // 계정 존재/일치 여부를 노출하지 않기 위해, 없어도 항상 같은 성공 응답을 줌
+        // (실제 코드 발급/발송은 셋 다 일치할 때만)
         if ($user) {
-            $code = (string) random_int(100000, 999999);
-
-            DB::table('password_reset_codes')->updateOrInsert(
-                ['email' => $user->email],
-                [
-                    'code'       => $code,
-                    'expires_at' => now()->addMinutes(10),
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]
-            );
-
-            // ★ 실제 발송 채널은 .env MAIL_MAILER 설정을 따름 — 지금은 'log'라
-            //   storage/logs/laravel.log에 코드가 찍힘. 나중에 SMTP/SES로 바꿔도
-            //   이 코드는 그대로 둔 채 .env만 바꾸면 됨.
-            $user->notify(new PasswordResetCodeNotification($code));
+            $this->issueVerificationCode($data['phone'], 'reset_password', $user->email);
         }
 
-        return ApiResponse::success(null, '입력하신 이메일로 인증코드를 발송했습니다.');
+        return ApiResponse::success(null, '입력하신 전화번호로 인증번호를 발송했습니다.');
     }
 
     // ────────────────────────────────────
@@ -215,50 +282,27 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $data = $request->validate([
-            'email'    => 'required|email',
+            'phone'    => 'required|string|max:20',
             'code'     => 'required|string|size:6',
             'password' => 'required|min:6|confirmed',
         ]);
 
-        $reset = DB::table('password_reset_codes')
-            ->where('email', $data['email'])
-            ->first();
-
-        if (!$reset || $reset->code !== $data['code'] || now()->greaterThan($reset->expires_at)) {
-            return ApiResponse::error(
-                '인증코드가 올바르지 않거나 만료되었습니다.',
-                ErrorCode::AUTH_RESET_CODE_INVALID,
-                422
-            );
+        $email = $this->consumeVerificationCode($data['phone'], 'reset_password', $data['code']);
+        if (!$email) {
+            return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
 
-        $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', $email)->where('phone', $data['phone'])->first();
         if (!$user) {
-            return ApiResponse::error(
-                '인증코드가 올바르지 않거나 만료되었습니다.',
-                ErrorCode::AUTH_RESET_CODE_INVALID,
-                422
-            );
+            return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
 
         $user->update(['password' => Hash::make($data['password'])]);
 
-        // 사용한 코드 + 기존 로그인 세션(토큰) 전부 무효화
-        DB::table('password_reset_codes')->where('email', $data['email'])->delete();
+        // 기존 로그인 세션(토큰) 전부 무효화
         $user->tokens()->delete();
 
         return ApiResponse::success(null, '비밀번호가 재설정되었습니다. 다시 로그인해주세요.');
-    }
-
-    /**
-     * 이메일 마스킹 — 예: test1234@example.com → te****@example.com
-     */
-    private function maskEmail(string $email): string
-    {
-        [$local, $domain] = explode('@', $email);
-        $visible = Str::substr($local, 0, min(2, strlen($local)));
-
-        return $visible . str_repeat('*', max(strlen($local) - strlen($visible), 2)) . '@' . $domain;
     }
 
     // ────────────────────────────────────

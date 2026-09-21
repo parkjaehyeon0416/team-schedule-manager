@@ -23,11 +23,12 @@ use Illuminate\Support\Facades\Route;
 // ═══════════════════════════════════════════════════════════════
 // ★ 브루트포스 방지 — IP당 분당 5회로 제한 (기존엔 rate limit이 전혀 없었음)
 Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
-    Route::post('/register',         [AuthController::class, 'register']);
-    Route::post('/login',            [AuthController::class, 'login']);
-    Route::post('/find-email',       [AuthController::class, 'findEmail']);
-    Route::post('/forgot-password',  [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password',   [AuthController::class, 'resetPassword']);
+    Route::post('/register',           [AuthController::class, 'register']);
+    Route::post('/login',              [AuthController::class, 'login']);
+    Route::post('/find-email/request', [AuthController::class, 'findEmailRequest']);
+    Route::post('/find-email/verify',  [AuthController::class, 'findEmailVerify']);
+    Route::post('/forgot-password',    [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password',     [AuthController::class, 'resetPassword']);
 });
 
 // ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.

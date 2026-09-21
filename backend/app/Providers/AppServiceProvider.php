@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Schedule;
 use App\Observers\ScheduleObserver;
+use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +14,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // ★ SMS 발송 드라이버 바인딩 — config/sms.php의 driver 설정에 따라 구현체 결정.
+        //   지금은 'log' 드라이버뿐이라 실제 발송 없이 로그에만 남음.
+        $this->app->bind(SmsServiceInterface::class, function () {
+            $driver = config('sms.driver');
+            $class  = config("sms.drivers.{$driver}");
+
+            return new $class();
+        });
     }
 
     /**

@@ -45,6 +45,33 @@ class SiteController extends Controller
         $wantsPersonal = $request->boolean('is_personal') || !$user->team_id;
         unset($data['is_personal']);
 
+        $teamId = $wantsPersonal ? null : $user->team_id;
+        $ownerId = $wantsPersonal ? $user->id : null;
+
+        // ★ v18.16 — 주소+동/호까지 완전히 같은 현장 중복 등록 방지(더블탭 방지 목적).
+        $duplicate = Site::where('address', $data['address'])
+            ->when(
+                $data['dong'] ?? null,
+                fn($q, $dong) => $q->where('dong', $dong),
+                fn($q) => $q->whereNull('dong'),
+            )
+            ->when(
+                $data['ho'] ?? null,
+                fn($q, $ho) => $q->where('ho', $ho),
+                fn($q) => $q->whereNull('ho'),
+            )
+            ->when($teamId, fn($q, $id) => $q->where('team_id', $id), fn($q) => $q->whereNull('team_id'))
+            ->when($ownerId, fn($q, $id) => $q->where('owner_id', $id), fn($q) => $q->whereNull('owner_id'))
+            ->exists();
+
+        if ($duplicate) {
+            return ApiResponse::error(
+                '이미 동일한 주소로 등록된 현장이 있습니다.',
+                ErrorCode::SITE_DUPLICATE,
+                409,
+            );
+        }
+
         $site = Site::create([
             ...$data,
             'team_id'    => $wantsPersonal ? null : $user->team_id,

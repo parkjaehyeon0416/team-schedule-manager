@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Http\Responses\ApiResponse;
@@ -70,6 +71,38 @@ class ScheduleController extends Controller
         $data['team_id']    = $wantsPersonal ? null : $user->team_id;
         $data['owner_id']   = $wantsPersonal ? $user->id : null;
         $data['created_by'] = $user->id;
+
+        // ★ v18.16 — 현장+날짜+공정이 완전히 같은 일정 중복 등록 방지(더블탭 방지 목적).
+        //   같은 현장에 같은 날 다른 공정(전기팀/설비팀 등)을 각각 등록하는 건 정상 케이스라
+        //   막지 않고, site_id+date+work_type_id가 전부 일치할 때만 차단함.
+        if (!empty($data['site_id'])) {
+            $duplicate = Schedule::where('site_id', $data['site_id'])
+                ->where('date', $data['date'])
+                ->when(
+                    $data['work_type_id'] ?? null,
+                    fn($q, $wtId) => $q->where('work_type_id', $wtId),
+                    fn($q) => $q->whereNull('work_type_id'),
+                )
+                ->when(
+                    $data['team_id'],
+                    fn($q, $teamId) => $q->where('team_id', $teamId),
+                    fn($q) => $q->whereNull('team_id'),
+                )
+                ->when(
+                    $data['owner_id'],
+                    fn($q, $ownerId) => $q->where('owner_id', $ownerId),
+                    fn($q) => $q->whereNull('owner_id'),
+                )
+                ->exists();
+
+            if ($duplicate) {
+                return ApiResponse::error(
+                    '이미 같은 현장·날짜·공정으로 등록된 일정이 있습니다.',
+                    ErrorCode::SCHEDULE_DUPLICATE,
+                    409,
+                );
+            }
+        }
 
         // 1) 기본 정보 생성 (v9.0 신규 필드 포함)
         $schedule = Schedule::create([

@@ -41,6 +41,7 @@ class ErrorCode
     // 현장 / 파일 / 근태 / 팀 (v7)
     // ═══════════════════════════════════════════════
     public const SITE_NOT_FOUND          = 'ERR_SITE_001';
+    public const SITE_DUPLICATE          = 'ERR_SITE_002'; // v18.16 — 주소+동/호 완전 동일 중복 등록(더블탭 방지)
     public const FILE_TYPE_INVALID       = 'ERR_FILE_001';
     public const ATTEND_ALREADY_IN       = 'ERR_ATTEND_001';
     public const ATTEND_NO_CHECK_IN      = 'ERR_ATTEND_002';

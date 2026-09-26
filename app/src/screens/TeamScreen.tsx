@@ -10,10 +10,10 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Share,
+  TouchableOpacity,
 } from 'react-native';
-import { Text, Button, TextInput, Divider, Chip } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Text, Button, TextInput, Chip } from 'react-native-paper';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { useFocusEffect } from '@react-navigation/native';
 
 import {
@@ -21,6 +21,7 @@ import {
   getTeamMembers,
   createTeam,
   joinTeam,
+  leaveTeam,
 } from '../api/teamApi';
 import type { Team, TeamMember } from '../types/api';
 import AppHeader from '../components/AppHeader';
@@ -100,11 +101,28 @@ export default function TeamScreen() {
     }
   };
 
-  const handleShareInvite = () => {
+  const handleCopyInvite = () => {
     if (!team) return;
-    Share.share({
-      message: `Team Schedule Manager에서 "${team.name}" 팀에 초대합니다.\n초대 코드: ${team.invite_code}`,
-    }).catch(() => {});
+    Clipboard.setString(team.invite_code);
+    Alert.alert('복사 완료', '초대 코드가 복사되었습니다.');
+  };
+
+  const handleLeaveTeam = () => {
+    Alert.alert('팀 탈퇴', '정말 이 팀에서 탈퇴하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '탈퇴',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leaveTeam();
+            await load();
+          } catch (e: any) {
+            Alert.alert('탈퇴 실패', e?.response?.data?.message || '팀 탈퇴에 실패했습니다.');
+          }
+        },
+      },
+    ]);
   };
 
   if (loading) {
@@ -154,6 +172,10 @@ export default function TeamScreen() {
                   value={teamName}
                   onChangeText={setTeamName}
                   disabled={submitting}
+                  style={styles.input}
+                  textColor="#222222"
+                  outlineColor="#CCCCCC"
+                  activeOutlineColor="#1F3864"
                 />
                 <Button
                   mode="contained"
@@ -174,6 +196,10 @@ export default function TeamScreen() {
                   onChangeText={t => setInviteCode(t.toUpperCase())}
                   autoCapitalize="characters"
                   disabled={submitting}
+                  style={styles.input}
+                  textColor="#222222"
+                  outlineColor="#CCCCCC"
+                  activeOutlineColor="#1F3864"
                 />
                 <Button
                   mode="contained"
@@ -190,25 +216,53 @@ export default function TeamScreen() {
         ) : (
           <View>
             <View style={styles.teamCard}>
+              <Text style={styles.fieldLabel}>우리 팀</Text>
               <Text style={styles.teamName}>{team.name}</Text>
+              <Text style={styles.fieldLabel}>초대코드</Text>
               <View style={styles.inviteRow}>
-                <Icon name="ticket-confirmation-outline" size={18} color="#2E75B6" />
                 <Text style={styles.inviteCode}>{team.invite_code}</Text>
-                <Button mode="text" compact onPress={handleShareInvite}>
-                  공유
-                </Button>
+                <TouchableOpacity onPress={handleCopyInvite} style={styles.copyBtn}>
+                  <Text style={styles.copyBtnText}>복사</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-            <Divider style={styles.divider} />
-
             <Text style={styles.section}>팀원 ({members.length}명)</Text>
-            {members.map(m => (
-              <View key={m.id} style={styles.memberRow}>
-                <Text style={styles.memberName}>{m.name}</Text>
-                <Text style={styles.memberRole}>{ROLE_LABELS[m.role_id] ?? '팀원'}</Text>
-              </View>
-            ))}
+            {members.map(m => {
+              const isLead = m.role_id <= 2;
+              return (
+                <View key={m.id} style={styles.memberRow}>
+                  <View
+                    style={[
+                      styles.avatar,
+                      { backgroundColor: isLead ? '#1F3864' : '#999' },
+                    ]}
+                  >
+                    <Text style={styles.avatarText}>{m.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.memberName}>{m.name}</Text>
+                  <View
+                    style={[
+                      styles.roleBadge,
+                      { backgroundColor: isLead ? '#eaf0fb' : '#f0f0f0' },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.roleBadgeText,
+                        { color: isLead ? '#1F3864' : '#666' },
+                      ]}
+                    >
+                      {ROLE_LABELS[m.role_id] ?? '팀원'}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+
+            <TouchableOpacity onPress={handleLeaveTeam} style={styles.leaveBtn}>
+              <Text style={styles.leaveBtnText}>팀 탈퇴하기</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -217,7 +271,7 @@ export default function TeamScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: '#F5F6F8' },
   container: { padding: 16, paddingBottom: 60 },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
@@ -228,27 +282,65 @@ const styles = StyleSheet.create({
   tabChip: {},
 
   formGroup: { gap: 12 },
+  input: { backgroundColor: '#fff' },
   submitBtn: { marginTop: 4 },
 
   teamCard: {
-    backgroundColor: '#F5F7FA',
-    borderRadius: 10,
-    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 18,
   },
-  teamName: { fontSize: 18, fontWeight: '700', color: '#1F3864', marginBottom: 10 },
-  inviteRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  inviteCode: { fontSize: 15, fontWeight: '600', color: '#333', flex: 1 },
+  fieldLabel: { fontSize: 12, color: '#777', marginBottom: 6 },
+  teamName: { fontSize: 18, fontWeight: '900', color: '#222', marginBottom: 14 },
+  inviteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F6F8',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  inviteCode: { fontSize: 17, fontWeight: '700', letterSpacing: 3, color: '#1F3864' },
+  copyBtn: {
+    borderWidth: 1,
+    borderColor: '#1F3864',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  copyBtnText: { fontSize: 12, color: '#1F3864', fontWeight: '700' },
 
-  divider: { marginVertical: 20 },
-  section: { fontSize: 15, fontWeight: '700', color: '#333', marginBottom: 10 },
+  section: { fontSize: 13, fontWeight: '700', color: '#444', marginBottom: 10 },
 
   memberRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    marginBottom: 8,
   },
-  memberName: { fontSize: 15, color: '#222' },
-  memberRole: { fontSize: 13, color: '#888' },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  avatarText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+  memberName: { flex: 1, fontSize: 14, fontWeight: '600', color: '#222' },
+  roleBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  roleBadgeText: { fontSize: 11, fontWeight: '700' },
+
+  leaveBtn: { marginTop: 14, alignItems: 'center' },
+  leaveBtnText: {
+    fontSize: 13,
+    color: '#C0392B',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
 });

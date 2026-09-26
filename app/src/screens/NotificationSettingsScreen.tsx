@@ -10,7 +10,7 @@
 // ═══════════════════════════════════════════════════════════════
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { Text, Switch, Divider } from 'react-native-paper';
+import { Text, Switch, Divider, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   getNotificationSettings,
@@ -57,15 +57,18 @@ const ITEMS: {
 export default function NotificationSettingsScreen() {
   const [settings, setSettings] = useState<NotificationSetting | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<boolean>(false);
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(false);
       const data = await getNotificationSettings();
       setSettings(data);
     } catch (e: any) {
       console.error('알림 설정 조회 실패:', e);
+      setLoadError(true);
       Alert.alert(
         '조회 실패',
         e?.response?.data?.message || '알림 설정을 불러오지 못했습니다.',
@@ -100,12 +103,30 @@ export default function NotificationSettingsScreen() {
     }
   };
 
-  if (loading || !settings) {
+  if (loading) {
     return (
       <View style={styles.screen}>
         <AppHeader leftType="back" title="알림 설정" />
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#2E75B6" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <View style={styles.screen}>
+        <AppHeader leftType="back" title="알림 설정" />
+        <View style={styles.centerBox}>
+          <Text style={styles.errorText}>
+            {loadError
+              ? '알림 설정을 불러오지 못했습니다.'
+              : '알림 설정이 없습니다.'}
+          </Text>
+          <Button mode="contained" onPress={load} style={styles.retryBtn}>
+            다시 시도
+          </Button>
         </View>
       </View>
     );
@@ -143,7 +164,9 @@ export default function NotificationSettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 24 },
+  errorText: { fontSize: 14, color: '#888', textAlign: 'center' },
+  retryBtn: { marginTop: 4 },
   container: { padding: 16, paddingBottom: 40 },
 
   hint: {

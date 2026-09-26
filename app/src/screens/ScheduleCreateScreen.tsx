@@ -449,6 +449,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={formatMoney(dailyWage)}
           onChangeText={text => setDailyWage(parseMoney(text))}
           placeholder="공정 선택 시 자동 입력"
@@ -464,6 +467,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={String(workUnits)}
           onChangeText={text => {
             const n = parseFloat(text);
@@ -484,6 +490,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={formatMoney(expenses)}
           onChangeText={text => setExpenses(parseMoney(text))}
           placeholder="교통비, 자재비 등"
@@ -499,6 +508,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={expensesMemo}
           onChangeText={setExpensesMemo}
           placeholder="예: 톨게이트, 주차비"
@@ -518,6 +530,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={district}
           onChangeText={setDistrict}
           placeholder="예: 강남구"
@@ -534,6 +549,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={areaM2}
           onChangeText={setAreaM2}
           placeholder="예: 23.5"
@@ -551,6 +569,9 @@ export default function ScheduleCreateScreen({ navigation, route }: any) {
         </View>
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           value={memo}
           onChangeText={setMemo}
           placeholder="특이사항이 있다면 입력해주세요"

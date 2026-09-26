@@ -40,6 +40,9 @@ export default function WageInputForm({
       </View>
       <TextInput
         mode="outlined"
+        textColor="#222222"
+        outlineColor="#CCCCCC"
+        activeOutlineColor="#1F3864"
         value={formatMoney(defaultWage)}
         onChangeText={text => onChangeWage(parseMoney(text))}
         placeholder="예: 280,000"
@@ -55,6 +58,9 @@ export default function WageInputForm({
       </View>
       <TextInput
         mode="outlined"
+        textColor="#222222"
+        outlineColor="#CCCCCC"
+        activeOutlineColor="#1F3864"
         value={String(defaultWorkUnits)}
         onChangeText={text => {
           const n = parseFloat(text);
@@ -73,6 +79,9 @@ export default function WageInputForm({
       </View>
       <TextInput
         mode="outlined"
+        textColor="#222222"
+        outlineColor="#CCCCCC"
+        activeOutlineColor="#1F3864"
         value={memo}
         onChangeText={onChangeMemo}
         placeholder="예: 30평 이상 현장만"

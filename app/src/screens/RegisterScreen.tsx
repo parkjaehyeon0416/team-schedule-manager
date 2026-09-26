@@ -13,6 +13,27 @@ import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
 
+// ★ v18.15 — 서버 validation 에러(errors 객체)의 필드명+영문 메시지를
+//   한국어로 번역해서 "어느 항목이 왜 문제인지" 바로 보이게 함.
+const FIELD_LABELS: Record<string, string> = {
+  name: '이름',
+  email: '이메일',
+  phone: '전화번호',
+  password: '비밀번호',
+  password_confirmation: '비밀번호 확인',
+  agree_terms: '약관 동의',
+};
+
+function translateFieldError(field: string, rawMessage: string): string {
+  const label = FIELD_LABELS[field] ?? field;
+  if (rawMessage.includes('already been taken')) return `이미 사용 중인 ${label}입니다.`;
+  if (rawMessage.includes('field is required')) return `${label}을(를) 입력해주세요.`;
+  if (rawMessage.includes('must be a valid email')) return '올바른 이메일 형식이 아닙니다.';
+  if (rawMessage.includes('must be at least')) return `${label}이(가) 너무 짧습니다.`;
+  if (rawMessage.includes('confirmation does not match')) return '비밀번호가 일치하지 않습니다.';
+  return `${label}: ${rawMessage}`;
+}
+
 // ★ 가입 시점엔 '팀 없는 개인'으로 시작 — 팀 소속 여부는 회원가입 후
 //   팀을 만들거나(TeamScreen) 초대코드로 가입하면 그때 바뀌는 상태값이라
 //   여기서 미리 고를 필요가 없음.
@@ -55,12 +76,17 @@ export default function RegisterScreen() {
         await setAuth(res.data.data.user, res.data.data.token);
       }
     } catch (error: any) {
-      const errCode = error.response?.data?.error_code;
+      const errors = error.response?.data?.errors as Record<string, string[]> | undefined;
       const message = error.response?.data?.message;
-      if (message) {
+      // ★ v18.15 — 422일 때 서버가 필드별 구체적 사유(errors)를 같이 내려주는데
+      //   전에는 항상 똑같은 "입력값을 확인해주세요."(message)만 보여줘서
+      //   실제로 뭐가 틀렸는지(이메일/비밀번호/전화번호 등) 알 수 없었음.
+      const firstFieldKey = errors ? Object.keys(errors)[0] : undefined;
+      const firstFieldMsg = firstFieldKey ? errors![firstFieldKey][0] : undefined;
+      if (firstFieldKey && firstFieldMsg) {
+        Alert.alert('회원가입 실패', translateFieldError(firstFieldKey, firstFieldMsg));
+      } else if (message) {
         Alert.alert('회원가입 실패', message);
-      } else if (errCode) {
-        Alert.alert('회원가입 실패', '입력값을 확인해주세요.');
       } else {
         Alert.alert('오류', '네트워크 오류가 발생했습니다.');
       }

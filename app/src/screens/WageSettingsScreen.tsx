@@ -27,8 +27,10 @@ import { formatMoney } from '../utils/format';
 import WorkTypePicker from '../components/WorkTypePicker';
 import WageInputForm from '../components/WageInputForm';
 import AppHeader from '../components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function WageSettingsScreen() {
+  const insets = useSafeAreaInsets();
   // ─────────────────────────────────────────────────────────
   // [1] 상태 관리
   // ─────────────────────────────────────────────────────────
@@ -253,7 +255,7 @@ export default function WageSettingsScreen() {
       </ScrollView>
 
       {/* 하단 고정 FAB */}
-      <View style={styles.fabContainer}>
+      <View style={[styles.fabContainer, { bottom: 20 + insets.bottom }]}>
         <Button
           mode="contained"
           onPress={openNewModal}

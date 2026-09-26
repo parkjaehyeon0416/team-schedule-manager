@@ -10,8 +10,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 //   /api 가 빠진 루트 경로로 접근해야 storage:link로 연결된 폴더에 닿음
 // ─────────────────────────────────────────────────────────
 // export const SERVER_BASE_URL = 'http://10.0.2.2:8000';
-// 신규 (에뮬·핸드폰 둘 다 됨, adb reverse 사용)
-export const SERVER_BASE_URL = 'http://localhost:8000';
+// 로컬 개발용 (에뮬·핸드폰 둘 다 됨, adb reverse 사용) — 개발 중엔 이 줄로 되돌릴 것
+// export const SERVER_BASE_URL = 'http://localhost:8000';
+// ★ v18.14 — 실기기 APK 배포용. localhost는 폰 자기 자신을 가리켜서 실제 폰에선
+//   백엔드에 연결이 안 됨. 실서버(NCP) 주소로 고정해야 wifi/데이터 상관없이 어디서든 접속됨.
+export const SERVER_BASE_URL = 'http://211.233.210.85';
 export const API_BASE_URL = `${SERVER_BASE_URL}/api`;
 
 const axiosInstance = axios.create({

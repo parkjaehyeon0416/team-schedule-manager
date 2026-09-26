@@ -130,6 +130,9 @@ export default function BusinessCardScreen() {
 
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="표시 이름 *"
           value={displayName}
           onChangeText={setDisplayName}
@@ -138,6 +141,9 @@ export default function BusinessCardScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="직함"
           placeholder="예: 도배 전문"
           value={jobTitle}
@@ -147,6 +153,9 @@ export default function BusinessCardScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="경력(년)"
           keyboardType="numeric"
           value={yearsExperience}
@@ -156,6 +165,9 @@ export default function BusinessCardScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="활동 지역"
           placeholder="예: 서울/경기"
           value={serviceArea}
@@ -165,6 +177,9 @@ export default function BusinessCardScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="전문 분야"
           placeholder="예: 합지·실크·천장도배"
           value={specialty}
@@ -174,6 +189,9 @@ export default function BusinessCardScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="연락처"
           placeholder="예: 010-1234-5678"
           keyboardType="phone-pad"
@@ -184,6 +202,9 @@ export default function BusinessCardScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="한 줄 소개"
           value={tagline}
           onChangeText={setTagline}

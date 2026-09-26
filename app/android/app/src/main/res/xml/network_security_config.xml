@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ★ v18.14 — 릴리즈 빌드는 android:usesCleartextTraffic이 자동으로 false가 되어
+  HTTP(비암호화) 통신이 전부 차단됨. 실서버가 아직 HTTPS 인증서가 없어서
+  http://211.233.210.85 로만 접속 가능한 임시 상태라, 이 IP에 한해서만
+  예외적으로 평문 HTTP를 허용함. HTTPS 붙이면 이 파일과
+  AndroidManifest.xml의 networkSecurityConfig 참조는 제거할 것.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">211.233.210.85</domain>
+    </domain-config>
+</network-security-config>

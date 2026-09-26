@@ -2,14 +2,18 @@
 // 📄 QuoteCreateScreen.tsx — 견적서 작성 (★ v12.1 백엔드/웹에 이어 모바일 연동 ★ 이번 작업)
 // ═══════════════════════════════════════════════════════════════
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Platform } from 'react-native';
 import { Text, Button, TextInput, IconButton, Divider } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 
 import { createQuote, getMaterials } from '../api/quoteApi';
 import type { QuoteLine, UserMaterial } from '../types/api';
 import { formatMoney, parseMoney } from '../utils/format';
 import AppHeader from '../components/AppHeader';
+import AddressSearchModal, { DaumAddressResult } from '../components/AddressSearchModal';
 
 interface LineForm {
   name: string;
@@ -32,7 +36,9 @@ export default function QuoteCreateScreen() {
   const [clientName, setClientName] = useState('');
   const [clientContact, setClientContact] = useState('');
   const [address, setAddress] = useState('');
-  const [desiredDate, setDesiredDate] = useState('');
+  const [addressSearchVisible, setAddressSearchVisible] = useState(false);
+  const [desiredDate, setDesiredDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [memo, setMemo] = useState('');
   const [discountAmount, setDiscountAmount] = useState('0');
   const [lines, setLines] = useState<LineForm[]>([emptyLine()]);
@@ -47,6 +53,15 @@ export default function QuoteCreateScreen() {
 
   const updateLine = (idx: number, patch: Partial<LineForm>) => {
     setLines(prev => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  };
+
+  const handleAddressSelect = (result: DaumAddressResult) => {
+    setAddress(result.roadAddress || result.jibunAddress);
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) setDesiredDate(selectedDate);
   };
 
   const pickMaterial = (idx: number, m: UserMaterial) => {
@@ -78,18 +93,13 @@ export default function QuoteCreateScreen() {
       Alert.alert('입력 오류', '최소 1개 이상의 견적 항목을 입력해주세요.');
       return;
     }
-    if (desiredDate && !/^\d{4}-\d{2}-\d{2}$/.test(desiredDate)) {
-      Alert.alert('입력 오류', '희망 시공일은 YYYY-MM-DD 형식으로 입력해주세요.');
-      return;
-    }
-
     setSaving(true);
     try {
       await createQuote({
         client_name: clientName.trim() || undefined,
         client_contact: clientContact.trim() || undefined,
         address: address.trim() || undefined,
-        desired_date: desiredDate.trim() || undefined,
+        desired_date: desiredDate ? dayjs(desiredDate).format('YYYY-MM-DD') : undefined,
         memo: memo.trim() || undefined,
         discount_amount: parseMoney(discountAmount),
         lines: validLines,
@@ -107,17 +117,44 @@ export default function QuoteCreateScreen() {
     <View style={styles.screen}>
       <AppHeader leftType="back" title="견적서 작성" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} />
-        <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={setClientContact} style={styles.input} />
-        <TextInput mode="outlined" label="현장 주소" value={address} onChangeText={setAddress} style={styles.input} />
-        <TextInput
-          mode="outlined"
-          label="희망 시공일 (YYYY-MM-DD)"
-          value={desiredDate}
-          onChangeText={setDesiredDate}
-          placeholder="2026-10-01"
-          style={styles.input}
+        <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={setClientContact} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TouchableOpacity onPress={() => setAddressSearchVisible(true)}>
+          <TextInput
+            mode="outlined"
+            textColor="#222222"
+            outlineColor="#CCCCCC"
+            activeOutlineColor="#1F3864"
+            label="현장 주소"
+            value={address}
+            placeholder="눌러서 주소 검색"
+            editable={false}
+            pointerEvents="none"
+            right={<TextInput.Icon icon="magnify" />}
+            style={styles.input}
+          />
+        </TouchableOpacity>
+        <AddressSearchModal
+          visible={addressSearchVisible}
+          onClose={() => setAddressSearchVisible(false)}
+          onSelect={handleAddressSelect}
         />
+
+        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+          <Text style={desiredDate ? styles.dateButtonText : styles.dateButtonPlaceholder}>
+            {desiredDate ? dayjs(desiredDate).format('YYYY년 MM월 DD일 (ddd)') : '희망 시공일 선택 (선택사항)'}
+          </Text>
+          <Icon name="calendar-edit" size={20} color="#2E75B6" />
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={desiredDate ?? new Date()}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            locale="ko-KR"
+          />
+        )}
 
         <Divider style={styles.divider} />
         <Text style={styles.section}>견적 항목</Text>
@@ -127,6 +164,9 @@ export default function QuoteCreateScreen() {
             <View style={styles.lineHeaderRow}>
               <TextInput
                 mode="outlined"
+                textColor="#222222"
+                outlineColor="#CCCCCC"
+                activeOutlineColor="#1F3864"
                 label="항목명"
                 value={line.name}
                 onChangeText={t => updateLine(idx, { name: t })}
@@ -159,6 +199,9 @@ export default function QuoteCreateScreen() {
 
             <TextInput
               mode="outlined"
+              textColor="#222222"
+              outlineColor="#CCCCCC"
+              activeOutlineColor="#1F3864"
               label="규격/설명"
               value={line.spec}
               onChangeText={t => updateLine(idx, { spec: t })}
@@ -168,6 +211,9 @@ export default function QuoteCreateScreen() {
             <View style={styles.rowThree}>
               <TextInput
                 mode="outlined"
+                textColor="#222222"
+                outlineColor="#CCCCCC"
+                activeOutlineColor="#1F3864"
                 label="수량"
                 keyboardType="numeric"
                 value={line.quantity}
@@ -177,6 +223,9 @@ export default function QuoteCreateScreen() {
               />
               <TextInput
                 mode="outlined"
+                textColor="#222222"
+                outlineColor="#CCCCCC"
+                activeOutlineColor="#1F3864"
                 label="단위"
                 value={line.unit}
                 onChangeText={t => updateLine(idx, { unit: t })}
@@ -185,6 +234,9 @@ export default function QuoteCreateScreen() {
               />
               <TextInput
                 mode="outlined"
+                textColor="#222222"
+                outlineColor="#CCCCCC"
+                activeOutlineColor="#1F3864"
                 label="단가"
                 keyboardType="numeric"
                 value={line.unit_price}
@@ -211,6 +263,9 @@ export default function QuoteCreateScreen() {
 
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="할인 금액"
           keyboardType="numeric"
           value={discountAmount}
@@ -219,6 +274,9 @@ export default function QuoteCreateScreen() {
         />
         <TextInput
           mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
           label="메모"
           value={memo}
           onChangeText={setMemo}
@@ -250,6 +308,20 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { padding: 16, paddingBottom: 60 },
   input: { marginBottom: 12, backgroundColor: '#FFF' },
+  dateButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#CCC',
+    borderRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 12,
+  },
+  dateButtonText: { fontSize: 16, color: '#222' },
+  dateButtonPlaceholder: { fontSize: 16, color: '#999' },
 
   divider: { marginVertical: 16 },
   section: { fontSize: 15, fontWeight: '700', color: '#333', marginBottom: 10 },

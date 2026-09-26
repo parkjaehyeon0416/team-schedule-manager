@@ -103,10 +103,10 @@ export default function ScheduleReportsScreen({ route }: any) {
       <AppHeader leftType="back" title="자동 보고서" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.section}>보고서 생성</Text>
-        <TextInput mode="outlined" label="보고서 제목 *" value={title} onChangeText={setTitle} style={styles.input} />
-        <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} />
-        <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={setClientContact} style={styles.input} />
-        <TextInput mode="outlined" label="인사말" value={greeting} onChangeText={setGreeting} multiline numberOfLines={2} style={styles.input} />
+        <TextInput mode="outlined" label="보고서 제목 *" value={title} onChangeText={setTitle} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={setClientContact} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TextInput mode="outlined" label="인사말" value={greeting} onChangeText={setGreeting} multiline numberOfLines={2} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
         <Button mode="contained" onPress={handleCreate} loading={creating} disabled={creating} style={styles.createBtn}>
           PDF 보고서 생성
         </Button>

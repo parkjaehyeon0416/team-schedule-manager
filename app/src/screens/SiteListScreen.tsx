@@ -21,11 +21,13 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getSites, createSite, updateSite, deleteSite } from '../api/siteApi';
 import type { Site } from '../types/api';
 import AppHeader from '../components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddressSearchModal, {
   DaumAddressResult,
 } from '../components/AddressSearchModal';
 
 export default function SiteListScreen() {
+  const insets = useSafeAreaInsets();
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -222,7 +224,7 @@ export default function SiteListScreen() {
           ))}
         </ScrollView>
 
-        <View style={styles.fabContainer}>
+        <View style={[styles.fabContainer, { bottom: 20 + insets.bottom }]}>
           <Button
             mode="contained"
             onPress={openNewModal}
@@ -258,6 +260,9 @@ export default function SiteListScreen() {
                 >
                   <TextInput
                     mode="outlined"
+                    textColor="#222222"
+                    outlineColor="#CCCCCC"
+                    activeOutlineColor="#1F3864"
                     label="주소 *"
                     value={address}
                     placeholder="눌러서 주소 검색"
@@ -270,6 +275,9 @@ export default function SiteListScreen() {
                 </TouchableOpacity>
                 <TextInput
                   mode="outlined"
+                  textColor="#222222"
+                  outlineColor="#CCCCCC"
+                  activeOutlineColor="#1F3864"
                   label="아파트/건물명"
                   value={aptName}
                   onChangeText={setAptName}
@@ -279,6 +287,9 @@ export default function SiteListScreen() {
                 <View style={styles.rowGroup}>
                   <TextInput
                     mode="outlined"
+                    textColor="#222222"
+                    outlineColor="#CCCCCC"
+                    activeOutlineColor="#1F3864"
                     label="동"
                     value={dong}
                     onChangeText={setDong}
@@ -287,6 +298,9 @@ export default function SiteListScreen() {
                   />
                   <TextInput
                     mode="outlined"
+                    textColor="#222222"
+                    outlineColor="#CCCCCC"
+                    activeOutlineColor="#1F3864"
                     label="호"
                     value={ho}
                     onChangeText={setHo}
@@ -296,6 +310,9 @@ export default function SiteListScreen() {
                 </View>
                 <TextInput
                   mode="outlined"
+                  textColor="#222222"
+                  outlineColor="#CCCCCC"
+                  activeOutlineColor="#1F3864"
                   label="평수 (㎡)"
                   keyboardType="numeric"
                   value={areaM2}
@@ -305,6 +322,9 @@ export default function SiteListScreen() {
                 />
                 <TextInput
                   mode="outlined"
+                  textColor="#222222"
+                  outlineColor="#CCCCCC"
+                  activeOutlineColor="#1F3864"
                   label="메모"
                   value={memo}
                   onChangeText={setMemo}

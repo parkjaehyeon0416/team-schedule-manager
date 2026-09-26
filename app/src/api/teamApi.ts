@@ -23,6 +23,10 @@ export async function joinTeam(inviteCode: string): Promise<void> {
   await axios.post('/teams/join', { invite_code: inviteCode });
 }
 
+export async function leaveTeam(): Promise<void> {
+  await axios.post('/teams/leave');
+}
+
 export async function updateTeam(id: number, name: string): Promise<Team> {
   const res = await axios.put<ApiResponse<Team>>(`/teams/${id}`, { name });
   return res.data.data;

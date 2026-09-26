@@ -11,6 +11,7 @@ import { getQuotes, approveQuote, deleteQuote } from '../api/quoteApi';
 import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
 import AppHeader from '../components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STATUS_LABEL: Record<Quote['status'], { text: string; color: string }> = {
   draft: { text: '작성중', color: '#999999' },
@@ -21,6 +22,7 @@ const STATUS_LABEL: Record<Quote['status'], { text: string; color: string }> = {
 
 export default function QuoteListScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [quotes, setQuotes] = useState<Quote[]>([]);
 
@@ -139,7 +141,7 @@ export default function QuoteListScreen() {
         ))}
       </ScrollView>
 
-      <View style={styles.fabContainer}>
+      <View style={[styles.fabContainer, { bottom: 20 + insets.bottom }]}>
         <Button
           mode="contained"
           icon="plus"

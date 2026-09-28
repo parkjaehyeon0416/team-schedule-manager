@@ -1,11 +1,17 @@
 <?php
 
 return [
-    // 지금은 'log'만 존재 — 실제 SMS 서비스(다이렉트샌드 등) 연동 시
-    // 'drivers'에 새 클래스를 추가하고 .env의 SMS_DRIVER만 바꾸면 됨.
+    // 실제 발송 전환: .env의 SMS_DRIVER를 'solapi'로 바꾸면 됨 (그 외 호출부는 수정 불필요).
     'driver' => env('SMS_DRIVER', 'log'),
 
     'drivers' => [
-        'log' => \App\Services\Sms\LogSmsService::class,
+        'log'    => \App\Services\Sms\LogSmsService::class,
+        'solapi' => \App\Services\Sms\SolapiSmsService::class,
+    ],
+
+    'solapi' => [
+        'api_key'    => env('SOLAPI_API_KEY'),
+        'api_secret' => env('SOLAPI_API_SECRET'),
+        'sender'     => env('SOLAPI_SENDER'), // 사전등록 완료된 발신번호(숫자만, 예: 01012345678)
     ],
 ];

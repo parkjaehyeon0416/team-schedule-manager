@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // ★ v18.18 — 소셜 로그인(구글/카카오)
+    'google' => [
+        // 앱에서 발급받은 OAuth 클라이언트 ID들을 쉼표로 나열(Android용 + Web용 둘 다 여기 넣으면
+        // 모바일에서 어떤 클라이언트로 로그인해도 서버가 id_token의 aud를 검증할 수 있음)
+        'client_ids' => array_filter(array_map('trim', explode(',', env('GOOGLE_CLIENT_IDS', '')))),
+    ],
+
 ];

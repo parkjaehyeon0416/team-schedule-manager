@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
+import { signInWithGoogle, signInWithKakao } from '../api/socialAuthApi';
 import { useNavigation } from '@react-navigation/native';
 
 export default function LoginScreen() {
@@ -18,6 +19,26 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'google' | 'kakao' | null>(null);
+
+  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
+    setSocialLoading(provider);
+    try {
+      const data =
+        provider === 'google' ? await signInWithGoogle() : await signInWithKakao();
+      if (data.success) {
+        setAuth(data.data.user, data.data.token);
+      }
+    } catch (error: any) {
+      if (error?.code === 'SIGN_IN_CANCELLED' || error?.message?.includes('cancel')) {
+        // 사용자가 로그인 창을 스스로 닫은 경우 — 에러 알림 불필요
+        return;
+      }
+      Alert.alert('로그인 실패', '소셜 로그인 중 오류가 발생했습니다.');
+    } finally {
+      setSocialLoading(null);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -92,6 +113,36 @@ export default function LoginScreen() {
           계정이 없으신가요?{' '}
           <Text style={styles.registerLinkBold}>회원가입</Text>
         </Text>
+      </TouchableOpacity>
+
+      <View style={styles.socialDivider}>
+        <View style={styles.socialDividerLine} />
+        <Text style={styles.socialDividerText}>또는</Text>
+        <View style={styles.socialDividerLine} />
+      </View>
+
+      <TouchableOpacity
+        style={[styles.socialButton, styles.googleButton]}
+        onPress={() => handleSocialLogin('google')}
+        disabled={loading || socialLoading !== null}
+      >
+        {socialLoading === 'google' ? (
+          <ActivityIndicator color="#222" />
+        ) : (
+          <Text style={styles.googleButtonText}>Google로 계속하기</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.socialButton, styles.kakaoButton]}
+        onPress={() => handleSocialLogin('kakao')}
+        disabled={loading || socialLoading !== null}
+      >
+        {socialLoading === 'kakao' ? (
+          <ActivityIndicator color="#3C1E1E" />
+        ) : (
+          <Text style={styles.kakaoButtonText}>카카오로 계속하기</Text>
+        )}
       </TouchableOpacity>
 
       <View style={styles.findRow}>
@@ -169,5 +220,46 @@ const styles = StyleSheet.create({
   findDivider: {
     color: '#ccc',
     marginHorizontal: 10,
+  },
+  socialDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  socialDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  socialDividerText: {
+    color: '#999',
+    fontSize: 12,
+    marginHorizontal: 10,
+  },
+  socialButton: {
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderColor: '#ddd',
+  },
+  googleButtonText: {
+    color: '#222222',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  kakaoButton: {
+    backgroundColor: '#FEE500',
+    borderColor: '#FEE500',
+  },
+  kakaoButtonText: {
+    color: '#3C1E1E',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

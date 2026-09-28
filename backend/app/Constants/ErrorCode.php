@@ -22,6 +22,8 @@ class ErrorCode
     public const AUTH_MOBILE_ONLY        = 'ERR_AUTH_008';   // v9.1
     public const AUTH_ACCOUNT_NOT_FOUND  = 'ERR_AUTH_009';   // v18.5 — 아이디 찾기: 이름+전화번호 불일치
     public const AUTH_CODE_INVALID       = 'ERR_AUTH_010';   // v18.5 — 인증코드 불일치/만료 (find-email·reset-password 공용)
+    public const AUTH_SOCIAL_TOKEN_INVALID = 'ERR_AUTH_011'; // v18.18 — 구글/카카오 토큰 검증 실패
+    public const AUTH_SOCIAL_EMAIL_TAKEN   = 'ERR_AUTH_012'; // v18.18 — 이미 일반 가입된 이메일로 소셜 로그인 시도(연동 필요)
 
     // ═══════════════════════════════════════════════
     // 입력 검증 (v6)

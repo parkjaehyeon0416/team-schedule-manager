@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     Route::post('/register',           [AuthController::class, 'register']);
     Route::post('/login',              [AuthController::class, 'login']);
+    Route::post('/social-login',       [AuthController::class, 'socialLogin']);
     Route::post('/find-email/request', [AuthController::class, 'findEmailRequest']);
     Route::post('/find-email/verify',  [AuthController::class, 'findEmailVerify']);
     Route::post('/forgot-password',    [AuthController::class, 'forgotPassword']);

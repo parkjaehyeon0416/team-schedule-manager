@@ -11,6 +11,8 @@ use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -145,6 +147,113 @@ class AuthController extends Controller
             'user'  => $user,
             'token' => $token,
         ], '로그인 성공');
+    }
+
+    // ────────────────────────────────────
+    // 소셜 로그인(구글/카카오) — 있으면 로그인, 없으면 자동 회원가입
+    // POST /api/auth/social-login
+    // ────────────────────────────────────
+    public function socialLogin(Request $request)
+    {
+        $data = $request->validate([
+            'provider' => 'required|in:google,kakao',
+            'token'    => 'required|string', // 구글: id_token, 카카오: access_token
+            'platform' => 'required|in:web,mobile',
+        ]);
+
+        $profile = $data['provider'] === 'google'
+            ? $this->verifyGoogleToken($data['token'])
+            : $this->verifyKakaoToken($data['token']);
+
+        if (!$profile) {
+            return ApiResponse::error(
+                '소셜 로그인 인증에 실패했습니다. 다시 시도해주세요.',
+                ErrorCode::AUTH_SOCIAL_TOKEN_INVALID,
+                401
+            );
+        }
+
+        $idColumn = $data['provider'] === 'google' ? 'google_id' : 'kakao_id';
+
+        // 1) 이미 이 소셜 계정으로 가입된 유저인지 확인
+        $user = User::with('role')->where($idColumn, $profile['id'])->first();
+
+        if (!$user) {
+            // 2) 같은 이메일로 일반(이메일/비번) 가입된 계정이 있으면 소셜 ID만 연동
+            $existing = $profile['email'] ? User::where('email', $profile['email'])->first() : null;
+
+            if ($existing) {
+                $existing->update([$idColumn => $profile['id']]);
+                $user = $existing->load('role');
+            } else {
+                // 3) 완전 신규 — 소셜 정보로 즉시 가입 처리 (개인, 팀 없음)
+                $user = User::create([
+                    'name'      => $profile['name'] ?: '사용자',
+                    'email'     => $profile['email'] ?: $data['provider'] . '_' . $profile['id'] . '@social.local',
+                    $idColumn   => $profile['id'],
+                    'password'  => null,
+                    'role_id'   => 2,
+                    'user_type' => 'freelancer',
+                ]);
+                $user->load('role');
+            }
+        }
+
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return ApiResponse::success([
+            'user'  => $user,
+            'token' => $token,
+        ], '로그인 성공');
+    }
+
+    /**
+     * 구글 id_token 검증 — Google의 tokeninfo 엔드포인트로 서명/유효기간/aud를 확인.
+     * @return array{id:string,email:?string,name:?string}|null
+     */
+    private function verifyGoogleToken(string $idToken): ?array
+    {
+        $response = Http::get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $idToken]);
+
+        if (!$response->successful()) {
+            return null;
+        }
+
+        $payload = $response->json();
+        $allowedClientIds = config('services.google.client_ids');
+
+        // aud가 우리 앱의 OAuth 클라이언트 ID 중 하나인지 검증 (다른 앱용 토큰 도용 방지)
+        if (!empty($allowedClientIds) && !in_array($payload['aud'] ?? null, $allowedClientIds, true)) {
+            return null;
+        }
+
+        return [
+            'id'    => $payload['sub'],
+            'email' => $payload['email'] ?? null,
+            'name'  => $payload['name'] ?? null,
+        ];
+    }
+
+    /**
+     * 카카오 access_token 검증 — 카카오 사용자 정보 조회 API를 그대로 검증용으로 사용.
+     * @return array{id:string,email:?string,name:?string}|null
+     */
+    private function verifyKakaoToken(string $accessToken): ?array
+    {
+        $response = Http::withToken($accessToken)->get('https://kapi.kakao.com/v2/user/me');
+
+        if (!$response->successful()) {
+            return null;
+        }
+
+        $payload = $response->json();
+        $account = $payload['kakao_account'] ?? [];
+
+        return [
+            'id'    => (string) $payload['id'],
+            'email' => $account['email'] ?? null,
+            'name'  => $account['profile']['nickname'] ?? null,
+        ];
     }
 
     // ════════════════════════════════════════════════════════

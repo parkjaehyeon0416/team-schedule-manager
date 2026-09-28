@@ -22,6 +22,8 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
+        'google_id',
+        'kakao_id',
         'role_id',
         'team_id',
         // ★ v1.9 추가 — 프리랜서 모드 지원

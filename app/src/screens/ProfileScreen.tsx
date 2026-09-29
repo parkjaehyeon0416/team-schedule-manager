@@ -38,12 +38,15 @@ export default function ProfileScreen() {
       <View style={styles.container}>
       {/* ── 1) 프로필 카드 ── */}
       <Card style={styles.profileCard}>
-        <Card.Content style={styles.profileContent}>
+        <View style={styles.profileBanner}>
           <Avatar.Text
             size={80}
             label={user.name.charAt(0)}
             style={styles.avatar}
+            labelStyle={styles.avatarLabel}
           />
+        </View>
+        <Card.Content style={styles.profileContent}>
           <Text variant="headlineSmall" style={styles.name}>
             {user.name}
           </Text>
@@ -51,9 +54,9 @@ export default function ProfileScreen() {
             {user.email}
           </Text>
           {user.role?.name && (
-            <Text variant="bodySmall" style={styles.role}>
-              권한: {user.role.name}
-            </Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>{user.role.name}</Text>
+            </View>
           )}
         </Card.Content>
       </Card>
@@ -100,39 +103,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#EEF4FC',
   },
   profileCard: {
     marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  profileBanner: {
+    alignItems: 'center',
+    paddingTop: 28,
+    paddingBottom: 44,
+    backgroundColor: '#2E75B6',
   },
   profileContent: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingTop: 0,
+    marginTop: -40,
+    paddingBottom: 22,
   },
   avatar: {
-    marginBottom: 16,
-    backgroundColor: '#1F3864',
+    backgroundColor: '#FFFFFF',
+  },
+  avatarLabel: {
+    color: '#2E75B6',
+    fontWeight: 'bold',
   },
   name: {
     fontWeight: 'bold',
+    color: '#1F3864',
+    marginTop: 12,
     marginBottom: 4,
   },
   email: {
-    color: '#666',
-    marginBottom: 8,
+    color: '#5A6B85',
+    marginBottom: 10,
   },
-  role: {
-    color: '#999',
+  roleBadge: {
+    backgroundColor: '#EAF1FB',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+  },
+  roleBadgeText: {
+    color: '#2E75B6',
+    fontSize: 12,
+    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: 13,
-    color: '#888',
-    fontWeight: '500',
+    color: '#5A6B85',
+    fontWeight: '700',
     marginBottom: 8,
     marginLeft: 4,
   },
   menuCard: {
     marginBottom: 8,
+    backgroundColor: '#FFFFFF',
   },
   menuItem: {
     flexDirection: 'row',

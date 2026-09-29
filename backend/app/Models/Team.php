@@ -12,4 +12,14 @@ class Team extends Model
 
     protected $fillable = ['name', 'invite_code', 'created_by'];
 
+    /**
+     * ★ v18.21 — 이 팀에 소속된 모든 사용자 (여러 팀 동시 소속 지원)
+     */
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'team_members')
+                    ->withPivot('role_id', 'joined_at')
+                    ->wherePivotNull('deleted_at')
+                    ->withTimestamps();
+    }
 }

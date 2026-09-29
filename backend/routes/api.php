@@ -62,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/teams/join',     [TeamController::class, 'join']);
     Route::post('/teams',          [TeamController::class, 'store']);
     Route::post('/teams/leave',    [TeamController::class, 'leave']);
+    // ★ v18.21 — 여러 팀 동시 소속 중 "지금 활동할 팀" 전환
+    Route::post('/teams/switch-active', [TeamController::class, 'switchActive']);
 
     // 평수 계산
     Route::post('calculate/area',  [CalculateController::class, 'area']);

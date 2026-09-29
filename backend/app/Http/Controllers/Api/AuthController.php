@@ -432,7 +432,8 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         // auth:sanctum 미들웨어가 토큰을 검증하고 사용자 정보를 주입해줌
-        $user = $request->user()->load('role', 'team');
+        // ★ v18.21 — teams도 같이 내려줘서 앱이 "여러 팀 소속" 여부를 바로 알 수 있게 함
+        $user = $request->user()->load('role', 'team', 'teams');
         return ApiResponse::success($user);
     }
 }

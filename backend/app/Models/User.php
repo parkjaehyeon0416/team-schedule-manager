@@ -50,10 +50,33 @@ class User extends Authenticatable
     }
 
     /**
-     * belongsTo: "이 User는 하나의 Team에 속한다"
+     * belongsTo: "이 User는 하나의 (활성) Team에 속한다"
+     *   ★ v18.21부터 team_id는 "지금 활동 중인 팀"만 가리킴 — 실제 소속 팀
+     *   전체는 teams()/teamIds() 참고 (여러 팀 동시 소속 가능).
      */
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    /**
+     * ★ v18.21 — 여러 팀 동시 소속. team_members 중간 테이블을 통해 연결.
+     *   $user->teams  →  이 사람이 소속된 모든 Team 목록
+     */
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class, 'team_members')
+                    ->withPivot('role_id', 'joined_at')
+                    ->wherePivotNull('deleted_at')
+                    ->withTimestamps();
+    }
+
+    /**
+     * 이 사람이 소속된 모든 팀의 id 배열 (Schedule/Site의 "team" 스코프에서
+     * 여러 팀 게시판을 한 캘린더로 합치는 데 사용).
+     */
+    public function teamIds(): array
+    {
+        return $this->teams()->pluck('teams.id')->all();
     }
 }

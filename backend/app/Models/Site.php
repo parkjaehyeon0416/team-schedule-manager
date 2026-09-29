@@ -22,10 +22,13 @@ class Site extends Model
     {
         $personal = fn ($q) => $q->where('owner_id', $user->id);
 
-        $team = function ($q) use ($user) {
-            $q->whereNotNull('team_id')->where(function ($q2) use ($user) {
-                if ($user->team_id) {
-                    $q2->orWhere('team_id', $user->team_id);
+        // ★ v18.21 — 여러 팀 동시 소속: 소속된 모든 팀의 현장을 합쳐서 보여줌.
+        $teamIds = $user->teamIds();
+
+        $team = function ($q) use ($user, $teamIds) {
+            $q->whereNotNull('team_id')->where(function ($q2) use ($user, $teamIds) {
+                if (!empty($teamIds)) {
+                    $q2->orWhereIn('team_id', $teamIds);
                 }
                 $q2->orWhere('created_by', $user->id);
             });

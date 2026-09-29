@@ -37,6 +37,7 @@ export default function SiteListScreen() {
   const [saving, setSaving] = useState<boolean>(false);
 
   const [address, setAddress] = useState<string>('');
+  const [manualAddress, setManualAddress] = useState<string>('');
   const [aptName, setAptName] = useState<string>('');
   const [dong, setDong] = useState<string>('');
   const [ho, setHo] = useState<string>('');
@@ -66,6 +67,7 @@ export default function SiteListScreen() {
   const openNewModal = () => {
     setEditingId(null);
     setAddress('');
+    setManualAddress('');
     setAptName('');
     setDong('');
     setHo('');
@@ -77,6 +79,7 @@ export default function SiteListScreen() {
   const openEditModal = (s: Site) => {
     setEditingId(s.id);
     setAddress(s.address ?? '');
+    setManualAddress('');
     setAptName(s.apt_name ?? '');
     setDong(s.dong ?? '');
     setHo(s.ho ?? '');
@@ -88,13 +91,26 @@ export default function SiteListScreen() {
   // ★ 다음(카카오) 우편번호 API로 검색한 주소를 선택했을 때 — 수기 입력 대체
   const handleAddressSelect = (result: DaumAddressResult) => {
     setAddress(result.roadAddress || result.jibunAddress);
+    setManualAddress('');
     if (result.buildingName) {
       setAptName(result.buildingName);
     }
   };
 
+  const openAddressSearch = () => {
+    // ★ 두 모달이 동시에 떠 있는 걸 피하기 위해 폼 모달을 잠깐 숨김
+    setModalVisible(false);
+    setAddressSearchVisible(true);
+  };
+
+  const handleAddressSearchClose = () => {
+    setAddressSearchVisible(false);
+    setModalVisible(true);
+  };
+
   const handleSave = async () => {
-    if (!address.trim()) {
+    const finalAddress = manualAddress.trim() || address.trim();
+    if (!finalAddress) {
       Alert.alert('입력 오류', '주소를 입력해주세요.');
       return;
     }
@@ -102,7 +118,7 @@ export default function SiteListScreen() {
     setSaving(true);
     try {
       const payload = {
-        address: address.trim(),
+        address: finalAddress,
         apt_name: aptName.trim() || null,
         dong: dong.trim() || null,
         ho: ho.trim() || null,
@@ -253,22 +269,31 @@ export default function SiteListScreen() {
                 style={styles.modalScroll}
                 keyboardShouldPersistTaps="handled"
               >
+                <TouchableOpacity activeOpacity={0.7} disabled={saving} onPress={openAddressSearch}>
+                  <TextInput
+                    mode="outlined"
+                    textColor="#222222"
+                    outlineColor="#CCCCCC"
+                    activeOutlineColor="#1F3864"
+                    label="주소 *"
+                    value={address}
+                    placeholder="눌러서 주소 검색"
+                    editable={false}
+                    pointerEvents="none"
+                    right={<TextInput.Icon icon="magnify" />}
+                    style={styles.input}
+                    disabled={saving}
+                  />
+                </TouchableOpacity>
                 <TextInput
                   mode="outlined"
                   textColor="#222222"
                   outlineColor="#CCCCCC"
                   activeOutlineColor="#1F3864"
-                  label="주소 *"
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder="직접 입력하거나 돋보기로 검색"
-                  right={
-                    <TextInput.Icon
-                      icon="magnify"
-                      onPress={() => setAddressSearchVisible(true)}
-                      disabled={saving}
-                    />
-                  }
+                  label="기타 주소 (검색에 안 나올 때 직접 입력)"
+                  value={manualAddress}
+                  onChangeText={setManualAddress}
+                  placeholder="검색 결과가 없으면 여기에 직접 입력하세요"
                   style={styles.input}
                   disabled={saving}
                 />
@@ -359,7 +384,7 @@ export default function SiteListScreen() {
 
         <AddressSearchModal
           visible={addressSearchVisible}
-          onClose={() => setAddressSearchVisible(false)}
+          onClose={handleAddressSearchClose}
           onSelect={handleAddressSelect}
         />
       </View>

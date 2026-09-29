@@ -37,6 +37,7 @@ export default function QuoteCreateScreen() {
   const [clientName, setClientName] = useState('');
   const [clientContact, setClientContact] = useState('');
   const [address, setAddress] = useState('');
+  const [manualAddress, setManualAddress] = useState('');
   const [addressSearchVisible, setAddressSearchVisible] = useState(false);
   const [desiredDate, setDesiredDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -58,6 +59,7 @@ export default function QuoteCreateScreen() {
 
   const handleAddressSelect = (result: DaumAddressResult) => {
     setAddress(result.roadAddress || result.jibunAddress);
+    setManualAddress('');
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -99,7 +101,7 @@ export default function QuoteCreateScreen() {
       await createQuote({
         client_name: clientName.trim() || undefined,
         client_contact: clientContact.trim() || undefined,
-        address: address.trim() || undefined,
+        address: (manualAddress.trim() || address.trim()) || undefined,
         desired_date: desiredDate ? dayjs(desiredDate).format('YYYY-MM-DD') : undefined,
         memo: memo.trim() || undefined,
         discount_amount: parseMoney(discountAmount),
@@ -120,18 +122,30 @@ export default function QuoteCreateScreen() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
         <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={t => setClientContact(formatPhoneInput(t))} keyboardType="phone-pad" maxLength={13} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TouchableOpacity onPress={() => setAddressSearchVisible(true)}>
+          <TextInput
+            mode="outlined"
+            textColor="#222222"
+            outlineColor="#CCCCCC"
+            activeOutlineColor="#1F3864"
+            label="현장 주소"
+            value={address}
+            placeholder="눌러서 주소 검색"
+            editable={false}
+            pointerEvents="none"
+            right={<TextInput.Icon icon="magnify" />}
+            style={styles.input}
+          />
+        </TouchableOpacity>
         <TextInput
           mode="outlined"
           textColor="#222222"
           outlineColor="#CCCCCC"
           activeOutlineColor="#1F3864"
-          label="현장 주소"
-          value={address}
-          onChangeText={setAddress}
-          placeholder="직접 입력하거나 돋보기로 검색"
-          right={
-            <TextInput.Icon icon="magnify" onPress={() => setAddressSearchVisible(true)} />
-          }
+          label="기타 주소 (검색에 안 나올 때 직접 입력)"
+          value={manualAddress}
+          onChangeText={setManualAddress}
+          placeholder="검색 결과가 없으면 여기에 직접 입력하세요"
           style={styles.input}
         />
         <AddressSearchModal

@@ -20,6 +20,7 @@ import {
   getPublicCardUrl,
 } from '../api/businessCardApi';
 import type { BusinessCard } from '../types/api';
+import { formatPhoneInput } from '../utils/phone';
 import AppHeader from '../components/AppHeader';
 
 export default function BusinessCardScreen() {
@@ -44,7 +45,7 @@ export default function BusinessCardScreen() {
       setYearsExperience(c.years_experience ? String(c.years_experience) : '');
       setServiceArea(c.service_area ?? '');
       setSpecialty(c.specialty ?? '');
-      setContactPhone(c.contact_phone ?? '');
+      setContactPhone(formatPhoneInput(c.contact_phone ?? ''));
       setTagline(c.tagline ?? '');
       setIsPublic(c.is_public);
     }
@@ -195,8 +196,9 @@ export default function BusinessCardScreen() {
           label="연락처"
           placeholder="예: 010-1234-5678"
           keyboardType="phone-pad"
+          maxLength={13}
           value={contactPhone}
-          onChangeText={setContactPhone}
+          onChangeText={t => setContactPhone(formatPhoneInput(t))}
           style={styles.input}
           disabled={saving}
         />

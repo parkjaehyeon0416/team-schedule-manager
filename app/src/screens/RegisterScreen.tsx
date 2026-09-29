@@ -12,6 +12,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
+import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 
 // ★ v18.15 — 서버 validation 에러(errors 객체)의 필드명+영문 메시지를
 //   한국어로 번역해서 "어느 항목이 왜 문제인지" 바로 보이게 함.
@@ -66,7 +67,7 @@ export default function RegisterScreen() {
       const res = await axiosInstance.post('/auth/register', {
         name,
         email,
-        phone,
+        phone: stripPhoneFormatting(phone),
         password,
         password_confirmation: passwordConfirm,
         platform: 'mobile',
@@ -120,11 +121,12 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="전화번호 ('-' 없이 숫자만, 예: 01012345678)"
+        placeholder="전화번호 (예: 010-1234-5678)"
         placeholderTextColor="#999999"
         value={phone}
-        onChangeText={setPhone}
+        onChangeText={t => setPhone(formatPhoneInput(t))}
         keyboardType="phone-pad"
+        maxLength={13}
       />
       <TextInput
         style={styles.input}

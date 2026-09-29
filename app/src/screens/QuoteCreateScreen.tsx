@@ -14,6 +14,7 @@ import type { QuoteLine, UserMaterial } from '../types/api';
 import { formatMoney, parseMoney } from '../utils/format';
 import AppHeader from '../components/AppHeader';
 import AddressSearchModal, { DaumAddressResult } from '../components/AddressSearchModal';
+import { formatPhoneInput } from '../utils/phone';
 
 interface LineForm {
   name: string;
@@ -118,22 +119,21 @@ export default function QuoteCreateScreen() {
       <AppHeader leftType="back" title="견적서 작성" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
-        <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={setClientContact} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
-        <TouchableOpacity onPress={() => setAddressSearchVisible(true)}>
-          <TextInput
-            mode="outlined"
-            textColor="#222222"
-            outlineColor="#CCCCCC"
-            activeOutlineColor="#1F3864"
-            label="현장 주소"
-            value={address}
-            placeholder="눌러서 주소 검색"
-            editable={false}
-            pointerEvents="none"
-            right={<TextInput.Icon icon="magnify" />}
-            style={styles.input}
-          />
-        </TouchableOpacity>
+        <TextInput mode="outlined" label="고객 연락처" value={clientContact} onChangeText={t => setClientContact(formatPhoneInput(t))} keyboardType="phone-pad" maxLength={13} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
+        <TextInput
+          mode="outlined"
+          textColor="#222222"
+          outlineColor="#CCCCCC"
+          activeOutlineColor="#1F3864"
+          label="현장 주소"
+          value={address}
+          onChangeText={setAddress}
+          placeholder="직접 입력하거나 돋보기로 검색"
+          right={
+            <TextInput.Icon icon="magnify" onPress={() => setAddressSearchVisible(true)} />
+          }
+          style={styles.input}
+        />
         <AddressSearchModal
           visible={addressSearchVisible}
           onClose={() => setAddressSearchVisible(false)}

@@ -10,6 +10,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile, uploadAvatar, deleteAvatar } from '../api/profileApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
+import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 import AppHeader from '../components/AppHeader';
 
 const AVATAR_COLORS = [
@@ -20,7 +21,7 @@ const AVATAR_COLORS = [
 export default function ProfileEditScreen() {
   const { user, updateUser } = useAuthStore();
 
-  const [phone, setPhone] = useState(user?.phone ?? '');
+  const [phone, setPhone] = useState(formatPhoneInput(user?.phone ?? ''));
   const [kakaoTalkId, setKakaoTalkId] = useState(user?.kakao_talk_id ?? '');
   const [avatarColor, setAvatarColor] = useState(user?.avatar_color ?? '#1F3864');
   const [avatarImagePath, setAvatarImagePath] = useState(user?.avatar_image_path ?? null);
@@ -76,7 +77,7 @@ export default function ProfileEditScreen() {
     setSaving(true);
     try {
       const updated = await updateProfile({
-        phone: phone.trim() || undefined,
+        phone: stripPhoneFormatting(phone) || undefined,
         kakao_talk_id: kakaoTalkId.trim() || undefined,
         avatar_color: avatarColor,
       });
@@ -149,9 +150,10 @@ export default function ProfileEditScreen() {
         <TextInput
           mode="outlined"
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={t => setPhone(formatPhoneInput(t))}
           placeholder="010-1234-5678"
           keyboardType="phone-pad"
+          maxLength={13}
           textColor="#222222"
           outlineColor="#CCCCCC"
           activeOutlineColor="#1F3864"

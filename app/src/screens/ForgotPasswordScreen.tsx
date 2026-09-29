@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
+import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 
 // 2단계: ① 이메일+이름+전화번호 일치 확인 후 인증번호 발송 → ② 인증번호+새 비밀번호 입력
 export default function ForgotPasswordScreen() {
@@ -33,7 +34,7 @@ export default function ForgotPasswordScreen() {
       const res = await axiosInstance.post('/auth/forgot-password', {
         email,
         name,
-        phone,
+        phone: stripPhoneFormatting(phone),
       });
       if (res.data.success) {
         Alert.alert('발송 완료', '입력하신 전화번호로 인증번호를 발송했습니다.');
@@ -58,7 +59,7 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const res = await axiosInstance.post('/auth/reset-password', {
-        phone,
+        phone: stripPhoneFormatting(phone),
         code,
         password,
         password_confirmation: passwordConfirm,
@@ -103,11 +104,12 @@ export default function ForgotPasswordScreen() {
           />
           <TextInput
             style={styles.input}
-            placeholder="전화번호 ('-' 없이 숫자만)"
+            placeholder="전화번호 (예: 010-1234-5678)"
             placeholderTextColor="#999999"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={t => setPhone(formatPhoneInput(t))}
             keyboardType="phone-pad"
+            maxLength={13}
           />
           <TouchableOpacity
             style={styles.button}

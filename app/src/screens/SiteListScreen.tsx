@@ -253,26 +253,25 @@ export default function SiteListScreen() {
                 style={styles.modalScroll}
                 keyboardShouldPersistTaps="handled"
               >
-                <TouchableOpacity
-                  activeOpacity={0.7}
+                <TextInput
+                  mode="outlined"
+                  textColor="#222222"
+                  outlineColor="#CCCCCC"
+                  activeOutlineColor="#1F3864"
+                  label="주소 *"
+                  value={address}
+                  onChangeText={setAddress}
+                  placeholder="직접 입력하거나 돋보기로 검색"
+                  right={
+                    <TextInput.Icon
+                      icon="magnify"
+                      onPress={() => setAddressSearchVisible(true)}
+                      disabled={saving}
+                    />
+                  }
+                  style={styles.input}
                   disabled={saving}
-                  onPress={() => setAddressSearchVisible(true)}
-                >
-                  <TextInput
-                    mode="outlined"
-                    textColor="#222222"
-                    outlineColor="#CCCCCC"
-                    activeOutlineColor="#1F3864"
-                    label="주소 *"
-                    value={address}
-                    placeholder="눌러서 주소 검색"
-                    editable={false}
-                    pointerEvents="none"
-                    right={<TextInput.Icon icon="magnify" />}
-                    style={styles.input}
-                    disabled={saving}
-                  />
-                </TouchableOpacity>
+                />
                 <TextInput
                   mode="outlined"
                   textColor="#222222"

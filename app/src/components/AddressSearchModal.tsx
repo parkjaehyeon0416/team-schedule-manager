@@ -4,7 +4,7 @@
 //   무료, API 키 불필요. WebView로 위젯을 그대로 띄우고 postMessage로 결과 수신.
 // ═══════════════════════════════════════════════════════════════
 import React from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Text } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,42 +23,24 @@ interface Props {
   onSelect: (result: DaumAddressResult) => void;
 }
 
-const POSTCODE_HTML = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-  <style>html,body{margin:0;padding:0;height:100%;}</style>
-</head>
-<body>
-  <div id="wrap" style="width:100%;height:100%;"></div>
-  <script>
-    new daum.Postcode({
-      oncomplete: function(data) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          zonecode: data.zonecode,
-          roadAddress: data.roadAddress,
-          jibunAddress: data.jibunAddress,
-          buildingName: data.buildingName,
-          bname: data.bname,
-        }));
-      },
-      width: '100%',
-      height: '100%',
-    }).embed(document.getElementById('wrap'));
-  </script>
-</body>
-</html>
-`;
+// ★ v18.25 — 다음 우편번호 위젯 페이지는 인라인 HTML이 아니라 실제 HTTPS URL로
+//   로드해야 함. 인라인 HTML(source={{html}})로 띄우면 문서 origin이 애매해져서
+//   주소 목록은 보이는데 클릭 시 "선택완료" postMessage가 조용히 전달 안 되는
+//   문제가 있었음(에뮬레이터로 직접 재현/확인). 지금은 우리 서버에 정적 파일로
+//   올려서 HTTPS로 서빙 중 — backend/public/postcode.html 참고.
+const POSTCODE_URL = 'https://211-233-210-85.sslip.io/postcode.html';
 
 export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
   const insets = useSafeAreaInsets();
 
   const handleMessage = (event: { nativeEvent: { data: string } }) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data) as DaumAddressResult;
+      const data = JSON.parse(event.nativeEvent.data) as DaumAddressResult & { __debug?: boolean; msg?: string };
+      if (data.__debug) {
+        // eslint-disable-next-line no-alert
+        Alert.alert('디버그', data.msg ?? '알 수 없는 에러');
+        return;
+      }
       onSelect(data);
       onClose();
     } catch (e) {
@@ -76,8 +58,10 @@ export default function AddressSearchModal({ visible, onClose, onSelect }: Props
           </TouchableOpacity>
         </View>
         <WebView
-          source={{ html: POSTCODE_HTML }}
+          source={{ uri: POSTCODE_URL }}
           onMessage={handleMessage}
+          onError={(e) => Alert.alert('WebView 로드 오류', JSON.stringify(e.nativeEvent))}
+          onHttpError={(e) => Alert.alert('WebView HTTP 오류', JSON.stringify(e.nativeEvent))}
           style={styles.webview}
         />
       </View>

@@ -37,7 +37,6 @@ export default function SiteListScreen() {
   const [saving, setSaving] = useState<boolean>(false);
 
   const [address, setAddress] = useState<string>('');
-  const [manualAddress, setManualAddress] = useState<string>('');
   const [aptName, setAptName] = useState<string>('');
   const [dong, setDong] = useState<string>('');
   const [ho, setHo] = useState<string>('');
@@ -67,7 +66,6 @@ export default function SiteListScreen() {
   const openNewModal = () => {
     setEditingId(null);
     setAddress('');
-    setManualAddress('');
     setAptName('');
     setDong('');
     setHo('');
@@ -79,7 +77,6 @@ export default function SiteListScreen() {
   const openEditModal = (s: Site) => {
     setEditingId(s.id);
     setAddress(s.address ?? '');
-    setManualAddress('');
     setAptName(s.apt_name ?? '');
     setDong(s.dong ?? '');
     setHo(s.ho ?? '');
@@ -91,7 +88,6 @@ export default function SiteListScreen() {
   // ★ 다음(카카오) 우편번호 API로 검색한 주소를 선택했을 때 — 수기 입력 대체
   const handleAddressSelect = (result: DaumAddressResult) => {
     setAddress(result.roadAddress || result.jibunAddress);
-    setManualAddress('');
     if (result.buildingName) {
       setAptName(result.buildingName);
     }
@@ -109,7 +105,7 @@ export default function SiteListScreen() {
   };
 
   const handleSave = async () => {
-    const finalAddress = manualAddress.trim() || address.trim();
+    const finalAddress = address.trim();
     if (!finalAddress) {
       Alert.alert('입력 오류', '주소를 입력해주세요.');
       return;
@@ -285,18 +281,6 @@ export default function SiteListScreen() {
                     disabled={saving}
                   />
                 </TouchableOpacity>
-                <TextInput
-                  mode="outlined"
-                  textColor="#222222"
-                  outlineColor="#CCCCCC"
-                  activeOutlineColor="#1F3864"
-                  label="기타 주소 (검색에 안 나올 때 직접 입력)"
-                  value={manualAddress}
-                  onChangeText={setManualAddress}
-                  placeholder="검색 결과가 없으면 여기에 직접 입력하세요"
-                  style={styles.input}
-                  disabled={saving}
-                />
                 <TextInput
                   mode="outlined"
                   textColor="#222222"

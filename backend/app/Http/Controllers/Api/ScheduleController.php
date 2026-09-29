@@ -6,6 +6,7 @@ use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Http\Responses\ApiResponse;
+use App\Services\MonthlySummaryService;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
@@ -186,15 +187,45 @@ class ScheduleController extends Controller
             'site_id'       => 'nullable|integer|exists:sites,id',
         ]);
 
+        // ★ v18.20 — 인원 배정 해제/날짜 이동 시 "떠나간 쪽" 월별 공수 집계가 그대로 남는
+        //   버그 수정. Observer는 저장 시점의 "현재" 배정자·날짜만 재계산하므로, 바뀌기
+        //   전의 배정자/월을 미리 기록해뒀다가 그쪽도 따로 재계산해줘야 함.
+        $oldUserIds  = $schedule->users()->pluck('users.id')->all();
+        $oldYearMonth = $schedule->date instanceof \Carbon\Carbon
+            ? $schedule->date->format('Y-m')
+            : substr((string) $schedule->date, 0, 7);
+
         $schedule->update($data);
+
+        $newYearMonth = $schedule->date instanceof \Carbon\Carbon
+            ? $schedule->date->format('Y-m')
+            : substr((string) $schedule->date, 0, 7);
 
         // 투입 인원 재배정
         if (isset($data['user_ids'])) {
             $schedule->users()->sync($data['user_ids']);
 
             // ★ v10.2 패치 — schedule_users 변경 후 Observer 재발동
-            //   (monthly_summary 자동 갱신 트리거)
+            //   (monthly_summary 자동 갱신 트리거, 잔류/신규 배정자 대상)
             $schedule->touch();
+
+            // ★ v18.20 — sync()로 완전히 빠진 사람은 위 touch()가 재계산하는 "현재 배정자"
+            //   목록에 없어서 공수가 그대로 남아있는 버그 수정. 빠진 사람만 옛 월 기준으로 재계산.
+            $removedUserIds = array_diff($oldUserIds, $data['user_ids']);
+            foreach ($removedUserIds as $removedUserId) {
+                MonthlySummaryService::recalculate((int) $removedUserId, $oldYearMonth);
+            }
+        }
+
+        // ★ v18.20 — 날짜가 다른 달로 이동한 경우, 잔류(=해제 안 된) 배정자들의 "옛 달"
+        //   집계도 재계산해서 옮겨지기 전 달에서 이 일정이 빠졌다는 걸 반영해야 함.
+        if ($oldYearMonth !== $newYearMonth) {
+            $stayingUserIds = isset($data['user_ids'])
+                ? array_intersect($oldUserIds, $data['user_ids'])
+                : $oldUserIds;
+            foreach ($stayingUserIds as $stayingUserId) {
+                MonthlySummaryService::recalculate((int) $stayingUserId, $oldYearMonth);
+            }
         }
 
         $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho']);

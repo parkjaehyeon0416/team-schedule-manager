@@ -38,8 +38,6 @@ export default function QuoteCreateScreen() {
   const [clientContact, setClientContact] = useState('');
   const [address, setAddress] = useState('');
   const [manualAddress, setManualAddress] = useState('');
-  const [dong, setDong] = useState('');
-  const [ho, setHo] = useState('');
   const [addressSearchVisible, setAddressSearchVisible] = useState(false);
   const [desiredDate, setDesiredDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -100,11 +98,7 @@ export default function QuoteCreateScreen() {
     }
     setSaving(true);
     try {
-      const baseAddress = manualAddress.trim() || address.trim();
-      const dongHo = [dong.trim() && `${dong.trim()}동`, ho.trim() && `${ho.trim()}호`]
-        .filter(Boolean)
-        .join(' ');
-      const fullAddress = [baseAddress, dongHo].filter(Boolean).join(' ');
+      const fullAddress = [address.trim(), manualAddress.trim()].filter(Boolean).join(' ');
 
       await createQuote({
         client_name: clientName.trim() || undefined,
@@ -150,34 +144,12 @@ export default function QuoteCreateScreen() {
           textColor="#222222"
           outlineColor="#CCCCCC"
           activeOutlineColor="#1F3864"
-          label="기타 주소 (검색에 안 나올 때 직접 입력)"
+          label="기타 주소"
           value={manualAddress}
           onChangeText={setManualAddress}
-          placeholder="검색 결과가 없으면 여기에 직접 입력하세요"
+          placeholder="아파트/건물명, 동, 호수 등을 자유롭게 입력하세요"
           style={styles.input}
         />
-        <View style={styles.rowGroup}>
-          <TextInput
-            mode="outlined"
-            textColor="#222222"
-            outlineColor="#CCCCCC"
-            activeOutlineColor="#1F3864"
-            label="동"
-            value={dong}
-            onChangeText={setDong}
-            style={[styles.input, styles.inputHalf]}
-          />
-          <TextInput
-            mode="outlined"
-            textColor="#222222"
-            outlineColor="#CCCCCC"
-            activeOutlineColor="#1F3864"
-            label="호"
-            value={ho}
-            onChangeText={setHo}
-            style={[styles.input, styles.inputHalf]}
-          />
-        </View>
         <AddressSearchModal
           visible={addressSearchVisible}
           onClose={() => setAddressSearchVisible(false)}
@@ -352,8 +324,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { padding: 16, paddingBottom: 60 },
   input: { marginBottom: 12, backgroundColor: '#FFF' },
-  rowGroup: { flexDirection: 'row', gap: 8 },
-  inputHalf: { flex: 1 },
   dateButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',

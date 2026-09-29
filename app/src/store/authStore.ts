@@ -7,6 +7,11 @@ interface User {
   email: string;
   role_id: number;
   team_id: number | null;
+  // ★ v18.23 — 프로필/연락처 공유
+  phone?: string | null;
+  avatar_color?: string;
+  avatar_image_path?: string | null;
+  kakao_talk_id?: string | null;
   role?: { id: number; name: string };
   team?: { id: number; name: string };
 }
@@ -17,11 +22,12 @@ interface AuthState {
   isLoggedIn: boolean;
   isLoading: boolean; // ★ 추가 — 앱 시작 시 토큰 복원 중인지 여부
   setAuth: (user: User, token: string) => Promise<void>;
+  updateUser: (partial: Partial<User>) => Promise<void>; // ★ v18.23 — 프로필 수정 후 로컬 상태 갱신
   logout: () => Promise<void>;
   restoreAuth: () => Promise<void>; // ★ 추가 — 앱 시작 시 토큰 복원
 }
 
-export const useAuthStore = create<AuthState>()(set => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   token: null,
   isLoggedIn: false,
@@ -32,6 +38,17 @@ export const useAuthStore = create<AuthState>()(set => ({
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('user', JSON.stringify(user)); // ★ 사용자 정보도 저장
     set({ user, token, isLoggedIn: true, isLoading: false });
+  },
+
+  // ★ v18.23 — 프로필 수정(PUT /profile, 아바타 업로드) 응답으로 받은 최신
+  //   user 정보를 메모리+저장소에 반영. 서버 응답 전체(user.fresh())를 그대로
+  //   넘기면 되고, 부분 필드만 와도 기존 값과 merge됨.
+  updateUser: async (partial: Partial<User>) => {
+    const current = get().user;
+    if (!current) return;
+    const merged = { ...current, ...partial };
+    await AsyncStorage.setItem('user', JSON.stringify(merged));
+    set({ user: merged });
   },
 
   // 로그아웃 — 저장소 비우기 + 메모리 상태 리셋

@@ -75,6 +75,11 @@ export interface TeamMember {
   id: number;
   name: string;
   role_id: number;
+  // ★ v18.23 — 같은 팀 사람끼리 연락할 수 있도록 members()에서 추가로 내려줌
+  phone?: string | null;
+  kakao_talk_id?: string | null;
+  avatar_color?: string;
+  avatar_image_path?: string | null;
 }
 
 /**

@@ -13,6 +13,7 @@ import HomeScreen from '../screens/HomeScreen';
 import MySummaryScreen from '../screens/MySummaryScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ProfileEditScreen from '../screens/ProfileEditScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
 import ScheduleCreateScreen from '../screens/ScheduleCreateScreen';
@@ -137,6 +138,7 @@ export default function AppNavigator() {
               options={{ presentation: 'modal' }}
             />
             <Stack.Screen name="WageSettings" component={WageSettingsScreen} />
+            <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} />
             {/* ★ 이번 작업 추가 */}
             <Stack.Screen name="QuoteCreate" component={QuoteCreateScreen} />

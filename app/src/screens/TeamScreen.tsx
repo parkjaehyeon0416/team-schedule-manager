@@ -13,6 +13,9 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
+  Modal,
+  Linking,
 } from 'react-native';
 import { Text, Button, TextInput, Chip } from 'react-native-paper';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -27,6 +30,7 @@ import {
   switchActiveTeam,
 } from '../api/teamApi';
 import type { Team, TeamMember } from '../types/api';
+import { SERVER_BASE_URL } from '../api/axiosInstance';
 import AppHeader from '../components/AppHeader';
 
 const ROLE_LABELS: Record<number, string> = {
@@ -44,6 +48,7 @@ export default function TeamScreen() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [formTab, setFormTab] = useState<FormTabKey>('create');
@@ -149,6 +154,17 @@ export default function TeamScreen() {
     if (!selectedTeam) return;
     Clipboard.setString(selectedTeam.invite_code);
     Alert.alert('복사 완료', '초대 코드가 복사되었습니다.');
+  };
+
+  const handleCall = (phone: string) => {
+    Linking.openURL(`tel:${phone}`).catch(() =>
+      Alert.alert('오류', '전화 앱을 열 수 없습니다.'),
+    );
+  };
+
+  const handleCopyKakao = (kakaoTalkId: string) => {
+    Clipboard.setString(kakaoTalkId);
+    Alert.alert('복사 완료', '카카오톡 아이디가 복사되었습니다. 카카오톡에서 검색해 친구 추가해보세요.');
   };
 
   const handleLeaveTeam = () => {
@@ -312,16 +328,27 @@ export default function TeamScreen() {
                 ) : (
                   members.map(m => {
                     const isLead = m.role_id <= 2;
+                    const memberAvatarUri = m.avatar_image_path
+                      ? `${SERVER_BASE_URL}/storage/${m.avatar_image_path}`
+                      : null;
                     return (
-                      <View key={m.id} style={styles.memberRow}>
-                        <View
-                          style={[
-                            styles.avatar,
-                            { backgroundColor: isLead ? '#1F3864' : '#999' },
-                          ]}
-                        >
-                          <Text style={styles.avatarText}>{m.name.charAt(0)}</Text>
-                        </View>
+                      <TouchableOpacity
+                        key={m.id}
+                        style={styles.memberRow}
+                        onPress={() => setSelectedMember(m)}
+                      >
+                        {memberAvatarUri ? (
+                          <Image source={{ uri: memberAvatarUri }} style={styles.avatarImage} />
+                        ) : (
+                          <View
+                            style={[
+                              styles.avatar,
+                              { backgroundColor: m.avatar_color || (isLead ? '#1F3864' : '#999') },
+                            ]}
+                          >
+                            <Text style={styles.avatarText}>{m.name.charAt(0)}</Text>
+                          </View>
+                        )}
                         <Text style={styles.memberName}>{m.name}</Text>
                         <View
                           style={[
@@ -338,7 +365,8 @@ export default function TeamScreen() {
                             {ROLE_LABELS[m.role_id] ?? '팀원'}
                           </Text>
                         </View>
-                      </View>
+                        <Text style={styles.chevron}>›</Text>
+                      </TouchableOpacity>
                     );
                   })
                 )}
@@ -363,6 +391,82 @@ export default function TeamScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* ★ v18.23 — 팀원 상세(연락처/카카오톡 아이디) 모달 */}
+      <Modal
+        visible={!!selectedMember}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedMember(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setSelectedMember(null)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalCard}>
+            {selectedMember && (
+              <>
+                {selectedMember.avatar_image_path ? (
+                  <Image
+                    source={{ uri: `${SERVER_BASE_URL}/storage/${selectedMember.avatar_image_path}` }}
+                    style={styles.modalAvatarImage}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.modalAvatar,
+                      { backgroundColor: selectedMember.avatar_color || '#1F3864' },
+                    ]}
+                  >
+                    <Text style={styles.modalAvatarText}>
+                      {selectedMember.name.charAt(0)}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.modalName}>{selectedMember.name}</Text>
+                <Text style={styles.modalRole}>
+                  {ROLE_LABELS[selectedMember.role_id] ?? '팀원'}
+                </Text>
+
+                {selectedMember.phone ? (
+                  <TouchableOpacity
+                    style={styles.modalActionRow}
+                    onPress={() => handleCall(selectedMember.phone!)}
+                  >
+                    <Text style={styles.modalActionLabel}>📞 {selectedMember.phone}</Text>
+                    <Text style={styles.modalActionBtn}>전화하기</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={styles.modalEmptyHint}>등록된 연락처가 없습니다</Text>
+                )}
+
+                {selectedMember.kakao_talk_id ? (
+                  <TouchableOpacity
+                    style={styles.modalActionRow}
+                    onPress={() => handleCopyKakao(selectedMember.kakao_talk_id!)}
+                  >
+                    <Text style={styles.modalActionLabel}>
+                      💬 {selectedMember.kakao_talk_id}
+                    </Text>
+                    <Text style={styles.modalActionBtn}>복사</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={styles.modalEmptyHint}>등록된 카카오톡 아이디가 없습니다</Text>
+                )}
+
+                <Button
+                  mode="text"
+                  onPress={() => setSelectedMember(null)}
+                  style={{ marginTop: 8 }}
+                >
+                  닫기
+                </Button>
+              </>
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -440,10 +544,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
+  avatarImage: { width: 34, height: 34, borderRadius: 17, marginRight: 10 },
   avatarText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
   memberName: { flex: 1, fontSize: 14, fontWeight: '600', color: '#222' },
   roleBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
   roleBadgeText: { fontSize: 11, fontWeight: '700' },
+  chevron: { fontSize: 20, color: '#CCC', marginLeft: 8 },
 
   leaveBtn: { marginTop: 14, alignItems: 'center' },
   leaveBtnText: {
@@ -452,4 +558,45 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textDecorationLine: 'underline',
   },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  modalAvatarImage: { width: 64, height: 64, borderRadius: 32, marginBottom: 12 },
+  modalAvatarText: { fontSize: 22, fontWeight: '700', color: '#FFFFFF' },
+  modalName: { fontSize: 17, fontWeight: '800', color: '#222' },
+  modalRole: { fontSize: 12, color: '#888', marginBottom: 18 },
+  modalActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    backgroundColor: '#F5F6F8',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  modalActionLabel: { fontSize: 14, color: '#333', flexShrink: 1 },
+  modalActionBtn: { fontSize: 12, color: '#1F3864', fontWeight: '700' },
+  modalEmptyHint: { fontSize: 12, color: '#AAA', marginBottom: 10 },
 });

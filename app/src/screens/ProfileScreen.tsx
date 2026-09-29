@@ -6,11 +6,12 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import { Card, Text, Button, Avatar, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
+import { SERVER_BASE_URL } from '../api/axiosInstance';
 import AppHeader from '../components/AppHeader';
 
 export default function ProfileScreen() {
@@ -32,6 +33,10 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
+  const avatarUri = user.avatar_image_path
+    ? `${SERVER_BASE_URL}/storage/${user.avatar_image_path}`
+    : null;
+
   return (
     <View style={styles.screen}>
       <AppHeader leftType="menu" title="프로필" />
@@ -39,12 +44,16 @@ export default function ProfileScreen() {
       {/* ── 1) 프로필 카드 ── */}
       <Card style={styles.profileCard}>
         <View style={styles.profileBanner}>
-          <Avatar.Text
-            size={80}
-            label={user.name.charAt(0)}
-            style={styles.avatar}
-            labelStyle={styles.avatarLabel}
-          />
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+          ) : (
+            <Avatar.Text
+              size={80}
+              label={user.name.charAt(0)}
+              style={[styles.avatar, user.avatar_color ? { backgroundColor: '#FFFFFF' } : null]}
+              labelStyle={[styles.avatarLabel, user.avatar_color ? { color: user.avatar_color } : null]}
+            />
+          )}
         </View>
         <Card.Content style={styles.profileContent}>
           <Text variant="headlineSmall" style={styles.name}>
@@ -61,7 +70,27 @@ export default function ProfileScreen() {
         </Card.Content>
       </Card>
 
-      {/* ── 2) 업무 설정 섹션 ── */}
+      {/* ── 2) 프로필 설정 섹션 ── */}
+      <Text style={styles.sectionTitle}>프로필</Text>
+      <Card style={styles.menuCard}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ProfileEdit')}
+          style={styles.menuItem}
+        >
+          <View style={styles.menuLeft}>
+            <Icon name="account-edit" size={24} color="#2E75B6" />
+            <View style={styles.menuTextBox}>
+              <Text style={styles.menuLabel}>프로필 설정</Text>
+              <Text style={styles.menuSub}>
+                프로필 사진·색상, 연락처, 카카오톡 아이디를 설정합니다
+              </Text>
+            </View>
+          </View>
+          <Icon name="chevron-right" size={22} color="#BBB" />
+        </TouchableOpacity>
+      </Card>
+
+      {/* ── 3) 업무 설정 섹션 ── */}
       <Text style={styles.sectionTitle}>업무 설정</Text>
       <Card style={styles.menuCard}>
         <TouchableOpacity
@@ -124,6 +153,13 @@ const styles = StyleSheet.create({
   },
   avatar: {
     backgroundColor: '#FFFFFF',
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
   avatarLabel: {
     color: '#2E75B6',

@@ -202,6 +202,7 @@ export interface Team {
   name: string;
   invite_code: string;
   created_by: number | null;
+  is_active?: boolean; // ★ v18.21 — GET /teams 응답에서만 내려옴(지금 활성 팀인지)
 }
 
 // ═══════════════════════════════════════════════════════════════

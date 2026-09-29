@@ -9,8 +9,10 @@ export async function getMyTeams(): Promise<Team[]> {
   return res.data.data;
 }
 
-export async function getTeamMembers(): Promise<TeamMember[]> {
-  const res = await axios.get<ApiResponse<TeamMember[]>>('/team/members');
+export async function getTeamMembers(teamId?: number): Promise<TeamMember[]> {
+  const res = await axios.get<ApiResponse<TeamMember[]>>('/team/members', {
+    params: teamId ? { team_id: teamId } : undefined,
+  });
   return res.data.data;
 }
 
@@ -23,8 +25,13 @@ export async function joinTeam(inviteCode: string): Promise<void> {
   await axios.post('/teams/join', { invite_code: inviteCode });
 }
 
-export async function leaveTeam(): Promise<void> {
-  await axios.post('/teams/leave');
+export async function leaveTeam(teamId?: number): Promise<void> {
+  await axios.post('/teams/leave', teamId ? { team_id: teamId } : {});
+}
+
+// ★ v18.21 — 여러 팀 동시 소속 중 "지금 활동할 팀" 전환
+export async function switchActiveTeam(teamId: number): Promise<void> {
+  await axios.post('/teams/switch-active', { team_id: teamId });
 }
 
 export async function updateTeam(id: number, name: string): Promise<Team> {

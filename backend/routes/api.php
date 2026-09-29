@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\TaxSummaryController;              // ★ v17
 use App\Http\Controllers\Api\QuoteController;                   // ★ v12~v13
 use App\Http\Controllers\Api\UserMaterialController;            // ★ v12
 use App\Http\Controllers\Api\NotificationSettingController;     // ★ v18.1
+use App\Http\Controllers\Api\ProfileController;                 // ★ v18.23
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -43,6 +44,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── 내 정보 + 로그아웃 ──
     Route::get('/me',           [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    // ★ v18.23 — 내 프로필 설정(연락처/카카오톡 아이디/아바타)
+    Route::put('/profile',          [ProfileController::class, 'update']);
+    Route::post('/profile/avatar',  [ProfileController::class, 'uploadAvatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
 
     // ═══════════════════════════════════════════════════════════
     // ── 조회 (member 이상 모두 가능) ──

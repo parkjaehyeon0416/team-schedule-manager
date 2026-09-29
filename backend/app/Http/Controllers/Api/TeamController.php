@@ -306,12 +306,22 @@ class TeamController extends Controller
             return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
+        // ★ v18.23 — 같은 팀 사람끼리는 연락처/카카오톡 아이디/아바타까지 볼 수 있게
+        //   확장(전체 공개 아님 — 위에서 이미 요청자가 이 팀 소속인지 확인함).
         $members = User::query()
             ->join('team_members', 'team_members.user_id', '=', 'users.id')
             ->where('team_members.team_id', $teamId)
             ->whereNull('team_members.deleted_at')
             ->whereNull('users.deleted_at')
-            ->select('users.id', 'users.name', 'team_members.role_id')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.phone',
+                'users.kakao_talk_id',
+                'users.avatar_color',
+                'users.avatar_image_path',
+                'team_members.role_id',
+            )
             ->orderBy('team_members.role_id')
             ->orderBy('users.name')
             ->get();

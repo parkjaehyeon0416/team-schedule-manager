@@ -24,6 +24,10 @@ class User extends Authenticatable
         'password',
         'google_id',
         'kakao_id',
+        // ★ v18.23 — 팀원 간 프로필/연락처 공유
+        'avatar_color',
+        'avatar_image_path',
+        'kakao_talk_id',
         'role_id',
         'team_id',
         // ★ v1.9 추가 — 프리랜서 모드 지원

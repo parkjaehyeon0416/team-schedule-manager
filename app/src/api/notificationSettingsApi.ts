@@ -16,7 +16,14 @@ export async function getNotificationSettings(): Promise<NotificationSetting> {
 export type NotificationSettingPayload = Partial<
   Pick<
     NotificationSetting,
-    'schedule_reminder' | 'team_activity' | 'quote_update' | 'report_view'
+    | 'schedule_reminder'
+    | 'team_activity'
+    | 'quote_update'
+    | 'report_view'
+    | 'tax_reminder'
+    | 'marketing_opt_in'
+    | 'night_quiet_hours'
+    | 'schedule_reminder_time'
   >
 >;
 

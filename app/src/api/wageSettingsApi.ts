@@ -4,7 +4,18 @@
 //   GET/POST/DELETE /api/wage-settings
 // ═══════════════════════════════════════════════════════════════
 import axios from './axiosInstance';
-import type { ApiResponse, WageSetting } from '../types/api';
+import type { ApiResponse, WageProfile, WageSetting } from '../types/api';
+
+// ★ DESIGN-CANVAS(MY_RATES) — 공정과 무관한 기본 일급 프로필
+export async function getWageProfile(): Promise<WageProfile> {
+  const res = await axios.get<ApiResponse<WageProfile>>('/wage-profile');
+  return res.data.data;
+}
+
+export async function saveWageProfile(payload: WageProfile): Promise<WageProfile> {
+  const res = await axios.put<ApiResponse<WageProfile>>('/wage-profile', payload);
+  return res.data.data;
+}
 
 /**
  * 내 단가 목록 조회

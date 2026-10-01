@@ -2,7 +2,7 @@
 // 📄 AttendanceScreen.tsx — 근태 현황 (팀장 전용)
 //
 //   ★ 설계 방향(2026-09-21): 개인이 직접 체크인하는 출퇴근 기능이 아님.
-//   팀원 본인의 근무일/공수는 이미 MySummaryScreen(내 수입 현황)에 나오므로
+//   팀원 본인의 근무일/공수는 이미 IncomeListScreen(내 수입)에 나오므로
 //   중복임 — 이 화면은 "팀장이 팀원 전체의 그 달 출근 현황(=일정 배정일)을
 //   한눈에 파악"하는 용도로, manager 이상만 볼 수 있음.
 // ═══════════════════════════════════════════════════════════════
@@ -72,7 +72,7 @@ export default function AttendanceScreen() {
   if (!user?.team_id) {
     return (
       <View style={styles.screen}>
-        <AppHeader leftType="menu" title="근태 현황" />
+        <AppHeader leftType="back" title="근태 현황" />
         <View style={styles.centerBox}>
           <Text style={styles.emptyIcon}>👥</Text>
           <Text style={styles.emptyTitle}>소속된 팀이 없습니다</Text>
@@ -85,7 +85,7 @@ export default function AttendanceScreen() {
   if (!canView) {
     return (
       <View style={styles.screen}>
-        <AppHeader leftType="menu" title="근태 현황" />
+        <AppHeader leftType="back" title="근태 현황" />
         <View style={styles.centerBox}>
           <Text style={styles.emptyIcon}>🔒</Text>
           <Text style={styles.emptyTitle}>팀장만 볼 수 있는 화면이에요</Text>
@@ -99,7 +99,7 @@ export default function AttendanceScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="menu" title="근태 현황" />
+      <AppHeader leftType="back" title="근태 현황" />
 
       <View style={styles.monthRow}>
         <Pressable onPress={handlePrevMonth} hitSlop={12}>

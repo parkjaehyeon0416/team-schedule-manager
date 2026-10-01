@@ -61,6 +61,7 @@ class QuoteController extends Controller
             'desired_date'     => 'nullable|date',
             'memo'             => 'nullable|string',
             'discount_amount'  => 'nullable|numeric|min:0',
+            'tax_type'         => 'nullable|in:separate,included,exempt',
             'lines'            => 'required|array|min:1',
             'lines.*.name'       => 'required|string|max:100',
             'lines.*.spec'       => 'nullable|string|max:255',
@@ -75,6 +76,8 @@ class QuoteController extends Controller
                 $subtotal += $line['quantity'] * $line['unit_price'];
             }
             $discount = $data['discount_amount'] ?? 0;
+            $taxType  = $data['tax_type'] ?? 'separate';
+            [$vat, $total] = $this->calculateTax($subtotal, $discount, $taxType);
 
             $quote = Quote::create([
                 'user_id'          => $user->id,
@@ -88,7 +91,9 @@ class QuoteController extends Controller
                 'memo'             => $data['memo'] ?? null,
                 'subtotal_amount'  => $subtotal,
                 'discount_amount'  => $discount,
-                'total_amount'     => max(0, $subtotal - $discount),
+                'tax_type'         => $taxType,
+                'vat_amount'       => $vat,
+                'total_amount'     => $total,
                 'status'           => 'draft',
             ]);
 
@@ -133,6 +138,79 @@ class QuoteController extends Controller
     }
 
     /**
+     * 견적 수정 (고객정보/현장/항목 전체 교체)
+     * PUT /api/quotes/{id}
+     */
+    public function update(Request $request, string $id)
+    {
+        $quote = $this->findQuote($request, $id);
+        if (!$quote) {
+            return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
+
+        $data = $request->validate([
+            'client_name'      => 'nullable|string|max:100',
+            'client_contact'   => 'nullable|string|max:100',
+            'address'          => 'nullable|string|max:255',
+            'site_id'          => 'nullable|integer|exists:sites,id',
+            'work_type_id'     => 'nullable|integer|exists:work_types,id',
+            'desired_date'     => 'nullable|date',
+            'memo'             => 'nullable|string',
+            'discount_amount'  => 'nullable|numeric|min:0',
+            'tax_type'         => 'nullable|in:separate,included,exempt',
+            'lines'            => 'required|array|min:1',
+            'lines.*.name'       => 'required|string|max:100',
+            'lines.*.spec'       => 'nullable|string|max:255',
+            'lines.*.quantity'   => 'required|numeric|min:0',
+            'lines.*.unit'       => 'nullable|string|max:20',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        DB::transaction(function () use ($quote, $data, $request) {
+            $subtotal = 0;
+            foreach ($data['lines'] as $line) {
+                $subtotal += $line['quantity'] * $line['unit_price'];
+            }
+            $discount = $data['discount_amount'] ?? 0;
+            $taxType  = $data['tax_type'] ?? $quote->tax_type ?? 'separate';
+            [$vat, $total] = $this->calculateTax($subtotal, $discount, $taxType);
+
+            $quote->update([
+                'site_id'          => $data['site_id'] ?? null,
+                'work_type_id'     => $data['work_type_id'] ?? null,
+                'client_name'      => $data['client_name'] ?? null,
+                'client_contact'   => $data['client_contact'] ?? null,
+                'address'          => $data['address'] ?? null,
+                'desired_date'     => $data['desired_date'] ?? null,
+                'memo'             => $data['memo'] ?? null,
+                'subtotal_amount'  => $subtotal,
+                'discount_amount'  => $discount,
+                'tax_type'         => $taxType,
+                'vat_amount'       => $vat,
+                'total_amount'     => $total,
+            ]);
+
+            $quote->lines()->delete();
+            foreach ($data['lines'] as $i => $line) {
+                QuoteLine::create([
+                    'quote_id'   => $quote->id,
+                    'name'       => $line['name'],
+                    'spec'       => $line['spec'] ?? null,
+                    'quantity'   => $line['quantity'],
+                    'unit'       => $line['unit'] ?? '개',
+                    'unit_price' => $line['unit_price'],
+                    'amount'     => $line['quantity'] * $line['unit_price'],
+                    'sort_order' => $i,
+                ]);
+
+                $this->learnMaterial($request->user()->id, $data['work_type_id'] ?? null, $line);
+            }
+        });
+
+        return ApiResponse::success($quote->fresh('lines'), '견적서가 수정되었습니다.');
+    }
+
+    /**
      * 견적 상태 변경 (draft → sent, 또는 반려)
      * PATCH /api/quotes/{id}/status
      */
@@ -149,6 +227,18 @@ class QuoteController extends Controller
 
         $quote->status = $data['status'];
         $quote->save();
+
+        // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가 — 발송 처리 시 알림 피드에 기록(셀프 알림, 발송 이력 확인용)
+        if ($data['status'] === 'sent') {
+            \App\Models\Notification::create([
+                'user_id'   => $request->user()->id,
+                'category'  => 'quote',
+                'title'     => '견적 알림',
+                'body'      => ($quote->client_name ? "{$quote->client_name}님에게 " : '') . '견적서를 발송했어요.',
+                'link_type' => 'quote',
+                'link_id'   => $quote->id,
+            ]);
+        }
 
         return ApiResponse::success($quote, '견적 상태가 변경되었습니다.');
     }
@@ -271,6 +361,24 @@ class QuoteController extends Controller
     private function findQuote(Request $request, string $id): ?Quote
     {
         return Quote::where('user_id', $request->user()->id)->find($id);
+    }
+
+    /**
+     * 세금 계산 — ★ DESIGN-CANVAS(ESTIMATE_CREATE/EDIT) "세금" 탭 실계산.
+     *   separate(부가세 별도): 공급가에 10% 더해서 합계
+     *   included(부가세 포함): 합계는 공급가 그대로, 부가세는 그 안에 포함된 금액으로 역산해 표시만
+     *   exempt(면세): 부가세 없음
+     * 반환: [부가세금액, 합계금액]
+     */
+    private function calculateTax(float $subtotal, float $discount, string $taxType): array
+    {
+        $base = max(0, $subtotal - $discount);
+
+        return match ($taxType) {
+            'separate' => [round($base * 0.1), $base + round($base * 0.1)],
+            'included' => [round($base - $base / 1.1), $base],
+            default    => [0, $base], // exempt
+        };
     }
 
     private function learnMaterial(int $userId, ?int $workTypeId, array $line): void

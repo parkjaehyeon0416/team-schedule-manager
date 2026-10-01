@@ -18,3 +18,14 @@ export async function getTaxSummary(year: number): Promise<TaxSummary> {
 export function getTaxSummaryPdfPath(year: number): string {
   return `/tax-summary/pdf?year=${year}`;
 }
+
+// ★ DESIGN-CANVAS(TAX_EXPORT) 추가 (2026-10-02) — CSV 자료 내보내기
+// PDF와 달리 인증된 axios 요청으로 텍스트를 직접 받아서, 모바일에서는 OS 공유 시트로 전달함.
+export async function exportTaxCsv(from: string, to: string, items: string[]): Promise<string> {
+  const res = await axios.get<string>('/tax-summary/export', {
+    params: { from, to, items: items.join(',') },
+    responseType: 'text',
+    transformResponse: [(data) => data], // axios가 JSON으로 파싱하지 않도록
+  });
+  return res.data;
+}

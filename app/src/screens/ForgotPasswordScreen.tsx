@@ -7,10 +7,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
 import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
+import AppHeader from '../components/AppHeader';
+import { colors, radius, spacing } from '../theme/designTokens';
+import GradientButton from '../components/GradientButton';
 
 // 2단계: ① 이메일+이름+전화번호 일치 확인 후 인증번호 발송 → ② 인증번호+새 비밀번호 입력
 export default function ForgotPasswordScreen() {
@@ -78,158 +83,138 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🔑 비밀번호 재설정</Text>
-
-      {step === 1 ? (
-        <>
+    <View style={styles.screen}>
+      <AppHeader leftType="back" />
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>비밀번호 찾기</Text>
           <Text style={styles.subtitle}>
-            가입 시 등록한 이메일, 이름, 전화번호를 입력해주세요.
+            {step === 1
+              ? '가입 시 등록한 이메일, 이름, 전화번호를 입력해주세요.'
+              : `${phone}로 발송된 인증번호(10분간 유효)와 새 비밀번호를 입력해주세요.`}
           </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="이메일"
-            placeholderTextColor="#999999"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="이름"
-            placeholderTextColor="#999999"
-            value={name}
-            onChangeText={setName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="전화번호 (예: 010-1234-5678)"
-            placeholderTextColor="#999999"
-            value={phone}
-            onChangeText={t => setPhone(formatPhoneInput(t))}
-            keyboardType="phone-pad"
-            maxLength={13}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSendCode}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>인증번호 받기</Text>
-            )}
-          </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <Text style={styles.subtitle}>
-            {phone}로 발송된 인증번호(10분간 유효)와 새 비밀번호를 입력해주세요.
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="인증번호 6자리"
-            placeholderTextColor="#999999"
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-            maxLength={6}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="새 비밀번호 (6자 이상)"
-            placeholderTextColor="#999999"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="새 비밀번호 확인"
-            placeholderTextColor="#999999"
-            value={passwordConfirm}
-            onChangeText={setPasswordConfirm}
-            secureTextEntry
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleReset}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>비밀번호 재설정</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.backLink}
-            onPress={handleSendCode}
-            disabled={loading}
-          >
-            <Text style={styles.backLinkText}>인증번호 다시 받기</Text>
-          </TouchableOpacity>
-        </>
-      )}
+        </View>
 
-      <TouchableOpacity
-        style={styles.backLink}
-        onPress={() => navigation.goBack()}
-        disabled={loading}
-      >
-        <Text style={styles.backLinkText}>로그인으로 돌아가기</Text>
-      </TouchableOpacity>
+        {step === 1 ? (
+          <>
+            <View style={styles.inputWrap}>
+              <Icon name="email-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="이메일"
+                placeholderTextColor={colors.muted}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.inputWrap}>
+              <Icon name="account-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="이름"
+                placeholderTextColor={colors.muted}
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+            <View style={styles.inputWrap}>
+              <Icon name="cellphone" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="전화번호 (예: 010-1234-5678)"
+                placeholderTextColor={colors.muted}
+                value={phone}
+                onChangeText={t => setPhone(formatPhoneInput(t))}
+                keyboardType="phone-pad"
+                maxLength={13}
+              />
+            </View>
+            <GradientButton onPress={handleSendCode} loading={loading}>인증번호 받기</GradientButton>
+          </>
+        ) : (
+          <>
+            <View style={styles.inputWrap}>
+              <Icon name="shield-check-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="인증번호 6자리"
+                placeholderTextColor={colors.muted}
+                value={code}
+                onChangeText={setCode}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+            <View style={styles.inputWrap}>
+              <Icon name="lock-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="새 비밀번호 (6자 이상)"
+                placeholderTextColor={colors.muted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+            <View style={styles.inputWrap}>
+              <Icon name="lock-check-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="새 비밀번호 확인"
+                placeholderTextColor={colors.muted}
+                value={passwordConfirm}
+                onChangeText={setPasswordConfirm}
+                secureTextEntry
+              />
+            </View>
+            <GradientButton onPress={handleReset} loading={loading}>비밀번호 재설정</GradientButton>
+            <TouchableOpacity style={styles.backLink} onPress={handleSendCode} disabled={loading}>
+              <Text style={styles.backLinkText}>인증번호 다시 받기</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} disabled={loading}>
+          <Text style={styles.backLinkText}>로그인으로 돌아가기</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.surface },
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f0f2f5',
+    flexGrow: 1,
+    padding: spacing.xl,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1F3864',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    fontSize: 16,
-    color: '#222222',
+  titleBlock: { marginBottom: spacing.lg, gap: 4 },
+  title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
+  subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    height: 48,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
   },
+  input: { flex: 1, fontSize: 14, color: colors.textPrimary },
   button: {
-    backgroundColor: '#1F3864',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: colors.primaryDark,
+    borderRadius: radius.sm,
+    height: 52,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  backLink: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  backLinkText: {
-    color: '#666',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
+  buttonText: { color: colors.surface, fontSize: 15, fontWeight: '700' },
+  backLink: { marginTop: spacing.md, alignItems: 'center' },
+  backLinkText: { color: colors.textSecondary, fontSize: 13 },
 });

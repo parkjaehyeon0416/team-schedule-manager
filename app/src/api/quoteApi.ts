@@ -8,10 +8,12 @@ export interface QuoteInput {
   client_name?: string;
   client_contact?: string;
   address?: string;
+  site_id?: number;
   work_type_id?: number;
   desired_date?: string;
   memo?: string;
   discount_amount?: number;
+  tax_type?: 'separate' | 'included' | 'exempt';
   lines: QuoteLine[];
 }
 
@@ -27,6 +29,19 @@ export async function getQuote(id: number): Promise<Quote> {
 
 export async function createQuote(payload: QuoteInput): Promise<Quote> {
   const res = await axios.post<ApiResponse<Quote>>('/quotes', payload);
+  return res.data.data;
+}
+
+export async function updateQuote(id: number, payload: QuoteInput): Promise<Quote> {
+  const res = await axios.put<ApiResponse<Quote>>(`/quotes/${id}`, payload);
+  return res.data.data;
+}
+
+export async function updateQuoteStatus(
+  id: number,
+  status: 'draft' | 'sent' | 'rejected',
+): Promise<Quote> {
+  const res = await axios.patch<ApiResponse<Quote>>(`/quotes/${id}/status`, { status });
   return res.data.data;
 }
 

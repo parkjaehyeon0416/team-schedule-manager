@@ -6,6 +6,7 @@ use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Schedule;
+use App\Models\Site;
 use App\Models\SiteFile;
 use Illuminate\Http\Request;
 
@@ -304,6 +305,113 @@ class PhotoController extends Controller
         }
 
         $photo->delete(); // SoftDelete
+
+        return ApiResponse::success(null, '사진이 삭제되었습니다.');
+    }
+
+    /**
+     * ★ DESIGN-CANVAS(SITE_DETAIL/CREATE) 추가 — 현장 단위 사진 (일정 경유 없이 현장 자체에 직접 업로드)
+     *
+     * GET /api/sites/{siteId}/photos
+     */
+    public function siteIndex(Request $request, int $siteId)
+    {
+        $user = $request->user();
+
+        $site = Site::forUser($user)->find($siteId);
+        if (!$site) {
+            return ApiResponse::error('현장을 찾을 수 없습니다.', ErrorCode::SITE_NOT_FOUND, 404);
+        }
+
+        $photos = SiteFile::where('site_id', $siteId)
+            ->where('file_type', 'photo')
+            ->orderBy('sort_order')
+            ->orderBy('created_at')
+            ->get();
+
+        $grouped = ['before' => [], 'during' => [], 'after' => [], 'other' => []];
+        foreach ($photos as $p) {
+            $cat = $p->photo_category ?? 'other';
+            if (!array_key_exists($cat, $grouped)) {
+                $cat = 'other';
+            }
+            $grouped[$cat][] = $p;
+        }
+
+        return ApiResponse::success([
+            'before' => $grouped['before'],
+            'during' => $grouped['during'],
+            'after'  => $grouped['after'],
+            'other'  => $grouped['other'],
+            'counts' => array_map('count', $grouped),
+        ], '사진 목록 조회 성공');
+    }
+
+    /**
+     * POST /api/sites/{siteId}/photos
+     * Body: photo (file), photo_category (before|after), description (optional)
+     */
+    public function siteStore(Request $request, int $siteId)
+    {
+        $user = $request->user();
+
+        $site = Site::editableBy($user)->find($siteId);
+        if (!$site) {
+            return ApiResponse::error('현장을 찾을 수 없습니다.', ErrorCode::SITE_NOT_FOUND, 404);
+        }
+
+        $validated = $request->validate([
+            'photo'          => 'required|image|mimes:jpeg,png,jpg|max:10240',
+            'photo_category' => 'required|in:before,during,after,other',
+            'description'    => 'nullable|string|max:255',
+        ]);
+
+        $file   = $request->file('photo');
+        $stored = $file->store('site-photos', 'public');
+
+        $sortOrder = SiteFile::where('site_id', $siteId)
+            ->ofCategory($validated['photo_category'])
+            ->count();
+
+        $record = SiteFile::create([
+            'site_id'        => $siteId,
+            'original_name'  => $file->getClientOriginalName(),
+            'stored_name'    => basename($stored),
+            'mime_type'      => $file->getClientMimeType(),
+            'file_size'      => $file->getSize(),
+            'file_path'      => $stored,
+            'file_type'      => 'photo',
+            'uploaded_by'    => $user->id,
+            'photo_category' => $validated['photo_category'],
+            'description'    => $validated['description'] ?? null,
+            'sort_order'     => $sortOrder,
+        ]);
+
+        return ApiResponse::success($record, '사진이 업로드되었습니다.', 201);
+    }
+
+    /**
+     * DELETE /api/sites/{siteId}/photos/{photoId}
+     */
+    public function siteDestroy(Request $request, int $siteId, int $photoId)
+    {
+        $user = $request->user();
+
+        $site = Site::editableBy($user)->find($siteId);
+        if (!$site) {
+            return ApiResponse::error('현장을 찾을 수 없습니다.', ErrorCode::SITE_NOT_FOUND, 404);
+        }
+
+        $photo = SiteFile::where('id', $photoId)->where('site_id', $siteId)->first();
+        if (!$photo) {
+            return ApiResponse::error('사진을 찾을 수 없습니다.', ErrorCode::PHOTO_NOT_FOUND, 404);
+        }
+
+        if ($photo->photo_category === 'before') {
+            SiteFile::where('paired_with_id', $photo->id)->update(['paired_with_id' => null]);
+        }
+
+        $photo->delete();
 
         return ApiResponse::success(null, '사진이 삭제되었습니다.');
     }

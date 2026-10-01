@@ -2,7 +2,15 @@
 // 📄 src/api/teamApi.ts — 팀 관리 (★ v11.8, 모바일 연동 ★ 이번 작업)
 // ═══════════════════════════════════════════════════════════════
 import axios from './axiosInstance';
-import type { ApiResponse, Team, TeamMember } from '../types/api';
+import type { ApiResponse, Team, TeamMember, TeamPreview } from '../types/api';
+
+export interface TeamFormPayload {
+  name: string;
+  description?: string;
+  specialty?: string; // 콤마 구분 공정명 목록
+  activity_area?: string;
+  photo?: { uri: string; name: string; type: string } | null;
+}
 
 export async function getMyTeams(): Promise<Team[]> {
   const res = await axios.get<ApiResponse<Team[]>>('/teams');
@@ -16,13 +24,31 @@ export async function getTeamMembers(teamId?: number): Promise<TeamMember[]> {
   return res.data.data;
 }
 
-export async function createTeam(name: string): Promise<Team> {
-  const res = await axios.post<ApiResponse<Team>>('/teams', { name });
+function buildTeamForm(payload: TeamFormPayload): FormData {
+  const form = new FormData();
+  form.append('name', payload.name);
+  if (payload.description) form.append('description', payload.description);
+  if (payload.specialty) form.append('specialty', payload.specialty);
+  if (payload.activity_area) form.append('activity_area', payload.activity_area);
+  if (payload.photo) form.append('photo', payload.photo as any);
+  return form;
+}
+
+export async function createTeam(payload: TeamFormPayload): Promise<Team> {
+  const res = await axios.post<ApiResponse<Team>>('/teams', buildTeamForm(payload), {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return res.data.data;
 }
 
 export async function joinTeam(inviteCode: string): Promise<void> {
   await axios.post('/teams/join', { invite_code: inviteCode });
+}
+
+// ★ DESIGN-CANVAS(TEAM_JOIN) 추가 — 가입 전 초대코드로 팀 정보 미리보기
+export async function previewTeam(inviteCode: string): Promise<TeamPreview> {
+  const res = await axios.post<ApiResponse<TeamPreview>>('/teams/preview', { invite_code: inviteCode });
+  return res.data.data;
 }
 
 export async function leaveTeam(teamId?: number): Promise<void> {
@@ -34,8 +60,12 @@ export async function switchActiveTeam(teamId: number): Promise<void> {
   await axios.post('/teams/switch-active', { team_id: teamId });
 }
 
-export async function updateTeam(id: number, name: string): Promise<Team> {
-  const res = await axios.put<ApiResponse<Team>>(`/teams/${id}`, { name });
+export async function updateTeam(id: number, payload: TeamFormPayload): Promise<Team> {
+  const form = buildTeamForm(payload);
+  form.append('_method', 'PUT');
+  const res = await axios.post<ApiResponse<Team>>(`/teams/${id}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return res.data.data;
 }
 

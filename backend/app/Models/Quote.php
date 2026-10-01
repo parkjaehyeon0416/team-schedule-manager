@@ -21,6 +21,8 @@ class Quote extends Model
         'memo',
         'subtotal_amount',
         'discount_amount',
+        'tax_type',
+        'vat_amount',
         'total_amount',
         'status',
         'approved_schedule_id',
@@ -30,6 +32,7 @@ class Quote extends Model
         'desired_date'     => 'date:Y-m-d',
         'subtotal_amount'  => 'decimal:2',
         'discount_amount'  => 'decimal:2',
+        'vat_amount'       => 'decimal:2',
         'total_amount'     => 'decimal:2',
     ];
 

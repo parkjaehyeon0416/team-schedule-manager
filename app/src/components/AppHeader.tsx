@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
-  leftType?: 'menu' | 'back';
+  leftType?: 'menu' | 'back' | 'none';
   title?: string;
   centerContent?: React.ReactNode;
   rightContent?: React.ReactNode;
@@ -57,7 +57,7 @@ export default function AppHeader({
           >
             <Text style={styles.iconText}>←</Text>
           </Pressable>
-        ) : (
+        ) : leftType === 'menu' ? (
           <>
             <Pressable
               onPress={handleMenu}
@@ -74,7 +74,7 @@ export default function AppHeader({
               <Text style={styles.iconText}>🏠</Text>
             </Pressable>
           </>
-        )}
+        ) : null}
       </View>
 
       <View style={styles.center}>

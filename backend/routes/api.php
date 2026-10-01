@@ -11,12 +11,14 @@ use App\Http\Controllers\Api\SiteReportController;               // ★ v12
 use App\Http\Controllers\Api\BusinessCardController;              // ★ v14
 use App\Http\Controllers\Api\WorkTypeController;                // ★ v10.1
 use App\Http\Controllers\Api\UserWageSettingController;         // ★ v10.1
+use App\Http\Controllers\Api\WageProfileController;              // ★ DESIGN-CANVAS(MY_RATES) 추가
 use App\Http\Controllers\Api\MonthlySummaryController;          // ★ v10.1
 use App\Http\Controllers\Api\TaxSummaryController;              // ★ v17
 use App\Http\Controllers\Api\QuoteController;                   // ★ v12~v13
 use App\Http\Controllers\Api\UserMaterialController;            // ★ v12
 use App\Http\Controllers\Api\NotificationSettingController;     // ★ v18.1
 use App\Http\Controllers\Api\ProfileController;                 // ★ v18.23
+use App\Http\Controllers\Api\NotificationController;            // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -44,6 +46,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── 내 정보 + 로그아웃 ──
     Route::get('/me',           [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::delete('/account',   [AuthController::class, 'withdraw']); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
+
+    Route::get('/notifications',             [NotificationController::class, 'index']);
+    Route::patch('/notifications/read-all',  [NotificationController::class, 'markAllRead']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
     // ★ v18.23 — 내 프로필 설정(연락처/카카오톡 아이디/아바타)
     Route::put('/profile',          [ProfileController::class, 'update']);
@@ -57,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/schedules/{id}',  [ScheduleController::class, 'show']);
     Route::get('/sites',           [SiteController::class, 'index']);
     Route::get('/sites/{id}',      [SiteController::class, 'show']);
+    Route::get('/sites/{id}/photos', [PhotoController::class, 'siteIndex']); // ★ DESIGN-CANVAS 추가
 
     // ★ 추가 — 내 팀 멤버 목록 조회 (일정 등록 시 투입 인원 선택용)
     Route::get('/team/members',    [TeamController::class, 'members']);
@@ -66,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/teams',           [TeamController::class, 'index']);
     Route::get('/teams/{id}',      [TeamController::class, 'show']);
     Route::post('/teams/join',     [TeamController::class, 'join']);
+    Route::post('/teams/preview',  [TeamController::class, 'preview']); // ★ DESIGN-CANVAS(TEAM_JOIN) 추가
     Route::post('/teams',          [TeamController::class, 'store']);
     Route::post('/teams/leave',    [TeamController::class, 'leave']);
     // ★ v18.21 — 여러 팀 동시 소속 중 "지금 활동할 팀" 전환
@@ -99,6 +108,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/quotes',              [QuoteController::class, 'index']);
     Route::post('/quotes',             [QuoteController::class, 'store']);
     Route::get('/quotes/{id}',         [QuoteController::class, 'show']);
+    Route::put('/quotes/{id}',         [QuoteController::class, 'update']);
     Route::patch('/quotes/{id}/status', [QuoteController::class, 'updateStatus']);
     Route::post('/quotes/{id}/approve', [QuoteController::class, 'approve']);
     Route::get('/quotes/{id}/pdf',     [QuoteController::class, 'downloadPdf']);
@@ -130,6 +140,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/wage-settings',         [UserWageSettingController::class, 'index']);
     Route::post('/wage-settings',        [UserWageSettingController::class, 'store']);
     Route::delete('/wage-settings/{id}', [UserWageSettingController::class, 'destroy']);
+    Route::get('/wage-profile',          [WageProfileController::class, 'show']);   // ★ DESIGN-CANVAS(MY_RATES)
+    Route::put('/wage-profile',          [WageProfileController::class, 'update']); // ★ DESIGN-CANVAS(MY_RATES)
 
     // ★ v18.1 — 내 알림 설정 조회/수정
     Route::get('/notification-settings', [NotificationSettingController::class, 'show']);
@@ -143,6 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ═══════════════════════════════════════════════════════════
     Route::get('/tax-summary',     [TaxSummaryController::class, 'show']);
     Route::get('/tax-summary/pdf', [TaxSummaryController::class, 'downloadPdf']);
+    Route::get('/tax-summary/export', [TaxSummaryController::class, 'exportCsv']); // ★ DESIGN-CANVAS(TAX_EXPORT) 추가
 
     // ═══════════════════════════════════════════════════════════
     // ── 등록·수정·삭제 (manager 이상) ──
@@ -157,10 +170,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sites',        [SiteController::class, 'store']);
         Route::put('/sites/{id}',    [SiteController::class, 'update']);
         Route::delete('/sites/{id}', [SiteController::class, 'destroy']);
+        Route::post('/sites/{id}/photos',               [PhotoController::class, 'siteStore']);   // ★ DESIGN-CANVAS 추가
+        Route::delete('/sites/{id}/photos/{photoId}',    [PhotoController::class, 'siteDestroy']); // ★ DESIGN-CANVAS 추가
 
         // 팀 관리 — 수정/삭제만 manager 이상 (조회/생성/가입은 위 member+ 그룹으로 이동됨)
         Route::put('/teams/{id}',    [TeamController::class, 'update']);
         Route::delete('/teams/{id}', [TeamController::class, 'destroy']);
+        Route::post('/teams/{id}/photo',   [TeamController::class, 'uploadPhoto']); // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
+        Route::delete('/teams/{id}/photo', [TeamController::class, 'deletePhoto']); // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
 
         // ★ 근태 현황 — 팀장이 팀원들의 그 달 출근일(=일정 배정일)을 조회.
         //   팀원 개인은 본인 근무일을 이미 MySummaryScreen에서 보므로 접근 불필요.

@@ -7,10 +7,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
 import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
+import AppHeader from '../components/AppHeader';
+import { colors, radius, spacing } from '../theme/designTokens';
+import GradientButton from '../components/GradientButton';
 
 // 2단계: ① 이름+전화번호로 계정 확인 후 인증번호 발송 → ② 인증번호 확인 후 이메일 공개
 export default function FindEmailScreen() {
@@ -69,149 +74,141 @@ export default function FindEmailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🔍 아이디(이메일) 찾기</Text>
+    <View style={styles.screen}>
+      <AppHeader leftType="back" />
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        {!foundEmail ? (
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>아이디 찾기</Text>
+            <Text style={styles.subtitle}>
+              {step === 1
+                ? '가입 시 입력한 이름과 전화번호를 입력해주세요.'
+                : `${phone}로 발송된 인증번호(10분간 유효)를 입력해주세요.`}
+            </Text>
+          </View>
+        ) : null}
 
-      {step === 1 ? (
-        <>
-          <Text style={styles.subtitle}>
-            가입 시 입력한 이름과 전화번호를 입력해주세요.
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="이름"
-            placeholderTextColor="#999999"
-            value={name}
-            onChangeText={setName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="전화번호 (예: 010-1234-5678)"
-            placeholderTextColor="#999999"
-            value={phone}
-            onChangeText={t => setPhone(formatPhoneInput(t))}
-            keyboardType="phone-pad"
-            maxLength={13}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleSendCode}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>인증번호 받기</Text>
-            )}
-          </TouchableOpacity>
-        </>
-      ) : !foundEmail ? (
-        <>
-          <Text style={styles.subtitle}>
-            {phone}로 발송된 인증번호(10분간 유효)를 입력해주세요.
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="인증번호 6자리"
-            placeholderTextColor="#999999"
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-            maxLength={6}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleVerify}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>확인</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.backLink}
-            onPress={handleSendCode}
-            disabled={loading}
-          >
-            <Text style={styles.backLinkText}>인증번호 다시 받기</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <View style={styles.resultBox}>
-          <Text style={styles.resultLabel}>찾은 이메일</Text>
-          <Text style={styles.resultEmail}>{foundEmail}</Text>
-        </View>
-      )}
+        {step === 1 ? (
+          <>
+            <View style={styles.inputWrap}>
+              <Icon name="account-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="이름"
+                placeholderTextColor={colors.muted}
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
+            <View style={styles.inputWrap}>
+              <Icon name="cellphone" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="전화번호 (예: 010-1234-5678)"
+                placeholderTextColor={colors.muted}
+                value={phone}
+                onChangeText={t => setPhone(formatPhoneInput(t))}
+                keyboardType="phone-pad"
+                maxLength={13}
+              />
+            </View>
+            <GradientButton onPress={handleSendCode} loading={loading}>아이디 찾기</GradientButton>
+          </>
+        ) : !foundEmail ? (
+          <>
+            <View style={styles.inputWrap}>
+              <Icon name="shield-check-outline" size={18} color={colors.muted} />
+              <TextInput
+                style={styles.input}
+                placeholder="인증번호 6자리"
+                placeholderTextColor={colors.muted}
+                value={code}
+                onChangeText={setCode}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+            <GradientButton onPress={handleVerify} loading={loading}>확인</GradientButton>
+            <TouchableOpacity style={styles.backLink} onPress={handleSendCode} disabled={loading}>
+              <Text style={styles.backLinkText}>인증번호 다시 받기</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <View style={styles.resultIconWrap}>
+              <Icon name="email-check-outline" size={36} color={colors.primaryDark} />
+            </View>
+            <Text style={styles.title}>아이디 찾기 결과</Text>
+            <Text style={styles.subtitle}>입력하신 정보와 일치하는{'\n'}계정이 있습니다.</Text>
+            <View style={styles.resultBox}>
+              <Text style={styles.resultEmail}>{foundEmail}</Text>
+            </View>
+            <GradientButton onPress={() => navigation.navigate('Login')}>로그인 화면으로 이동</GradientButton>
+          </>
+        )}
 
-      <TouchableOpacity
-        style={styles.backLink}
-        onPress={() => navigation.goBack()}
-        disabled={loading}
-      >
-        <Text style={styles.backLinkText}>로그인으로 돌아가기</Text>
-      </TouchableOpacity>
+        {!foundEmail && (
+          <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()} disabled={loading}>
+            <Text style={styles.backLinkText}>로그인으로 돌아가기</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.surface },
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f0f2f5',
+    flexGrow: 1,
+    padding: spacing.xl,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1F3864',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    fontSize: 16,
-    color: '#222222',
+  titleBlock: { marginBottom: spacing.lg, gap: 4 },
+  title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
+  subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 4 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    height: 48,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
   },
+  input: { flex: 1, fontSize: 14, color: colors.textPrimary },
   button: {
-    backgroundColor: '#1F3864',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: colors.primaryDark,
+    borderRadius: radius.sm,
+    height: 52,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  buttonText: { color: colors.surface, fontSize: 15, fontWeight: '700' },
+  resultIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: colors.successBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
   resultBox: {
-    marginTop: 20,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    padding: spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
   },
-  resultLabel: { fontSize: 12, color: '#666', marginBottom: 4 },
-  resultEmail: { fontSize: 18, fontWeight: 'bold', color: '#1F3864' },
-  backLink: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  backLinkText: {
-    color: '#666',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
+  resultEmail: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
+  backLink: { marginTop: spacing.md, alignItems: 'center' },
+  backLinkText: { color: colors.textSecondary, fontSize: 13 },
 });

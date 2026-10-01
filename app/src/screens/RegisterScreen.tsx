@@ -9,10 +9,14 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigation } from '@react-navigation/native';
 import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
+import AppHeader from '../components/AppHeader';
+import { colors, radius, spacing } from '../theme/designTokens';
+import GradientButton from '../components/GradientButton';
 
 // ★ v18.15 — 서버 validation 에러(errors 객체)의 필드명+영문 메시지를
 //   한국어로 번역해서 "어느 항목이 왜 문제인지" 바로 보이게 함.
@@ -79,9 +83,6 @@ export default function RegisterScreen() {
     } catch (error: any) {
       const errors = error.response?.data?.errors as Record<string, string[]> | undefined;
       const message = error.response?.data?.message;
-      // ★ v18.15 — 422일 때 서버가 필드별 구체적 사유(errors)를 같이 내려주는데
-      //   전에는 항상 똑같은 "입력값을 확인해주세요."(message)만 보여줘서
-      //   실제로 뭐가 틀렸는지(이메일/비밀번호/전화번호 등) 알 수 없었음.
       const firstFieldKey = errors ? Object.keys(errors)[0] : undefined;
       const firstFieldMsg = firstFieldKey ? errors![firstFieldKey][0] : undefined;
       if (firstFieldKey && firstFieldMsg) {
@@ -97,188 +98,180 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>📋 회원가입</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="이름"
-        placeholderTextColor="#999999"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="이메일"
-        placeholderTextColor="#999999"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="전화번호 (예: 010-1234-5678)"
-        placeholderTextColor="#999999"
-        value={phone}
-        onChangeText={t => setPhone(formatPhoneInput(t))}
-        keyboardType="phone-pad"
-        maxLength={13}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호 (6자 이상)"
-        placeholderTextColor="#999999"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호 확인"
-        placeholderTextColor="#999999"
-        value={passwordConfirm}
-        onChangeText={setPasswordConfirm}
-        secureTextEntry
-      />
-
-      <TouchableOpacity
-        style={styles.agreeRow}
-        onPress={() => setAgreeTerms(v => !v)}
-        disabled={loading}
+    <View style={styles.screen}>
+      <AppHeader leftType="back" title="회원가입" />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
-          {agreeTerms && <Text style={styles.checkboxMark}>✓</Text>}
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>기본정보 입력</Text>
+          <Text style={styles.subtitle}>함께 더 나은 내일을 만들어가요.</Text>
         </View>
-        <Text style={styles.agreeText}>
-          <Text
-            style={styles.agreeLink}
-            onPress={() =>
-              navigation.navigate('LegalDocument', { type: 'terms' })
-            }
-          >
-            이용약관
-          </Text>
-          {' 및 '}
-          <Text
-            style={styles.agreeLink}
-            onPress={() =>
-              navigation.navigate('LegalDocument', { type: 'privacy' })
-            }
-          >
-            개인정보 처리방침
-          </Text>
-          에 동의합니다.
-        </Text>
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleRegister}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>가입하기</Text>
-        )}
-      </TouchableOpacity>
+        <View style={styles.inputWrap}>
+          <Icon name="account-outline" size={18} color={colors.muted} />
+          <TextInput
+            style={styles.input}
+            placeholder="이름"
+            placeholderTextColor={colors.muted}
+            value={name}
+            onChangeText={setName}
+          />
+        </View>
+        <View style={styles.inputWrap}>
+          <Icon name="email-outline" size={18} color={colors.muted} />
+          <TextInput
+            style={styles.input}
+            placeholder="이메일"
+            placeholderTextColor={colors.muted}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+        <View style={styles.inputWrap}>
+          <Icon name="cellphone" size={18} color={colors.muted} />
+          <TextInput
+            style={styles.input}
+            placeholder="전화번호 (예: 010-1234-5678)"
+            placeholderTextColor={colors.muted}
+            value={phone}
+            onChangeText={t => setPhone(formatPhoneInput(t))}
+            keyboardType="phone-pad"
+            maxLength={13}
+          />
+        </View>
+        <View style={styles.inputWrap}>
+          <Icon name="lock-outline" size={18} color={colors.muted} />
+          <TextInput
+            style={styles.input}
+            placeholder="비밀번호 (6자 이상)"
+            placeholderTextColor={colors.muted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+        <View style={styles.inputWrap}>
+          <Icon name="lock-check-outline" size={18} color={colors.muted} />
+          <TextInput
+            style={styles.input}
+            placeholder="비밀번호 확인"
+            placeholderTextColor={colors.muted}
+            value={passwordConfirm}
+            onChangeText={setPasswordConfirm}
+            secureTextEntry
+          />
+        </View>
 
-      <TouchableOpacity
-        style={styles.loginLink}
-        onPress={() => navigation.goBack()}
-        disabled={loading}
-      >
-        <Text style={styles.loginLinkText}>
-          이미 계정이 있으신가요? <Text style={styles.loginLinkBold}>로그인</Text>
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity
+          style={styles.agreeRow}
+          onPress={() => setAgreeTerms(v => !v)}
+          disabled={loading}
+        >
+          <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
+            {agreeTerms && <Icon name="check-bold" size={12} color={colors.surface} />}
+          </View>
+          <Text style={styles.agreeText}>
+            <Text
+              style={styles.agreeLink}
+              onPress={() => navigation.navigate('LegalDocument', { type: 'terms' })}
+            >
+              이용약관
+            </Text>
+            {' 및 '}
+            <Text
+              style={styles.agreeLink}
+              onPress={() => navigation.navigate('LegalDocument', { type: 'privacy' })}
+            >
+              개인정보 처리방침
+            </Text>
+            에 동의합니다.
+          </Text>
+        </TouchableOpacity>
+
+        <GradientButton onPress={handleRegister} loading={loading} style={styles.buttonWrap}>
+          가입하기
+        </GradientButton>
+
+        <TouchableOpacity
+          style={styles.loginLink}
+          onPress={() => navigation.goBack()}
+          disabled={loading}
+        >
+          <Text style={styles.loginLinkText}>
+            이미 계정이 있으신가요? <Text style={styles.loginLinkBold}>로그인</Text>
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.surface },
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f0f2f5',
+    padding: spacing.xl,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 24,
-    color: '#1F3864',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    fontSize: 16,
-    color: '#222222',
+  titleBlock: { marginBottom: spacing.md, gap: 4 },
+  title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
+  subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    height: 48,
+    marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
   },
+  input: { flex: 1, fontSize: 14, color: colors.textPrimary },
   agreeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 8,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#aaa',
-    backgroundColor: '#fff',
+    width: 18,
+    height: 18,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#C5D5E8',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
   },
   checkboxChecked: {
-    backgroundColor: '#1F3864',
-    borderColor: '#1F3864',
-  },
-  checkboxMark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   agreeText: {
     flex: 1,
     fontSize: 13,
-    color: '#444',
+    color: colors.textSecondary,
   },
   agreeLink: {
-    color: '#1F3864',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    color: colors.primaryDark,
+    fontWeight: '700',
   },
-  button: {
-    backgroundColor: '#1F3864',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  buttonWrap: { marginTop: spacing.sm },
   loginLink: {
-    marginTop: 20,
+    marginTop: spacing.lg,
     alignItems: 'center',
   },
   loginLinkText: {
-    color: '#666',
-    fontSize: 14,
+    color: colors.textSecondary,
+    fontSize: 13,
   },
   loginLinkBold: {
-    color: '#1F3864',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    color: colors.primaryDark,
+    fontWeight: '700',
   },
 });

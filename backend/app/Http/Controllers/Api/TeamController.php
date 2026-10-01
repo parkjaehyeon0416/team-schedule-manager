@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TeamController extends Controller
@@ -44,13 +45,21 @@ class TeamController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'name' => 'required|string|max:100',
+            'name'          => 'required|string|max:100',
+            'description'   => 'nullable|string|max:1000',
+            'specialty'     => 'nullable|string|max:255',
+            'activity_area' => 'nullable|string|max:100',
+            'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
         $team = Team::create([
-            'name'        => $data['name'],
-            'invite_code' => $this->generateInviteCode(),
-            'created_by'  => $user->id,
+            'name'          => $data['name'],
+            'description'   => $data['description'] ?? null,
+            'specialty'     => $data['specialty'] ?? null,
+            'activity_area' => $data['activity_area'] ?? null,
+            'photo_path'    => $request->hasFile('photo') ? $request->file('photo')->store('teams', 'public') : null,
+            'invite_code'   => $this->generateInviteCode(),
+            'created_by'    => $user->id,
         ]);
 
         // superadmin은 팀 안에서도 그대로, 그 외는 팀 생성과 동시에 그 팀의 manager
@@ -107,12 +116,109 @@ class TeamController extends Controller
         }
 
         $data = $request->validate([
-            'name' => 'sometimes|string|max:100',
+            'name'          => 'sometimes|string|max:100',
+            'description'   => 'nullable|string|max:1000',
+            'specialty'     => 'nullable|string|max:255',
+            'activity_area' => 'nullable|string|max:100',
+            'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
+
+        if ($request->hasFile('photo')) {
+            if ($team->photo_path) {
+                Storage::disk('public')->delete($team->photo_path);
+            }
+            $data['photo_path'] = $request->file('photo')->store('teams', 'public');
+        }
+        unset($data['photo']);
 
         $team->update($data);
 
         return ApiResponse::success($team, '팀 정보가 수정되었습니다.');
+    }
+
+    /**
+     * ─── 팀 사진 업로드/삭제 ───  ★ DESIGN-CANVAS(TEAM_CREATE) 추가
+     */
+    public function uploadPhoto(Request $request, string $id)
+    {
+        $user = $request->user();
+        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))->find($id);
+
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
+
+        if ($team->photo_path) {
+            Storage::disk('public')->delete($team->photo_path);
+        }
+
+        $path = $request->file('photo')->store('teams', 'public');
+        $team->update(['photo_path' => $path]);
+
+        return ApiResponse::success($team->fresh(), '팀 사진이 등록되었습니다.');
+    }
+
+    public function deletePhoto(Request $request, string $id)
+    {
+        $user = $request->user();
+        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))->find($id);
+
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        if ($team->photo_path) {
+            Storage::disk('public')->delete($team->photo_path);
+            $team->update(['photo_path' => null]);
+        }
+
+        return ApiResponse::success($team->fresh(), '팀 사진이 삭제되었습니다.');
+    }
+
+    /**
+     * ─── 초대코드 미리보기 ───  ★ DESIGN-CANVAS(TEAM_JOIN) 추가
+     *   가입하지 않고도 초대코드만으로 팀 이름/사진/인원수/공정/지역/팀장 이름을 미리 볼 수 있게 함.
+     *   (디자인의 "초대 만료일" 필드는 invite_code에 만료 개념 자체가 없어 생략 — QR/대기중 초대와
+     *    마찬가지로 이번 작업 범위에서 제외)
+     */
+    public function preview(Request $request)
+    {
+        $data = $request->validate([
+            'invite_code' => 'required|string',
+        ]);
+
+        $team = Team::where('invite_code', strtoupper($data['invite_code']))->first();
+
+        if (!$team) {
+            return ApiResponse::error('초대 코드가 유효하지 않습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        $leader = DB::table('team_members')
+            ->join('users', 'users.id', '=', 'team_members.user_id')
+            ->where('team_members.team_id', $team->id)
+            ->where('team_members.role_id', 2)
+            ->whereNull('team_members.deleted_at')
+            ->orderBy('team_members.joined_at')
+            ->value('users.name');
+
+        $memberCount = DB::table('team_members')
+            ->where('team_id', $team->id)
+            ->whereNull('deleted_at')
+            ->count();
+
+        return ApiResponse::success([
+            'id'            => $team->id,
+            'name'          => $team->name,
+            'photo_path'    => $team->photo_path,
+            'specialty'     => $team->specialty,
+            'activity_area' => $team->activity_area,
+            'member_count'  => $memberCount,
+            'leader_name'   => $leader,
+        ], '팀 미리보기 조회 성공');
     }
 
     /**
@@ -247,6 +353,24 @@ class TeamController extends Controller
         // 새로 가입한 팀을 활성 팀으로 전환 — 남의 팀에 들어가면서 manager 등급을
         // 유지한 채면 권한 상승이 되므로 반드시 member로 강등해야 함
         $this->switchActiveTeam($user, $team->id);
+
+        // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가 — 기존 팀원들에게 새 팀원 참여 알림
+        $existingMemberIds = DB::table('team_members')
+            ->where('team_id', $team->id)
+            ->where('user_id', '!=', $user->id)
+            ->whereNull('deleted_at')
+            ->pluck('user_id');
+
+        foreach ($existingMemberIds as $memberId) {
+            \App\Models\Notification::create([
+                'user_id'   => $memberId,
+                'category'  => 'team',
+                'title'     => '팀 활동',
+                'body'      => "{$user->name}님이 팀에 참여했어요.",
+                'link_type' => 'team',
+                'link_id'   => $team->id,
+            ]);
+        }
 
         return ApiResponse::success($user->fresh(), '팀에 가입되었습니다.');
     }

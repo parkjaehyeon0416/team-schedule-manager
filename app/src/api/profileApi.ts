@@ -33,3 +33,8 @@ export async function deleteAvatar(): Promise<any> {
   const res = await axios.delete<ApiResponse<any>>('/profile/avatar');
   return res.data.data;
 }
+
+// ★ DESIGN-CANVAS(APP_INFO) 추가 — 회원 탈퇴 (2026-10-02)
+export async function withdrawAccount(password: string): Promise<void> {
+  await axios.delete('/account', { data: { password } });
+}

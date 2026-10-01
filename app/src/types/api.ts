@@ -34,6 +34,16 @@ export interface WorkType {
  * 내 단가 설정 (user_wage_settings 테이블)
  * GET/POST/DELETE /api/wage-settings
  */
+// ★ DESIGN-CANVAS(MY_RATES) 추가 — 공정과 무관한 기본 일급 프로필
+export interface WageProfile {
+  id?: number;
+  user_id?: number;
+  full_day_wage: number;
+  half_day_wage: number;
+  overtime_hourly_wage: number;
+  night_holiday_premium_percent: number;
+}
+
 export interface WageSetting {
   id: number;
   user_id: number;
@@ -93,6 +103,11 @@ export interface NotificationSetting {
   team_activity: boolean;
   quote_update: boolean;
   report_view: boolean;
+  // ★ DESIGN-CANVAS(NOTIFICATION_SETTINGS) 추가
+  tax_reminder: boolean;
+  marketing_opt_in: boolean;
+  night_quiet_hours: boolean;
+  schedule_reminder_time: string;
   created_at: string;
   updated_at: string;
 }
@@ -104,12 +119,18 @@ export interface NotificationSetting {
 export interface Site {
   id: number;
   team_id: number | null;
+  owner_id?: number | null;
   address: string;
   apt_name: string | null;
   dong: string | null;
   ho: string | null;
   area_m2: string | null;
   memo: string | null;
+  // ★ DESIGN-CANVAS(SITE_DETAIL/CREATE/EDIT) 추가 필드
+  start_date?: string | null;
+  end_date?: string | null;
+  customer?: string | null;
+  status?: 'scheduled' | 'in_progress' | 'done';
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
@@ -124,6 +145,14 @@ export interface Schedule {
   owner_id: number | null;
   site_id: number | null;
   date: string; // "2026-04-15"
+  // ★ DESIGN-CANVAS(SCHEDULE_DETAIL/CREATE/EDIT/DAY) 추가
+  title?: string | null;
+  start_time?: string | null; // "09:00"
+  end_time?: string | null; // "17:00"
+  reminder_time?: string | null;
+  // ★ DESIGN-CANVAS(TAX_MONTH_DETAIL/INCOME_DETAIL) 추가
+  employment_type?: 'daily' | 'freelance';
+  payment_status?: 'pending' | 'paid';
   work_type: string | null; // 기존 ENUM (도배/타일/필름)
   work_type_id: number | null; // ★ v9.0 외래키
   daily_wage: string | null; // ★ v9.0
@@ -208,6 +237,23 @@ export interface Team {
   invite_code: string;
   created_by: number | null;
   is_active?: boolean; // ★ v18.21 — GET /teams 응답에서만 내려옴(지금 활성 팀인지)
+  created_at?: string;
+  // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
+  photo_path?: string | null;
+  description?: string | null;
+  specialty?: string | null; // 콤마 구분 공정명 목록
+  activity_area?: string | null;
+}
+
+// ★ DESIGN-CANVAS(TEAM_JOIN) 추가 — 가입 전 미리보기 응답
+export interface TeamPreview {
+  id: number;
+  name: string;
+  photo_path: string | null;
+  specialty: string | null;
+  activity_area: string | null;
+  member_count: number;
+  leader_name: string | null;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -236,6 +282,8 @@ export interface Quote {
   memo: string | null;
   subtotal_amount: string;
   discount_amount: string;
+  tax_type?: 'separate' | 'included' | 'exempt';
+  vat_amount?: string;
   total_amount: string;
   status: 'draft' | 'sent' | 'approved' | 'rejected';
   approved_schedule_id: number | null;

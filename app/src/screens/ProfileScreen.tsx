@@ -1,233 +1,235 @@
 /**
- * 프로필 화면 (햄버거 메뉴용)
- *
- * ★ 현재: 사용자 정보 + 메뉴 + 로그아웃
- * ★ v10.2: "내 단가 설정" 메뉴 추가
+ * 내 정보 화면 — v18.33 (DESIGN-CANVAS 기준, MY_HOME.dc.html 1:1)
+ * 하단 탭 '내정보' — 프로필 카드(통계 3개) + 그룹별 메뉴 리스트 + 로그아웃
  */
 
-import React from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
-import { Card, Text, Button, Avatar, Divider } from 'react-native-paper';
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, Alert, TouchableOpacity, Image, ScrollView, Text as RNText } from 'react-native';
+import { Avatar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
-import AppHeader from '../components/AppHeader';
+import { getMyTeams } from '../api/teamApi';
+import { getSchedules } from '../api/schedulesApi';
+import { getSites } from '../api/siteApi';
+import { colors, radius, spacing, typography } from '../theme/designTokens';
+
+type MenuRow = { key: string; icon: string; label: string; sub?: string; iconBg: string; iconFg: string; onPress: () => void };
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const [teamCount, setTeamCount] = useState<number | null>(null);
+  const [scheduleCount, setScheduleCount] = useState<number | null>(null);
+  const [siteCount, setSiteCount] = useState<number | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date();
+      getMyTeams().then(t => setTeamCount(t.length)).catch(() => setTeamCount(null));
+      getSchedules(now.getFullYear(), now.getMonth() + 1)
+        .then(s => setScheduleCount(s.length))
+        .catch(() => setScheduleCount(null));
+      getSites().then(s => setSiteCount(s.length)).catch(() => setSiteCount(null));
+    }, []),
+  );
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '정말 로그아웃하시겠습니까?', [
       { text: '취소', style: 'cancel' },
-      {
-        text: '로그아웃',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-        },
-      },
+      { text: '로그아웃', style: 'destructive', onPress: async () => await logout() },
     ]);
   };
 
   if (!user) return null;
 
-  const avatarUri = user.avatar_image_path
-    ? `${SERVER_BASE_URL}/storage/${user.avatar_image_path}`
-    : null;
+  const avatarUri = user.avatar_image_path ? `${SERVER_BASE_URL}/storage/${user.avatar_image_path}` : null;
+  const roleLine = [user.team?.name, user.role?.name].filter(Boolean).join(' · ');
+
+  const profileMenu: MenuRow[] = [
+    {
+      key: 'profile', icon: 'account-outline', label: '프로필 설정', sub: '이름 · 연락처 · 지역',
+      iconBg: '#E8F3FF', iconFg: colors.primaryDark, onPress: () => navigation.navigate('ProfileEdit'),
+    },
+    {
+      key: 'card', icon: 'card-account-details-outline', label: '내 명함', sub: 'QR 명함 공유',
+      iconBg: '#E8F3FF', iconFg: colors.primaryDark, onPress: () => navigation.navigate('BusinessCard'),
+    },
+    {
+      key: 'public', icon: 'account-eye-outline', label: '공개 프로필 보기', sub: '다른 사람에게 보이는 모습',
+      iconBg: '#E8F3FF', iconFg: colors.primaryDark,
+      onPress: () => navigation.navigate('ProfilePublic'),
+    },
+  ];
+
+  const settingsMenu: MenuRow[] = [
+    {
+      key: 'rates', icon: 'currency-krw', label: '내 단가 설정', sub: '공수 · 일급',
+      iconBg: colors.warningBg, iconFg: colors.accentDark, onPress: () => navigation.navigate('MyRates'),
+    },
+    {
+      key: 'tradeRates', icon: 'view-grid-outline', label: '공정별 단가 설정', sub: '도배 · 타일 · 필름',
+      iconBg: colors.warningBg, iconFg: colors.accentDark, onPress: () => navigation.navigate('TradeRates'),
+    },
+    {
+      key: 'notif', icon: 'bell-outline', label: '알림 설정', sub: '일정 · 팀 · 견적',
+      iconBg: colors.successBg, iconFg: colors.secondary, onPress: () => navigation.navigate('NotificationSettings'),
+    },
+    {
+      key: 'tax', icon: 'file-chart-outline', label: '세무 자료', sub: '자료 조회 · 내보내기',
+      iconBg: colors.successBg, iconFg: colors.secondary, onPress: () => navigation.navigate('TaxSummary'),
+    },
+  ];
+
+  const infoMenu: MenuRow[] = [
+    {
+      key: 'appInfo', icon: 'information-outline', label: '앱 정보', sub: 'v1.0.0',
+      iconBg: '#EEF2F7', iconFg: colors.textSecondary,
+      onPress: () => navigation.navigate('AppInfo'),
+    },
+  ];
+
+  const renderRow = (row: MenuRow, isLast: boolean) => (
+    <TouchableOpacity key={row.key} onPress={row.onPress} style={[styles.row, !isLast && styles.rowDivider]}>
+      <View style={[styles.rowIcon, { backgroundColor: row.iconBg }]}>
+        <Icon name={row.icon} size={18} color={row.iconFg} />
+      </View>
+      <View style={styles.rowTextBox}>
+        <RNText style={styles.rowLabel}>{row.label}</RNText>
+        {!!row.sub && <RNText style={styles.rowSub}>{row.sub}</RNText>}
+      </View>
+      <Icon name="chevron-right" size={16} color={colors.muted} />
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={styles.screen}>
-      <AppHeader leftType="menu" title="프로필" />
-      <View style={styles.container}>
-      {/* ── 1) 프로필 카드 ── */}
-      <Card style={styles.profileCard}>
-        <View style={styles.profileBanner}>
-          {avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-          ) : (
-            <Avatar.Text
-              size={80}
-              label={user.name.charAt(0)}
-              style={[styles.avatar, user.avatar_color ? { backgroundColor: '#FFFFFF' } : null]}
-              labelStyle={[styles.avatarLabel, user.avatar_color ? { color: user.avatar_color } : null]}
-            />
-          )}
-        </View>
-        <Card.Content style={styles.profileContent}>
-          <Text variant="headlineSmall" style={styles.name}>
-            {user.name}
-          </Text>
-          <Text variant="bodyMedium" style={styles.email}>
-            {user.email}
-          </Text>
-          {user.role?.name && (
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleBadgeText}>{user.role.name}</Text>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
-
-      {/* ── 2) 프로필 설정 섹션 ── */}
-      <Text style={styles.sectionTitle}>프로필</Text>
-      <Card style={styles.menuCard}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('ProfileEdit')}
-          style={styles.menuItem}
-        >
-          <View style={styles.menuLeft}>
-            <Icon name="account-edit" size={24} color="#2E75B6" />
-            <View style={styles.menuTextBox}>
-              <Text style={styles.menuLabel}>프로필 설정</Text>
-              <Text style={styles.menuSub}>
-                프로필 사진·색상, 연락처, 카카오톡 아이디를 설정합니다
-              </Text>
-            </View>
-          </View>
-          <Icon name="chevron-right" size={22} color="#BBB" />
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <RNText style={styles.headerTitle}>내 정보</RNText>
+        <TouchableOpacity onPress={() => navigation.navigate('NotificationSettings')} hitSlop={8}>
+          <Icon name="cog-outline" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-      </Card>
-
-      {/* ── 3) 업무 설정 섹션 ── */}
-      <Text style={styles.sectionTitle}>업무 설정</Text>
-      <Card style={styles.menuCard}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('WageSettings')}
-          style={styles.menuItem}
-        >
-          <View style={styles.menuLeft}>
-            <Icon name="currency-krw" size={24} color="#2E75B6" />
-            <View style={styles.menuTextBox}>
-              <Text style={styles.menuLabel}>내 단가 설정</Text>
-              <Text style={styles.menuSub}>
-                공정별 기본 단가를 등록하면 일정 작성 시 자동 입력됩니다
-              </Text>
-            </View>
-          </View>
-          <Icon name="chevron-right" size={22} color="#BBB" />
-        </TouchableOpacity>
-      </Card>
-
-      <Divider style={styles.divider} />
-
-      {/* ── 3) 로그아웃 ── */}
-      <Button
-        mode="outlined"
-        icon="logout"
-        onPress={handleLogout}
-        style={styles.logoutButton}
-        textColor="#D32F2F"
-      >
-        로그아웃
-      </Button>
       </View>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.profileCard}>
+          <View style={styles.profileRow}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <Avatar.Text
+                size={64}
+                label={user.name.charAt(0)}
+                style={[styles.avatar, user.avatar_color ? { backgroundColor: user.avatar_color } : null]}
+                labelStyle={styles.avatarLabel}
+              />
+            )}
+            <View style={styles.profileText}>
+              <RNText style={styles.name}>{user.name}</RNText>
+              {!!roleLine && <RNText style={styles.roleLine}>{roleLine}</RNText>}
+            </View>
+            <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('ProfileEdit')}>
+              <Icon name="pencil-outline" size={17} color={colors.primaryDark} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.statsRow}>
+            <TouchableOpacity style={styles.statCol} onPress={() => navigation.navigate('Team')}>
+              <RNText style={styles.statValue}>{teamCount ?? '-'}</RNText>
+              <RNText style={styles.statLabel}>소속 팀</RNText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.statCol} onPress={() => navigation.navigate('Schedule')}>
+              <RNText style={styles.statValue}>{scheduleCount ?? '-'}</RNText>
+              <RNText style={styles.statLabel}>이번 달 일정</RNText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.statCol} onPress={() => navigation.navigate('SiteList')}>
+              <RNText style={styles.statValue}>{siteCount ?? '-'}</RNText>
+              <RNText style={styles.statLabel}>진행 현장</RNText>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.card}>{profileMenu.map((row, i) => renderRow(row, i === profileMenu.length - 1))}</View>
+        <View style={styles.card}>{settingsMenu.map((row, i) => renderRow(row, i === settingsMenu.length - 1))}</View>
+        <View style={styles.card}>{infoMenu.map((row, i) => renderRow(row, i === infoMenu.length - 1))}</View>
+
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Icon name="logout" size={18} color={colors.danger} />
+          <RNText style={styles.logoutText}>로그아웃</RNText>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#EEF4FC',
-  },
-  profileCard: {
-    marginBottom: 20,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-  },
-  profileBanner: {
-    alignItems: 'center',
-    paddingTop: 28,
-    paddingBottom: 44,
-    backgroundColor: '#2E75B6',
-  },
-  profileContent: {
-    alignItems: 'center',
-    paddingTop: 0,
-    marginTop: -40,
-    paddingBottom: 22,
-  },
-  avatar: {
-    backgroundColor: '#FFFFFF',
-  },
-  avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
-  avatarLabel: {
-    color: '#2E75B6',
-    fontWeight: 'bold',
-  },
-  name: {
-    fontWeight: 'bold',
-    color: '#1F3864',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  email: {
-    color: '#5A6B85',
-    marginBottom: 10,
-  },
-  roleBadge: {
-    backgroundColor: '#EAF1FB',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-  },
-  roleBadgeText: {
-    color: '#2E75B6',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  sectionTitle: {
-    fontSize: 13,
-    color: '#5A6B85',
-    fontWeight: '700',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  menuCard: {
-    marginBottom: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  menuItem: {
+  screen: { flex: 1, backgroundColor: colors.background },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
   },
-  menuLeft: {
+  headerTitle: { ...typography.h2, color: colors.textPrimary },
+  content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, gap: spacing.md },
+
+  profileCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderCard,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  avatar: { backgroundColor: colors.primary },
+  avatarImage: { width: 64, height: 64, borderRadius: 32 },
+  avatarLabel: { color: '#FFFFFF', fontWeight: 'bold' },
+  profileText: { flex: 1, gap: 4 },
+  name: { fontSize: 19, fontWeight: '800', color: colors.textPrimary },
+  roleLine: { fontSize: 13, color: colors.textSecondary },
+  editBtn: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: '#EAF4FF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderHairline,
+  },
+  statCol: { flex: 1, alignItems: 'center', gap: 2 },
+  statValue: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  statLabel: { fontSize: 12, color: colors.textSecondary },
+
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderCard,
+    paddingHorizontal: spacing.md,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 11 },
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
+  rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  rowTextBox: { flex: 1, minWidth: 0, gap: 2 },
+  rowLabel: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  rowSub: { fontSize: 12, color: colors.textSecondary },
+  versionText: { fontSize: 13, color: colors.textSecondary },
+
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    flex: 1,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    height: 48,
+    borderRadius: radius.sm,
+    backgroundColor: colors.dangerBg,
+    borderWidth: 1,
+    borderColor: colors.dangerBorder,
   },
-  menuTextBox: {
-    flex: 1,
-  },
-  menuLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-    marginBottom: 2,
-  },
-  menuSub: {
-    fontSize: 12,
-    color: '#999',
-    lineHeight: 16,
-  },
-  divider: {
-    marginVertical: 16,
-  },
-  logoutButton: {
-    borderColor: '#D32F2F',
-  },
+  logoutText: { color: colors.danger, fontSize: 15, fontWeight: '700' },
 });

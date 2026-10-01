@@ -12,16 +12,27 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import AppHeader from '../components/AppHeader';
-import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../constants/legalDocuments';
+import { TERMS_OF_SERVICE, PRIVACY_POLICY, LOCATION_BASED_TERMS } from '../constants/legalDocuments';
 
-type LegalDocType = 'terms' | 'privacy';
+type LegalDocType = 'terms' | 'privacy' | 'location';
+
+const TITLES: Record<LegalDocType, string> = {
+  terms: '이용약관',
+  privacy: '개인정보 처리방침',
+  location: '위치기반서비스 이용약관',
+};
+const CONTENTS: Record<LegalDocType, string> = {
+  terms: TERMS_OF_SERVICE,
+  privacy: PRIVACY_POLICY,
+  location: LOCATION_BASED_TERMS,
+};
 
 export default function LegalDocumentScreen() {
   const route = useRoute<any>();
   const type: LegalDocType = route.params?.type ?? 'terms';
 
-  const title = type === 'terms' ? '이용약관' : '개인정보 처리방침';
-  const content = type === 'terms' ? TERMS_OF_SERVICE : PRIVACY_POLICY;
+  const title = TITLES[type];
+  const content = CONTENTS[type];
 
   return (
     <View style={styles.screen}>

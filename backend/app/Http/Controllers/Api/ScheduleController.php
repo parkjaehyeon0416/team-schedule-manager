@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\Schedule;
 use App\Http\Responses\ApiResponse;
 use App\Services\MonthlySummaryService;
@@ -25,6 +26,7 @@ class ScheduleController extends Controller
         $query = Schedule::with([
             'users:id,name',
             'site:id,address,apt_name,dong,ho',
+            'workType', // ★ 공정 이름/색상 표시용 — 기존엔 누락되어 있었음
         ])
             ->forUser($user, $scope)
             ->orderBy('date');
@@ -65,11 +67,29 @@ class ScheduleController extends Controller
             'site_id'       => 'nullable|integer|exists:sites,id',
             // ★ 팀 소속이어도 개인용으로 등록하고 싶을 때 true — team_id 없이 owner_id로 감
             'is_personal'   => 'nullable|boolean',
+            // ★ DESIGN-CANVAS(SCHEDULE_CREATE) 추가
+            'title'          => 'nullable|string|max:100',
+            'start_time'     => 'nullable|date_format:H:i',
+            'end_time'       => 'nullable|date_format:H:i',
+            'reminder_time'  => 'nullable|string|max:30',
+            // ★ DESIGN-CANVAS(TAX_MONTH_DETAIL/INCOME_DETAIL) 추가
+            'employment_type' => 'nullable|in:daily,freelance',
+            'payment_status'  => 'nullable|in:pending,paid',
+            // ★ 여러 팀 소속 중 어느 팀 일정으로 등록할지 명시적으로 고를 수 있음
+            'team_id'        => 'nullable|integer',
         ]);
 
-        // 팀 소속이면서 개인으로 명시하지 않은 경우에만 team_id를 부여, 그 외엔 전부 개인(owner_id)
-        $wantsPersonal = $request->boolean('is_personal') || !$user->team_id;
-        $data['team_id']    = $wantsPersonal ? null : $user->team_id;
+        // 팀을 명시적으로 지정했으면 그 팀 소속인지 검증 후 사용, 아니면 기존 로직(활성 팀/개인) 유지
+        $requestedTeamId = $data['team_id'] ?? null;
+        unset($data['team_id']);
+        if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
+            return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
+        }
+
+        $wantsPersonal = $requestedTeamId === null
+            ? ($request->boolean('is_personal') || !$user->team_id)
+            : false;
+        $data['team_id']    = $wantsPersonal ? null : ($requestedTeamId ?? $user->team_id);
         $data['owner_id']   = $wantsPersonal ? $user->id : null;
         $data['created_by'] = $user->id;
 
@@ -108,6 +128,12 @@ class ScheduleController extends Controller
         // 1) 기본 정보 생성 (v9.0 신규 필드 포함)
         $schedule = Schedule::create([
             'date'          => $data['date'],
+            'title'         => $data['title']         ?? null,
+            'start_time'    => $data['start_time']    ?? null,
+            'end_time'      => $data['end_time']      ?? null,
+            'reminder_time' => $data['reminder_time'] ?? null,
+            'employment_type' => $data['employment_type'] ?? 'daily',
+            'payment_status'  => $data['payment_status']  ?? 'pending',
             'district'      => $data['district']     ?? null,
             'work_type'     => $data['work_type']    ?? null,
             // ★ v9.0 추가
@@ -136,7 +162,27 @@ class ScheduleController extends Controller
         }
 
         // 3) 응답에 관계 데이터 포함
-        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho']);
+        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workType']);
+
+        // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가 — 팀 일정이면 작성자 본인을 뺀 나머지 팀원에게 알림
+        if ($schedule->team_id) {
+            $otherMemberIds = \Illuminate\Support\Facades\DB::table('team_members')
+                ->where('team_id', $schedule->team_id)
+                ->where('user_id', '!=', $user->id)
+                ->whereNull('deleted_at')
+                ->pluck('user_id');
+
+            foreach ($otherMemberIds as $memberId) {
+                Notification::create([
+                    'user_id'   => $memberId,
+                    'category'  => 'team',
+                    'title'     => '팀 활동',
+                    'body'      => "{$user->name}님이 일정을 추가했어요.",
+                    'link_type' => 'schedule',
+                    'link_id'   => $schedule->id,
+                ]);
+            }
+        }
 
         return ApiResponse::success($schedule, '일정이 등록되었습니다.', 201);
     }
@@ -146,7 +192,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::with(['users:id,name', 'site:id,address,apt_name,dong,ho'])
+        $schedule = Schedule::with(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workType'])
             ->forUser($user)
             ->find($id);
 
@@ -185,7 +231,27 @@ class ScheduleController extends Controller
             'user_ids'      => 'nullable|array',
             'user_ids.*'    => 'integer|exists:users,id',
             'site_id'       => 'nullable|integer|exists:sites,id',
+            // ★ DESIGN-CANVAS(SCHEDULE_EDIT) 추가
+            'title'          => 'nullable|string|max:100',
+            'start_time'     => 'nullable|date_format:H:i',
+            'end_time'       => 'nullable|date_format:H:i',
+            'reminder_time'  => 'nullable|string|max:30',
+            'employment_type' => 'nullable|in:daily,freelance',
+            'payment_status'  => 'nullable|in:pending,paid',
+            'team_id'        => 'nullable|integer',
+            'is_personal'    => 'nullable|boolean',
         ]);
+
+        if (array_key_exists('team_id', $data) || $request->has('is_personal')) {
+            $requestedTeamId = $data['team_id'] ?? null;
+            if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
+                return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
+            }
+            $wantsPersonal = $requestedTeamId === null ? $request->boolean('is_personal') : false;
+            $data['team_id']  = $wantsPersonal ? null : $requestedTeamId;
+            $data['owner_id'] = $wantsPersonal ? $user->id : null;
+        }
+        unset($data['is_personal']);
 
         // ★ v18.20 — 인원 배정 해제/날짜 이동 시 "떠나간 쪽" 월별 공수 집계가 그대로 남는
         //   버그 수정. Observer는 저장 시점의 "현재" 배정자·날짜만 재계산하므로, 바뀌기
@@ -228,7 +294,7 @@ class ScheduleController extends Controller
             }
         }
 
-        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho']);
+        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workType']);
 
         return ApiResponse::success($schedule, '일정이 수정되었습니다.');
     }

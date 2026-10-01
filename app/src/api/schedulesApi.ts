@@ -37,6 +37,18 @@ export interface CreateSchedulePayload {
   work_units?: number;
   expenses?: number;
   expenses_memo?: string | null;
+
+  // ★ DESIGN-CANVAS(SCHEDULE_CREATE/EDIT) 추가
+  title?: string | null;
+  start_time?: string | null; // "09:00"
+  end_time?: string | null; // "17:00"
+  reminder_time?: string | null;
+  team_id?: number | null; // 여러 팀 소속 중 명시적으로 지정
+  is_personal?: boolean;
+
+  // ★ DESIGN-CANVAS(TAX_MONTH_DETAIL/INCOME_DETAIL) 추가
+  employment_type?: 'daily' | 'freelance';
+  payment_status?: 'pending' | 'paid';
 }
 
 // 수정은 "일부 필드만" 보낼 수 있으므로 Partial 사용

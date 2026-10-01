@@ -17,6 +17,14 @@ class Schedule extends Model
         'owner_id',
         'created_by',
         'date',
+        // ★ DESIGN-CANVAS 추가 — 제목/시간/알림
+        'title',
+        'start_time',
+        'end_time',
+        'reminder_time',
+        // ★ DESIGN-CANVAS(TAX_MONTH_DETAIL/INCOME_DETAIL) 추가 — 고용형태/지급상태
+        'employment_type',
+        'payment_status',
         // 공정 (v7 ENUM + v9.0 외래키 둘 다 지원)
         'work_type',
         'work_type_id',

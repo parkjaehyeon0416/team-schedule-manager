@@ -1,198 +1,40 @@
 /**
- * 홈 화면 — v11.6
+ * 일정 화면 (하단 탭 '일정') — v18.32 (DESIGN-CANVAS 기준, SCHEDULE_MONTH.dc.html 1:1)
  */
 
-import React, {
-  useCallback,
-  useState,
-  useRef,
-} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Dimensions,
-} from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useCallback, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import CalendarScreen, { CalendarHandle, ScheduleScope } from './CalendarScreen';
-import YearMonthPicker from '../components/YearMonthPicker';
 import AppHeader from '../components/AppHeader';
-import { getMonthlySummary } from '../api/schedulesApi';
-import type { MonthlySummary } from '../types/api';
-import { formatShortKRW } from '../utils/format';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { colors, radius, spacing } from '../theme/designTokens';
 
 export default function HomeScreen({ navigation }: any) {
-  const insets = useSafeAreaInsets();
-
-  const RESERVED_HEIGHT = 232 + 44 + insets.top + insets.bottom; // +44: 전체/개인/팀 토글 행
-  const CALENDAR_CELL_HEIGHT = Math.max(
-    70,
-    Math.floor((SCREEN_HEIGHT - RESERVED_HEIGHT) / 6),
-  );
-
-  const now = new Date();
-  const [calendarYear, setCalendarYear] = useState<number>(now.getFullYear());
-  const [calendarMonth, setCalendarMonth] = useState<number>(now.getMonth() + 1);
-  const [summary, setSummary] = useState<MonthlySummary | null>(null);
-  const [pickerVisible, setPickerVisible] = useState(false);
   const [scope, setScope] = useState<ScheduleScope>('all');
   const calendarRef = useRef<CalendarHandle>(null);
 
-  const handleCalendarMonthChange = useCallback(
-    async (newYear: number, newMonth: number) => {
-      setCalendarYear(newYear);
-      setCalendarMonth(newMonth);
-      try {
-        const data = await getMonthlySummary(newYear, newMonth);
-        setSummary(data);
-      } catch {
-        setSummary(null);
-      }
-    },
-    [],
-  );
+  const handleGoHome = useCallback(() => {
+    navigation.navigate('HomeDashboard');
+  }, [navigation]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      const load = async () => {
-        try {
-          const data = await getMonthlySummary(calendarYear, calendarMonth);
-          if (!cancelled) setSummary(data);
-        } catch {
-          if (!cancelled) setSummary(null);
-        }
-      };
-      load();
-      return () => { cancelled = true; };
-    }, [calendarYear, calendarMonth]),
-  );
-
-  const handleGoToday = useCallback(() => {
-    calendarRef.current?.goToday();
-  }, []);
-
-  const handleGoHome = () => {
-    calendarRef.current?.goToday();
-  };
-
-  const handleOpenDrawer = () => {
-    navigation.openDrawer?.();
-  };
-
-  const handleOpenPicker = () => {
-    setPickerVisible(true);
-  };
-
-  const handlePickerSelect = (y: number, m: number) => {
-    setPickerVisible(false);
-    calendarRef.current?.jumpToDate(
-      `${y}-${String(m).padStart(2, '0')}-01`,
-    );
-  };
-
-  const workDays = summary?.work_days ?? 0;
-  const totalIncome = parseFloat(summary?.total_income || '0');
-  const totalWorkUnits = parseFloat(summary?.total_work_units || '0');
-
-  const goToMySummary = () => {
-    navigation.navigate('MySummary', {
-      year: calendarYear,
-      month: calendarMonth,
-      _ts: Date.now(),
-    });
-  };
-
-  const isCurrentMonth =
-    calendarYear === now.getFullYear() && calendarMonth === now.getMonth() + 1;
-  const incomeLabel = isCurrentMonth ? '수입' : `${calendarMonth}월수입`;
+  const handleQuickCreate = useCallback(() => {
+    const parent = navigation.getParent();
+    (parent || navigation).navigate('ScheduleCreate');
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
       <AppHeader
-        leftType="menu"
-        onMenuPress={handleOpenDrawer}
-        onHomePress={handleGoHome}
-        centerContent={
-          <Pressable
-            onPress={handleOpenPicker}
-            style={({ pressed }) => [
-              styles.monthTabBtn,
-              pressed && { opacity: 0.6 },
-            ]}
-            android_ripple={{ color: '#E8F0FE' }}
-          >
-            <Text style={styles.monthTabText}>
-              {calendarYear}년 {String(calendarMonth).padStart(2, '0')}월
-            </Text>
-            <Text style={styles.monthTabArrow}>  ▾</Text>
-          </Pressable>
-        }
+        leftType="back"
+        title="일정"
+        onBackPress={handleGoHome}
         rightContent={
-          <Pressable
-            onPress={handleGoToday}
-            style={({ pressed }) => [
-              styles.todayBtn,
-              pressed && styles.todayBtnPressed,
-            ]}
-          >
-            <Text style={styles.todayBtnText}>오늘</Text>
+          <Pressable onPress={handleQuickCreate} hitSlop={8} style={styles.plusBtn}>
+            <Icon name="plus" size={22} color={colors.textPrimary} />
           </Pressable>
         }
       />
-
-      {/* 요약 스트립 */}
-      <View style={styles.summaryStrip}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.summaryItem,
-            pressed && styles.summaryItemPressed,
-          ]}
-          onPress={goToMySummary}
-          android_ripple={{ color: '#E8F0FE' }}
-        >
-          <Text style={styles.summaryValue}>{workDays}일</Text>
-          <Text style={styles.summaryLabel}>근무</Text>
-        </Pressable>
-
-        <View style={styles.separator} />
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.summaryItem,
-            styles.summaryItemHighlight,
-            pressed && styles.summaryItemPressed,
-          ]}
-          onPress={goToMySummary}
-          android_ripple={{ color: '#FFE7B8' }}
-        >
-          <Text style={[styles.summaryValue, styles.summaryValueHighlight]}>
-            ₩{formatShortKRW(totalIncome)}
-          </Text>
-          <Text style={[styles.summaryLabel, styles.summaryLabelHighlight]}>
-            {incomeLabel}
-          </Text>
-        </Pressable>
-
-        <View style={styles.separator} />
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.summaryItem,
-            pressed && styles.summaryItemPressed,
-          ]}
-          onPress={goToMySummary}
-          android_ripple={{ color: '#E8F0FE' }}
-        >
-          <Text style={styles.summaryValue}>{totalWorkUnits.toFixed(1)}</Text>
-          <Text style={styles.summaryLabel}>공수</Text>
-        </Pressable>
-      </View>
 
       {/* ★ 전체/개인/팀 토글 — 팀에 있어도 개인용 일정을 따로 만들 수 있고,
           팀을 나간 뒤에도 '팀' 필터로 그때 일했던 기록을 볼 수 있음 */}
@@ -200,23 +42,17 @@ export default function HomeScreen({ navigation }: any) {
         {(
           [
             { key: 'all', label: '전체' },
-            { key: 'personal', label: '👤 개인' },
-            { key: 'team', label: '👥 팀' },
+            { key: 'personal', label: '개인' },
+            { key: 'team', label: '팀' },
           ] as { key: ScheduleScope; label: string }[]
         ).map(opt => (
           <Pressable
             key={opt.key}
             onPress={() => setScope(opt.key)}
-            style={[
-              styles.scopeChip,
-              scope === opt.key && styles.scopeChipActive,
-            ]}
+            style={[styles.scopeChip, scope === opt.key && styles.scopeChipActive]}
           >
             <Text
-              style={[
-                styles.scopeChipText,
-                scope === opt.key && styles.scopeChipTextActive,
-              ]}
+              style={[styles.scopeChipText, scope === opt.key && styles.scopeChipTextActive]}
             >
               {opt.label}
             </Text>
@@ -224,89 +60,39 @@ export default function HomeScreen({ navigation }: any) {
         ))}
       </View>
 
-      <View style={[styles.calendarArea, { paddingBottom: insets.bottom }]}>
-        <CalendarScreen
-          ref={calendarRef}
-          navigation={navigation}
-          onMonthChange={handleCalendarMonthChange}
-          cellHeight={CALENDAR_CELL_HEIGHT}
-          scope={scope}
-        />
-      </View>
-
-      <YearMonthPicker
-        visible={pickerVisible}
-        year={calendarYear}
-        month={calendarMonth}
-        onClose={() => setPickerVisible(false)}
-        onSelect={handlePickerSelect}
-      />
+      <CalendarScreen ref={calendarRef} navigation={navigation} scope={scope} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-
-  monthTabBtn: {
-    flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center',
-    height: 44, paddingHorizontal: 8,
-  },
-  monthTabText: {
-    fontSize: 17, fontWeight: '700', color: '#1F3864',
-  },
-  monthTabArrow: { fontSize: 12, color: '#1F3864' },
-  todayBtn: {
-    paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 6, backgroundColor: '#2E75B6',
-  },
-  todayBtnPressed: { backgroundColor: '#1F5A8E' },
-  todayBtnText: {
-    fontSize: 13, color: '#FFFFFF', fontWeight: '700',
-  },
-
-  summaryStrip: {
-    flexDirection: 'row', alignItems: 'center',
-    height: 56, backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
-    paddingHorizontal: 8, paddingVertical: 4,
-  },
-  summaryItem: {
-    flex: 1, flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center',
-    height: '100%', borderRadius: 8, paddingVertical: 4,
-  },
-  summaryItemHighlight: { backgroundColor: '#FFF8E1', flex: 1.4 },
-  summaryItemPressed: { opacity: 0.6 },
-  summaryValue: {
-    fontSize: 18, fontWeight: '700', color: '#1F3864', lineHeight: 22,
-  },
-  summaryValueHighlight: { color: '#D48806', fontSize: 19 },
-  summaryLabel: { fontSize: 11, color: '#666', marginTop: 2 },
-  summaryLabelHighlight: { color: '#666', fontWeight: '600' },
-  separator: {
-    width: 1, height: 32,
-    backgroundColor: '#E0E0E0', marginHorizontal: 6,
-  },
-  calendarArea: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.surface },
+  plusBtn: { padding: 4 },
 
   scopeRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    gap: 4,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    padding: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   scopeChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F0F2F5',
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: 'transparent',
   },
-  scopeChipActive: { backgroundColor: '#1F3864' },
-  scopeChipText: { fontSize: 12.5, fontWeight: '700', color: '#666' },
-  scopeChipTextActive: { color: '#FFFFFF' },
+  scopeChipActive: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  scopeChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  scopeChipTextActive: { color: colors.primary, fontWeight: '700' },
 });

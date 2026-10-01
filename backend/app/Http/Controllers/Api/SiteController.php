@@ -40,12 +40,28 @@ class SiteController extends Controller
             'area_m2'  => 'nullable|numeric|min:0',
             'memo'     => 'nullable|string',
             'is_personal' => 'nullable|boolean',
+            // ★ DESIGN-CANVAS(SITE_CREATE) 추가 필드
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+            'customer'   => 'nullable|string|max:100',
+            'team_id'    => 'nullable|integer',
         ]);
 
-        $wantsPersonal = $request->boolean('is_personal') || !$user->team_id;
+        // ★ 디자인의 "팀 선택" — 내가 소속된 팀 중 하나를 명시적으로 고를 수 있음.
+        //   지정 안 하면 기존처럼 활성 팀(또는 개인)으로 자동 결정.
+        $requestedTeamId = $data['team_id'] ?? null;
+        unset($data['team_id']);
+
+        if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
+            return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SITE_NOT_FOUND, 422);
+        }
+
+        $wantsPersonal = $requestedTeamId === null
+            ? ($request->boolean('is_personal') || !$user->team_id)
+            : false;
         unset($data['is_personal']);
 
-        $teamId = $wantsPersonal ? null : $user->team_id;
+        $teamId = $wantsPersonal ? null : ($requestedTeamId ?? $user->team_id);
         $ownerId = $wantsPersonal ? $user->id : null;
 
         // ★ v18.16 — 주소+동/호까지 완전히 같은 현장 중복 등록 방지(더블탭 방지 목적).
@@ -116,7 +132,21 @@ class SiteController extends Controller
             'ho'       => 'nullable|string|max:50',
             'area_m2'  => 'nullable|numeric|min:0',
             'memo'     => 'nullable|string',
+            // ★ DESIGN-CANVAS(SITE_EDIT) 추가 필드
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+            'customer'   => 'nullable|string|max:100',
+            'status'     => 'nullable|in:scheduled,in_progress,done',
+            'team_id'    => 'nullable|integer',
         ]);
+
+        if (array_key_exists('team_id', $data)) {
+            $requestedTeamId = $data['team_id'];
+            if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
+                return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SITE_NOT_FOUND, 422);
+            }
+            $data['owner_id'] = $requestedTeamId === null ? $user->id : null;
+        }
 
         $site->update($data);
 

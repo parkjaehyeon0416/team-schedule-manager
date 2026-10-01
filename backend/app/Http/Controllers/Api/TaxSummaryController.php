@@ -71,6 +71,81 @@ class TaxSummaryController extends Controller
     }
 
     /**
+     * CSV 자료 내보내기 — ★ DESIGN-CANVAS(TAX_EXPORT) 추가 (2026-10-02)
+     * GET /api/tax-summary/export?from=2026-01&to=2026-09&items=income,wage,tax,schedule
+     *   PhpSpreadsheet 등 엑셀 생성 패키지가 설치돼 있지 않아 "엑셀" 선택도 CSV로 생성함
+     *   (대부분의 스프레드시트 프로그램이 CSV를 그대로 열 수 있어 실사용엔 문제 없음).
+     *   파일 자체를 응답으로 반환(download)하지 않고 텍스트로 반환 — 모바일에서 인증 토큰
+     *   없이 여는 문제(PDF 다운로드와 동일한 제약)를 피하기 위해, 앱이 받은 텍스트를
+     *   OS 공유 시트(Share)로 저장/전달하도록 함.
+     */
+    public function exportCsv(Request $request)
+    {
+        $data = $request->validate([
+            'from'  => 'required|date_format:Y-m',
+            'to'    => 'required|date_format:Y-m',
+            'items' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+        $items = $data['items'] ? explode(',', $data['items']) : ['income', 'wage', 'tax'];
+
+        [$fromYear, $fromMonth] = array_map('intval', explode('-', $data['from']));
+        [$toYear, $toMonth] = array_map('intval', explode('-', $data['to']));
+
+        $rows = [];
+        for ($y = $fromYear; $y <= $toYear; $y++) {
+            foreach ($this->buildYearlySummaries($user->id, $y) as $row) {
+                $ym = $y * 100 + $row['month'];
+                if ($ym < $fromYear * 100 + $fromMonth || $ym > $toYear * 100 + $toMonth) {
+                    continue;
+                }
+                $rows[] = $row;
+            }
+        }
+
+        $header = ['연월'];
+        if (in_array('wage', $items)) { $header[] = '공수'; $header[] = '작업일수'; }
+        if (in_array('income', $items)) { $header[] = '총수입'; $header[] = '경비'; }
+        if (in_array('tax', $items)) { $header[] = '예상원천세'; $header[] = '실수령액'; }
+
+        $lines = [implode(',', $header)];
+        foreach ($rows as $row) {
+            $line = [$row['year_month']];
+            if (in_array('wage', $items)) { $line[] = $row['total_work_units']; $line[] = $row['work_days']; }
+            if (in_array('income', $items)) { $line[] = $row['total_income']; $line[] = $row['total_expenses']; }
+            if (in_array('tax', $items)) { $line[] = $row['estimated_tax']; $line[] = $row['net_income']; }
+            $lines[] = implode(',', $line);
+        }
+
+        if (in_array('schedule', $items)) {
+            $schedules = Schedule::query()
+                ->join('schedule_users', 'schedules.id', '=', 'schedule_users.schedule_id')
+                ->whereNull('schedules.deleted_at')
+                ->whereNull('schedule_users.deleted_at')
+                ->where('schedule_users.user_id', $user->id)
+                ->whereBetween('schedules.date', ["{$data['from']}-01", "{$data['to']}-31"])
+                ->orderBy('schedules.date')
+                ->select('schedules.date', 'schedules.memo', 'schedules.daily_wage')
+                ->get();
+
+            $lines[] = '';
+            $lines[] = '원본 일정';
+            $lines[] = '날짜,메모,금액';
+            foreach ($schedules as $s) {
+                $memo = str_replace(',', ' ', (string) $s->memo);
+                $lines[] = "{$s->date},{$memo},{$s->daily_wage}";
+            }
+        }
+
+        $csv = "\xEF\xBB\xBF" . implode("\n", $lines); // UTF-8 BOM — 엑셀에서 한글 깨짐 방지
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
      * 해당 연도 1~12월의 MonthlySummary를 모으되, 일정이 있는데 아직 캐시가 없는 달은
      * 그 자리에서 재계산해서 채운다(월별 수입 대시보드와 동일한 캐시 재사용 전략).
      */

@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 //   app/src/screens/CalendarScreen.tsx
-//   v11.6 — 2026-04-27
+//   v18.32 — DESIGN-CANVAS 기준 전면 재작성 (SCHEDULE_MONTH.dc.html 1:1)
+//   이전: react-native-calendars 기반 셀 안에 막대 텍스트 표시 + 바텀시트 모달
+//   이후: 자체 월 그리드(원형 날짜 + 점 인디케이터) + 하단 "그 날 일정" 인라인 섹션
 // ═══════════════════════════════════════════════════════════════
 
 import React, {
@@ -11,173 +13,18 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  BackHandler,
-} from 'react-native';
-import { Calendar, LocaleConfig } from 'react-native-calendars';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import axios from '../api/axiosInstance';
-import { Button, Divider } from 'react-native-paper';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import dayjs from 'dayjs';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from '../api/axiosInstance';
+import { getMyTeams } from '../api/teamApi';
+import type { Schedule, Team } from '../types/api';
+import { colors, radius, spacing } from '../theme/designTokens';
 
-// ───────────────────────────────────────────────────────────────
-// [1] 한국어 로케일
-// ───────────────────────────────────────────────────────────────
-LocaleConfig.locales['ko'] = {
-  monthNames: [
-    '1월', '2월', '3월', '4월', '5월', '6월',
-    '7월', '8월', '9월', '10월', '11월', '12월',
-  ],
-  monthNamesShort: [
-    '1월', '2월', '3월', '4월', '5월', '6월',
-    '7월', '8월', '9월', '10월', '11월', '12월',
-  ],
-  dayNames: [
-    '일요일', '월요일', '화요일', '수요일',
-    '목요일', '금요일', '토요일',
-  ],
-  dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
-  today: '오늘',
-};
-LocaleConfig.defaultLocale = 'ko';
+const TEAM_PALETTE = ['#FF9E2C', '#0B9C8A', '#8B6CF0', '#E5484D', '#2492FF', '#C026D3'];
+const PCOLOR = colors.primary;
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
-// ───────────────────────────────────────────────────────────────
-// [2] 작업유형별 색상
-// ───────────────────────────────────────────────────────────────
-const WORK_TYPE_COLOR: Record<string, string> = {
-  도배: '#2E75B6',
-  타일: '#E67E22',
-  필름: '#27AE60',
-};
-
-// ───────────────────────────────────────────────────────────────
-// [3] 타입 정의
-// ───────────────────────────────────────────────────────────────
-interface UserLite {
-  id: number;
-  name: string;
-}
-
-interface SiteLite {
-  id: number;
-  apt_name?: string;
-  dong?: string;
-  ho?: string;
-}
-
-interface ScheduleItem {
-  id: number;
-  date: string;
-  work_type: '도배' | '타일' | '필름';
-  district?: string;
-  area_m2?: number | null;
-  memo?: string | null;
-  users?: UserLite[];
-  site?: SiteLite | null;
-}
-
-// ───────────────────────────────────────────────────────────────
-// [4] 유틸 함수
-// ───────────────────────────────────────────────────────────────
-const shortSiteName = (site?: SiteLite | null): string => {
-  if (!site) return '';
-  if (site.dong && site.ho) return `${site.dong} ${site.ho}`;
-  if (site.ho) return site.ho;
-  return site.apt_name || '';
-};
-
-const buildCellLabel = (s: ScheduleItem): string => {
-  const place = s.district || s.site?.apt_name || '미정';
-  const pyeong = s.area_m2
-    ? ` ${(s.area_m2 / 3.3058).toFixed(0)}평`
-    : '';
-  return `${place}${pyeong}`;
-};
-
-const getDateColor = (
-  timestamp: number,
-  state: string | undefined,
-  isToday: boolean,
-): string => {
-  if (state === 'disabled') return '#CCCCCC';
-  if (isToday) return '#2E75B6';
-  const day = new Date(timestamp).getDay();
-  if (day === 0) return '#E74C3C';
-  if (day === 6) return '#2E75B6';
-  return '#222222';
-};
-
-// ───────────────────────────────────────────────────────────────
-// [5] 커스텀 Day 컴포넌트
-// ───────────────────────────────────────────────────────────────
-interface CustomDayProps {
-  date?: {
-    day: number;
-    month: number;
-    year: number;
-    timestamp: number;
-    dateString: string;
-  };
-  state?: string;
-  marking?: { schedules?: ScheduleItem[] };
-  onPress: (dateString: string, schedules: ScheduleItem[]) => void;
-  cellHeight: number;
-}
-
-const CustomDay: React.FC<CustomDayProps> = ({
-  date, state, marking, onPress, cellHeight,
-}) => {
-  if (!date) return <View style={[styles.cell, { minHeight: cellHeight }]} />;
-
-  const schedules = marking?.schedules || [];
-  const displayList = schedules.slice(0, 2);
-  const moreCount = schedules.length - displayList.length;
-  const isToday = state === 'today';
-  const dateColor = getDateColor(date.timestamp, state, isToday);
-
-  return (
-    <Pressable
-      onPress={() => onPress(date.dateString, schedules)}
-      style={({ pressed }) => [
-        styles.cell,
-        { minHeight: cellHeight },
-        isToday && styles.todayCell,
-        pressed && styles.pressedCell,
-      ]}
-    >
-      <View pointerEvents="none" style={styles.cellInner}>
-        <Text style={[styles.dateText, { color: dateColor }]}>
-          {date.day}
-        </Text>
-        {displayList.map(s => (
-          <View key={s.id} style={styles.scheduleBar}>
-            <View
-              style={[
-                styles.scheduleBarColor,
-                { backgroundColor: WORK_TYPE_COLOR[s.work_type] || '#888' },
-              ]}
-            />
-            <Text style={styles.scheduleBarText} numberOfLines={1}>
-              {buildCellLabel(s)}
-            </Text>
-          </View>
-        ))}
-        {moreCount > 0 && (
-          <Text style={styles.moreText}>+{moreCount}건</Text>
-        )}
-      </View>
-    </Pressable>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════
-// [6] 외부 호출 인터페이스
-// ═══════════════════════════════════════════════════════════════
 export interface CalendarHandle {
   goToday: () => void;
   jumpToDate: (date: string) => void;
@@ -189,228 +36,295 @@ interface Props {
   navigation: any;
   onMonthChange?: (year: number, month: number) => void;
   cellHeight?: number;
-  // ★ 전체/개인/팀 토글 필터 — 팀에 있어도 개인용 일정을 따로 만들 수 있어서
-  //   홈 화면에서 어느 범위를 볼지 고를 수 있음 (기본: 전체)
   scope?: ScheduleScope;
 }
 
 const CalendarScreen = forwardRef<CalendarHandle, Props>(
-  ({ navigation, onMonthChange, cellHeight = 90, scope = 'all' }, ref) => {
-    const [currentMonth, setCurrentMonth] = useState(
-      dayjs().format('YYYY-MM-DD'),
-    );
-    const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedSchedules, setSelectedSchedules] = useState<ScheduleItem[]>([]);
-    const [modalVisible, setModalVisible] = useState(false);
+  ({ navigation, onMonthChange, scope = 'all' }, ref) => {
+    const [cursor, setCursor] = useState(dayjs());
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [selectedTeamId, setSelectedTeamId] = useState<number | 'all'>('all');
+    const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
 
-    const insets = useSafeAreaInsets();
+    const teamColor = useCallback(
+      (teamId: number | null) => {
+        if (!teamId) return PCOLOR;
+        const idx = teams.findIndex(t => t.id === teamId);
+        return TEAM_PALETTE[idx >= 0 ? idx % TEAM_PALETTE.length : teams.length % TEAM_PALETTE.length];
+      },
+      [teams],
+    );
+
+    const teamName = useCallback(
+      (teamId: number | null) => {
+        if (!teamId) return '개인';
+        return teams.find(t => t.id === teamId)?.name || '팀';
+      },
+      [teams],
+    );
 
     const fetchSchedules = useCallback(async () => {
       try {
-        const res = await axios.get('/schedules', { params: { scope } });
-        const list: ScheduleItem[] = res.data?.data || [];
-        setSchedules(list);
-      } catch (e: any) {
-        console.error('스케줄 조회 실패:', e);
+        const res = await axios.get('/schedules', {
+          params: { year: cursor.year(), month: cursor.month() + 1, scope },
+        });
+        setSchedules(res.data?.data || []);
+      } catch {
+        setSchedules([]);
       }
-    }, [scope]);
-
-    useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
+    }, [cursor, scope]);
 
     useEffect(() => {
-      if (onMonthChange) {
-        const m = dayjs(currentMonth);
-        onMonthChange(m.year(), m.month() + 1);
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      getMyTeams().then(setTeams).catch(() => setTeams([]));
     }, []);
 
     useEffect(() => {
+      fetchSchedules();
+    }, [fetchSchedules]);
+
+    useEffect(() => {
       if (!navigation) return;
-      const unsubscribe = navigation.addListener('focus', () => {
-        fetchSchedules();
-      });
+      const unsubscribe = navigation.addListener('focus', fetchSchedules);
       return unsubscribe;
     }, [navigation, fetchSchedules]);
 
     useEffect(() => {
-      if (!modalVisible) return;
-      const subscription = BackHandler.addEventListener(
-        'hardwareBackPress',
-        () => { setModalVisible(false); return true; },
-      );
-      return () => subscription.remove();
-    }, [modalVisible]);
+      onMonthChange?.(cursor.year(), cursor.month() + 1);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cursor]);
+
+    // 월이 바뀌면 선택 날짜를 그 달 1일로 리셋 (이전 달의 날짜가 선택된 채 남지 않도록)
+    useEffect(() => {
+      if (!selectedDate.startsWith(cursor.format('YYYY-MM'))) {
+        const today = dayjs();
+        setSelectedDate(
+          today.format('YYYY-MM') === cursor.format('YYYY-MM')
+            ? today.format('YYYY-MM-DD')
+            : cursor.startOf('month').format('YYYY-MM-DD'),
+        );
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cursor]);
 
     useImperativeHandle(ref, () => ({
       goToday: () => {
-        const today = dayjs().format('YYYY-MM-DD');
-        setCurrentMonth(today);
-        if (onMonthChange) {
-          const m = dayjs(today);
-          onMonthChange(m.year(), m.month() + 1);
-        }
+        setCursor(dayjs());
+        setSelectedDate(dayjs().format('YYYY-MM-DD'));
       },
       jumpToDate: (date: string) => {
-        setCurrentMonth(date);
-        if (onMonthChange) {
-          const m = dayjs(date);
-          onMonthChange(m.year(), m.month() + 1);
-        }
+        setCursor(dayjs(date));
+        setSelectedDate(date);
       },
-    }), [onMonthChange]);
+    }), []);
 
-    const markedDates = useMemo(() => {
-      const grouped: Record<string, { schedules: ScheduleItem[] }> = {};
-      schedules.forEach(s => {
-        if (!grouped[s.date]) grouped[s.date] = { schedules: [] };
-        grouped[s.date].schedules.push(s);
+    const visibleSchedules = useMemo(() => {
+      if (scope !== 'team' || selectedTeamId === 'all') return schedules;
+      return schedules.filter(s => s.team_id === selectedTeamId);
+    }, [schedules, scope, selectedTeamId]);
+
+    const schedulesByDate = useMemo(() => {
+      const grouped: Record<string, Schedule[]> = {};
+      visibleSchedules.forEach(s => {
+        (grouped[s.date] ||= []).push(s);
       });
       return grouped;
-    }, [schedules]);
+    }, [visibleSchedules]);
 
-    const handleDayPress = (dateString: string, daySchedules: ScheduleItem[]) => {
-      setSelectedDate(dateString);
-      setSelectedSchedules(daySchedules);
-      setModalVisible(true);
-    };
+    const cells = useMemo(() => {
+      const startOfMonth = cursor.startOf('month');
+      const firstDow = startOfMonth.day();
+      const daysInMonth = cursor.daysInMonth();
+      const list: { day: number | null; dateStr: string }[] = [];
+      for (let i = 0; i < firstDow; i++) list.push({ day: null, dateStr: '' });
+      for (let d = 1; d <= daysInMonth; d++) {
+        list.push({ day: d, dateStr: startOfMonth.date(d).format('YYYY-MM-DD') });
+      }
+      while (list.length % 7 !== 0) list.push({ day: null, dateStr: '' });
+      return list;
+    }, [cursor]);
 
-    const goToCreate = () => {
-      setModalVisible(false);
+    const todayStr = dayjs().format('YYYY-MM-DD');
+    const dayEvents = schedulesByDate[selectedDate] || [];
+    const selDay = dayjs(selectedDate);
+
+    const legendItems = useMemo(() => {
+      if (scope === 'personal') return [{ name: '개인 일정', color: PCOLOR }];
+      if (scope === 'team') {
+        return teams.map(t => ({ name: t.name, color: teamColor(t.id) }));
+      }
+      return [{ name: '개인', color: PCOLOR }, ...teams.map(t => ({ name: t.name, color: teamColor(t.id) }))];
+    }, [scope, teams, teamColor]);
+
+    const goCreate = () => {
       const parent = navigation.getParent();
-      if (parent) { parent.navigate('ScheduleCreate', { date: selectedDate }); }
-      else { navigation.navigate('ScheduleCreate', { date: selectedDate }); }
+      (parent || navigation).navigate('ScheduleCreate', { date: selectedDate });
     };
 
-    const goToDetail = (scheduleId: number) => {
-      setModalVisible(false);
+    const goDetail = (id: number) => {
       const parent = navigation.getParent()?.getParent() || navigation.getParent();
-      if (parent) { parent.navigate('ScheduleDetail', { id: scheduleId }); }
-      else { navigation.navigate('ScheduleDetail', { id: scheduleId }); }
+      (parent || navigation).navigate('ScheduleDetail', { id });
     };
 
     return (
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <Calendar
-          current={currentMonth}
-          // ★ initialDate — react-native-calendars는 'current'를 마운트 시
-          //   초기값으로만 읽고 이후 변경은 무시한다. 헤더의 연/월 선택으로
-          //   점프할 때 캘린더가 실제로 이동하려면 'initialDate'가 필요하다.
-          initialDate={currentMonth}
-          onMonthChange={m => {
-            setCurrentMonth(m.dateString);
-            if (onMonthChange) { onMonthChange(m.year, m.month); }
-          }}
-          // dayComponent가 marking.schedules를 직접 읽는 커스텀 구조라
-          // 라이브러리의 MarkingProps 타입과는 형태가 다름 (런타임은 정상)
-          markedDates={markedDates as any}
-          enableSwipeMonths={true}
-          renderArrow={(direction: 'left' | 'right') => (
-            <View style={styles.arrowBtn}>
-              <Text style={styles.arrowText}>
-                {direction === 'left' ? '◀' : '▶'}
-              </Text>
-            </View>
-          )}
-          dayComponent={(props: any) => (
-            <CustomDay
-              date={props.date}
-              state={props.state}
-              marking={props.marking}
-              onPress={handleDayPress}
-              cellHeight={cellHeight}
-            />
-          )}
-          theme={{
-            calendarBackground: '#FFFFFF',
-            textMonthFontSize: 18,
-            textMonthFontWeight: '700',
-            monthTextColor: '#1F3864',
-            arrowColor: '#2E75B6',
-            dayTextColor: '#222222',
-            textDayFontSize: 14,
-            textDayFontWeight: '600',
-            textSectionTitleColor: '#555555',
-            textDisabledColor: '#CCCCCC',
-            // 'stylesheet.calendar.header'는 라이브러리 Theme 타입에 없는
-            // 런타임 전용 스타일 오버라이드 키라 캐스팅이 필요함
-            'stylesheet.calendar.header': {
-              dayTextAtIndex0: { color: '#E74C3C', fontWeight: '600' },
-              dayTextAtIndex6: { color: '#2E75B6', fontWeight: '600' },
-            },
-          } as any}
-        />
-
-        {modalVisible && (
-          <>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+        {scope === 'team' && teams.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.teamChipsRow}>
             <Pressable
-              style={styles.modalBackdrop}
-              onPress={() => setModalVisible(false)}
-            />
-            <View style={[styles.modalCard, { paddingBottom: 16 + insets.bottom }]}>
-              <Text style={styles.modalTitle}>
-                {selectedDate} 일정 ({selectedSchedules.length}건)
+              style={[styles.teamChip, selectedTeamId === 'all' && styles.teamChipActive]}
+              onPress={() => setSelectedTeamId('all')}
+            >
+              <View style={[styles.teamChipDot, { backgroundColor: colors.textPrimary }]} />
+              <Text style={[styles.teamChipText, selectedTeamId === 'all' && styles.teamChipTextActive]}>
+                전체 팀
               </Text>
-              <Text style={styles.modalHint}>
-                일정을 터치하면 상세 정보를 볼 수 있습니다.
-              </Text>
-              <Divider style={{ marginVertical: 8 }} />
-
-              <ScrollView style={{ maxHeight: 300 }}>
-                {selectedSchedules.length === 0 ? (
-                  <Text style={styles.emptyText}>등록된 일정이 없습니다.</Text>
-                ) : (
-                  selectedSchedules.map(s => (
-                    <Pressable
-                      key={s.id}
-                      onPress={() => goToDetail(s.id)}
-                      style={({ pressed }) => [
-                        styles.scheduleItem,
-                        pressed && styles.scheduleItemPressed,
-                      ]}
-                      android_ripple={{ color: '#E8F0FE' }}
-                    >
-                      <View
-                        style={[
-                          styles.workTypeBadge,
-                          { backgroundColor: WORK_TYPE_COLOR[s.work_type] },
-                        ]}
-                      >
-                        <Text style={styles.workTypeText}>{s.work_type}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.scheduleSite}>
-                          {shortSiteName(s.site) || s.district || '-'}
-                        </Text>
-                        <Text style={styles.scheduleUsers}>
-                          {(s.users || []).map(u => u.name).join(', ') || '미배정'}
-                        </Text>
-                        {s.area_m2 && (
-                          <Text style={styles.scheduleArea}>
-                            {s.area_m2}㎡ ({(s.area_m2 / 3.3058).toFixed(1)}평)
-                          </Text>
-                        )}
-                      </View>
-                      <Text style={styles.chevron}>›</Text>
-                    </Pressable>
-                  ))
-                )}
-              </ScrollView>
-
-              <Divider style={{ marginVertical: 8 }} />
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Button mode="outlined" style={{ flex: 1 }} onPress={() => setModalVisible(false)}>
-                  닫기
-                </Button>
-                <Button mode="contained" style={{ flex: 1 }} onPress={goToCreate}>
-                  + 일정 추가
-                </Button>
-              </View>
-            </View>
-          </>
+            </Pressable>
+            {teams.map(t => (
+              <Pressable
+                key={t.id}
+                style={[styles.teamChip, selectedTeamId === t.id && styles.teamChipActive]}
+                onPress={() => setSelectedTeamId(t.id)}
+              >
+                <View style={[styles.teamChipDot, { backgroundColor: teamColor(t.id) }]} />
+                <Text style={[styles.teamChipText, selectedTeamId === t.id && styles.teamChipTextActive]}>
+                  {t.name}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         )}
-      </View>
+
+        <View style={styles.calCard}>
+          <View style={styles.monthNavRow}>
+            <Pressable
+              style={styles.monthNavBtn}
+              onPress={() => setCursor(c => c.subtract(1, 'month'))}
+            >
+              <Icon name="chevron-left" size={20} color={colors.textPrimary} />
+            </Pressable>
+            <Text style={styles.monthLabel}>{cursor.format('YYYY년 M월')}</Text>
+            <Pressable
+              style={styles.monthNavBtn}
+              onPress={() => setCursor(c => c.add(1, 'month'))}
+            >
+              <Icon name="chevron-right" size={20} color={colors.textPrimary} />
+            </Pressable>
+          </View>
+
+          <View style={styles.dowRow}>
+            {DOW.map((d, i) => (
+              <Text
+                key={d}
+                style={[
+                  styles.dowText,
+                  i === 0 && { color: colors.danger },
+                  i === 6 && { color: colors.primaryDark },
+                ]}
+              >
+                {d}
+              </Text>
+            ))}
+          </View>
+
+          <View style={styles.gridWrap}>
+            {cells.map((c, i) => {
+              if (!c.day) return <View key={i} style={styles.cellEmpty} />;
+              const dow = i % 7;
+              const isToday = c.dateStr === todayStr;
+              const isSel = c.dateStr === selectedDate;
+              const dayEv = schedulesByDate[c.dateStr] || [];
+              const dots = dayEv.slice(0, 3);
+              const fg = isSel ? '#FFFFFF' : dow === 0 ? colors.danger : dow === 6 ? colors.primaryDark : colors.textPrimary;
+              return (
+                <Pressable
+                  key={i}
+                  style={styles.cellWrap}
+                  onPress={() => setSelectedDate(c.dateStr)}
+                >
+                  <View
+                    style={[
+                      styles.cellCircle,
+                      isSel && { backgroundColor: colors.primary },
+                      !isSel && isToday && { backgroundColor: '#E8F3FF' },
+                    ]}
+                  >
+                    <Text style={[styles.cellDayText, { color: fg, fontWeight: isSel || isToday ? '700' : '500' }]}>
+                      {c.day}
+                    </Text>
+                  </View>
+                  <View style={styles.cellDotsRow}>
+                    {dots.map((s, di) => (
+                      <View key={di} style={[styles.cellDot, { backgroundColor: teamColor(s.team_id) }]} />
+                    ))}
+                    {dayEv.length > 3 && <Text style={styles.cellMoreText}>+{dayEv.length - 3}</Text>}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {legendItems.length > 0 && (
+            <View style={styles.legendRow}>
+              {legendItems.map(l => (
+                <View key={l.name} style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: l.color }]} />
+                  <Text style={styles.legendText}>{l.name}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <Pressable
+          style={styles.dayHeaderRow}
+          onPress={() => {
+            const parent = navigation.getParent();
+            (parent || navigation).navigate('ScheduleDay', { date: selectedDate });
+          }}
+        >
+          <Text style={styles.dayTitle}>
+            {selDay.format('M월 D일')} ({DOW[selDay.day()]}) ›
+          </Text>
+          <Text style={styles.dayCount}>일정 {dayEvents.length}개</Text>
+        </Pressable>
+
+        {dayEvents.length === 0 ? (
+          <View style={styles.noEvCard}>
+            <Text style={styles.noEvText}>이 날은 일정이 없어요.</Text>
+            <Pressable onPress={goCreate}>
+              <Text style={styles.noEvLink}>+ 일정 등록</Text>
+            </Pressable>
+          </View>
+        ) : (
+          dayEvents.map(e => (
+            <Pressable
+              key={e.id}
+              style={({ pressed }) => [styles.evCard, pressed && { opacity: 0.85 }]}
+              onPress={() => goDetail(e.id)}
+            >
+              <View style={[styles.evBar, { backgroundColor: teamColor(e.team_id) }]} />
+              <View style={styles.evTextBox}>
+                <Text style={styles.evTitle} numberOfLines={1}>
+                  {e.site?.apt_name || e.work_type_relation?.name || e.work_type || '일정'}
+                </Text>
+                <Text style={styles.evSub} numberOfLines={1}>
+                  {e.site?.address || e.memo || ''}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.evTag,
+                  { backgroundColor: e.team_id ? '#E8F3FF' : '#F0EBFF' },
+                ]}
+              >
+                <Text style={[styles.evTagText, { color: e.team_id ? colors.primaryDark : '#6B4FD8' }]}>
+                  {teamName(e.team_id)}
+                </Text>
+              </View>
+            </Pressable>
+          ))
+        )}
+      </ScrollView>
     );
   },
 );
@@ -418,64 +332,99 @@ const CalendarScreen = forwardRef<CalendarHandle, Props>(
 CalendarScreen.displayName = 'CalendarScreen';
 export default CalendarScreen;
 
-// ═══════════════════════════════════════════════════════════════
-// [7] 스타일
-// ═══════════════════════════════════════════════════════════════
+const CELL_W = `${100 / 7}%` as const;
+
 const styles = StyleSheet.create({
-  arrowBtn: {
-    width: 36, height: 36, justifyContent: 'center',
-    alignItems: 'center', borderRadius: 18, backgroundColor: '#F0F7FF',
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.md, paddingBottom: spacing.xxl, gap: spacing.md },
+
+  teamChipsRow: { maxHeight: 36 },
+  teamChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: 6,
   },
-  arrowText: { fontSize: 16, fontWeight: '700', color: '#2E75B6' },
-  cell: {
-    width: '100%', paddingHorizontal: 3, paddingVertical: 4,
-    borderWidth: 0.5, borderColor: '#BBBBBB',
-    backgroundColor: '#FFFFFF', overflow: 'hidden',
+  teamChipActive: { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
+  teamChipDot: { width: 7, height: 7, borderRadius: 4 },
+  teamChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  teamChipTextActive: { color: '#FFFFFF' },
+
+  calCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderCard,
+    borderRadius: radius.lg,
+    padding: 10,
+    gap: 6,
   },
-  cellInner: { flex: 1 },
-  todayCell: { backgroundColor: '#FFF9E6' },
-  pressedCell: { backgroundColor: '#F0F7FF' },
-  dateText: { fontSize: 12, fontWeight: '700', marginBottom: 3 },
-  scheduleBar: {
-    flexDirection: 'row', alignItems: 'center',
-    marginBottom: 2, paddingRight: 1,
+  monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  monthNavBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  monthLabel: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  dowRow: { flexDirection: 'row' },
+  dowText: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  gridWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+  cellEmpty: { width: CELL_W, height: 46 },
+  cellWrap: { width: CELL_W, height: 46, alignItems: 'center', paddingTop: 2, gap: 3 },
+  cellCircle: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  cellDayText: { fontSize: 13 },
+  cellDotsRow: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 8 },
+  cellDot: { width: 5, height: 5, borderRadius: 3 },
+  cellMoreText: { fontSize: 9, fontWeight: '700', color: colors.textSecondary, lineHeight: 9 },
+
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'center',
+    paddingTop: 8,
+    marginTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderHairline,
   },
-  scheduleBarColor: {
-    width: 3, height: 14, borderRadius: 1.5, marginRight: 3,
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5, marginHorizontal: 4 },
+  legendDot: { width: 7, height: 7, borderRadius: 4 },
+  legendText: { fontSize: 12, color: colors.textSecondary },
+
+  dayHeaderRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  dayTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  dayCount: { fontSize: 13, color: colors.textSecondary },
+
+  noEvCard: {
+    padding: 24,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    gap: 6,
   },
-  scheduleBarText: { fontSize: 10, color: '#222', fontWeight: '500', flex: 1 },
-  moreText: {
-    fontSize: 9, color: '#2E75B6', textAlign: 'right',
-    marginTop: 1, fontWeight: '600',
+  noEvText: { fontSize: 14, color: colors.textSecondary },
+  noEvLink: { fontSize: 14, fontWeight: '700', color: colors.primaryDark },
+
+  evCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderCard,
+    borderRadius: radius.md,
+    paddingVertical: 12,
+    paddingRight: 12,
+    overflow: 'hidden',
   },
-  modalBackdrop: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 999, elevation: 999,
-  },
-  modalCard: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    paddingHorizontal: 16, paddingTop: 16,
-    zIndex: 1000, elevation: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.15, shadowRadius: 8,
-  },
-  modalTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
-  modalHint: { fontSize: 11, color: '#999', marginTop: 4 },
-  emptyText: { textAlign: 'center', color: '#888', paddingVertical: 24 },
-  scheduleItem: {
-    flexDirection: 'row', gap: 12, paddingVertical: 12,
-    paddingHorizontal: 8, alignItems: 'center',
-    borderBottomWidth: 0.5, borderBottomColor: '#EEE', borderRadius: 6,
-  },
-  scheduleItemPressed: { backgroundColor: '#F0F7FF' },
-  workTypeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4 },
-  workTypeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  scheduleSite: { fontSize: 14, fontWeight: '500', color: '#333' },
-  scheduleUsers: { fontSize: 12, color: '#666', marginTop: 2 },
-  scheduleArea: { fontSize: 11, color: '#888', marginTop: 2 },
-  chevron: { fontSize: 24, color: '#CCC', fontWeight: '300' },
+  evBar: { width: 4, alignSelf: 'stretch', borderTopRightRadius: 3, borderBottomRightRadius: 3 },
+  evTextBox: { flex: 1, minWidth: 0, gap: 3 },
+  evTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  evSub: { fontSize: 12, color: colors.textSecondary },
+  evTag: { height: 24, paddingHorizontal: 9, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  evTagText: { fontSize: 12, fontWeight: '700' },
 });

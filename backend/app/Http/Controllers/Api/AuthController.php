@@ -436,4 +436,36 @@ class AuthController extends Controller
         $user = $request->user()->load('role', 'team', 'teams');
         return ApiResponse::success($user);
     }
+
+    // ────────────────────────────────────
+    // 회원 탈퇴  ★ DESIGN-CANVAS(APP_INFO) 추가 (2026-10-02)
+    // DELETE /api/account
+    //   비밀번호 재확인 후 계정을 소프트 삭제하고, 소속된 모든 팀에서 탈퇴 처리하며,
+    //   발급된 모든 기기의 토큰을 폐기함. 일정/현장/견적 등 기존 기록은 삭제하지 않고
+    //   그대로 남겨둠(팀원이었던 다른 사람들의 "팀" 필터 조회에 영향을 주지 않기 위함 —
+    //   TeamController::destroy()의 탈퇴 정책과 동일한 원칙).
+    // ────────────────────────────────────
+    public function withdraw(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        if (!Hash::check($data['password'], $user->password)) {
+            return ApiResponse::error('비밀번호가 일치하지 않습니다.', 'ERR_AUTH_001', 422);
+        }
+
+        DB::table('team_members')
+            ->where('user_id', $user->id)
+            ->whereNull('deleted_at')
+            ->update(['deleted_at' => now()]);
+
+        $user->tokens()->delete();
+        $user->update(['email' => $user->email.'.withdrawn.'.time()]); // 재가입 시 이메일 중복 방지
+        $user->delete(); // SoftDeletes
+
+        return ApiResponse::success(null, '회원 탈퇴가 완료되었습니다.');
+    }
 }

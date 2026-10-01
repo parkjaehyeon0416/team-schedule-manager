@@ -13,6 +13,11 @@ class NotificationSetting extends Model
         'team_activity',
         'quote_update',
         'report_view',
+        // ★ DESIGN-CANVAS(NOTIFICATION_SETTINGS) 추가
+        'tax_reminder',
+        'marketing_opt_in',
+        'night_quiet_hours',
+        'schedule_reminder_time',
     ];
 
     protected $casts = [
@@ -20,6 +25,9 @@ class NotificationSetting extends Model
         'team_activity'     => 'boolean',
         'quote_update'      => 'boolean',
         'report_view'       => 'boolean',
+        'tax_reminder'       => 'boolean',
+        'marketing_opt_in'   => 'boolean',
+        'night_quiet_hours'  => 'boolean',
     ];
 
     public function user(): BelongsTo

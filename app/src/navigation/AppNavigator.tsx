@@ -2,107 +2,51 @@ import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator } from '@react-navigation/drawer';
 import { useAuthStore } from '../store/authStore';
+import BottomTabNavigator from './BottomTabNavigator';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FindEmailScreen from '../screens/FindEmailScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import HomeScreen from '../screens/HomeScreen';
-import MySummaryScreen from '../screens/MySummaryScreen';
+import IncomeListScreen from '../screens/IncomeListScreen';
+import IncomeDetailScreen from '../screens/IncomeDetailScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import ProfileEditScreen from '../screens/ProfileEditScreen';
-import SettingsScreen from '../screens/SettingsScreen';
 import ScheduleDetailScreen from '../screens/ScheduleDetailScreen';
 import ScheduleCreateScreen from '../screens/ScheduleCreateScreen';
-import WageSettingsScreen from '../screens/WageSettingsScreen';
+import ScheduleDayScreen from '../screens/ScheduleDayScreen';
+import QuickCreateScreen from '../screens/QuickCreateScreen';
+import MyRatesScreen from '../screens/MyRatesScreen';
+import TradeRatesScreen from '../screens/TradeRatesScreen';
 import PhotoCompareScreen from '../screens/PhotoCompareScreen';
 // ★ 이번 작업 추가 — 팀/견적서/자동보고서/명함/세무자료 (백엔드·웹은 v11.8~v17에서 이미 구현됨)
-import TeamScreen from '../screens/TeamScreen';
+// ★ v18.34 — 팀 화면군을 DESIGN-CANVAS 구조(목록/상세/생성/초대/참여)로 분리
+import TeamListScreen from '../screens/TeamListScreen';
+import TeamDetailScreen from '../screens/TeamDetailScreen';
+import TeamCreateScreen from '../screens/TeamCreateScreen';
+import TeamInviteScreen from '../screens/TeamInviteScreen';
+import TeamJoinScreen from '../screens/TeamJoinScreen';
 import QuoteListScreen from '../screens/QuoteListScreen';
-import QuoteCreateScreen from '../screens/QuoteCreateScreen';
+import QuoteFormScreen from '../screens/QuoteFormScreen';
+import QuoteDetailScreen from '../screens/QuoteDetailScreen';
+import QuotePreviewScreen from '../screens/QuotePreviewScreen';
 import ScheduleReportsScreen from '../screens/ScheduleReportsScreen';
 import BusinessCardScreen from '../screens/BusinessCardScreen';
-import TaxSummaryScreen from '../screens/TaxSummaryScreen';
+import TaxHomeScreen from '../screens/TaxHomeScreen';
+import TaxMonthDetailScreen from '../screens/TaxMonthDetailScreen';
+import TaxExportScreen from '../screens/TaxExportScreen';
 // ★ v18.1 추가 — 설정 화면 스텁 실구현 (알림 설정 / 현장 목록)
 import SiteListScreen from '../screens/SiteListScreen';
+import SiteDetailScreen from '../screens/SiteDetailScreen';
+import SiteFormScreen from '../screens/SiteFormScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import LegalDocumentScreen from '../screens/LegalDocumentScreen';
+import AppInfoScreen from '../screens/AppInfoScreen';
+import OpenSourceLicensesScreen from '../screens/OpenSourceLicensesScreen';
+import ProfilePublicScreen from '../screens/ProfilePublicScreen';
 
 const Stack = createNativeStackNavigator();
-const Drawer = createDrawerNavigator();
-
-/**
- * ═══════════════════════════════════════════
- * Drawer (햄버거 메뉴)
- * ═══════════════════════════════════════════
- * v11.7 변경:
- *  - 모든 화면이 AppHeader(공통 헤더)를 자체적으로 렌더링하므로
- *    Drawer 기본 헤더는 전부 끔 (headerShown: false)
- */
-function DrawerRoot() {
-  return (
-    <Drawer.Navigator
-      screenOptions={{
-        headerShown: false,
-        drawerActiveTintColor: '#1F3864',
-        drawerStyle: {
-          backgroundColor: '#FAFAFA',
-          width: 280,
-        },
-      }}
-    >
-      <Drawer.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ drawerLabel: '🏠 홈 (달력)' }}
-      />
-      <Drawer.Screen
-        name="MySummary"
-        component={MySummaryScreen}
-        options={{ drawerLabel: '💰 내 수입' }}
-      />
-      <Drawer.Screen
-        name="Attendance"
-        component={AttendanceScreen}
-        options={{ drawerLabel: '⏰ 근태' }}
-      />
-      {/* ★ 이번 작업 추가 */}
-      <Drawer.Screen
-        name="Team"
-        component={TeamScreen}
-        options={{ drawerLabel: '👥 팀 관리' }}
-      />
-      <Drawer.Screen
-        name="QuoteList"
-        component={QuoteListScreen}
-        options={{ drawerLabel: '💵 견적서 관리' }}
-      />
-      <Drawer.Screen
-        name="BusinessCard"
-        component={BusinessCardScreen}
-        options={{ drawerLabel: '🪪 내 명함' }}
-      />
-      <Drawer.Screen
-        name="TaxSummary"
-        component={TaxSummaryScreen}
-        options={{ drawerLabel: '🧾 세무 자료' }}
-      />
-      <Drawer.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ drawerLabel: '👤 프로필' }}
-      />
-      <Drawer.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ drawerLabel: '⚙️ 설정' }}
-      />
-    </Drawer.Navigator>
-  );
-}
 
 /**
  * ═══════════════════════════════════════════
@@ -129,26 +73,58 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>
-            <Stack.Screen name="DrawerRoot" component={DrawerRoot} />
+            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+            {/* ★ v18.29: 드로어 제거 — 아래 화면들은 하단탭 '내정보' 메뉴에서 push로 진입 */}
+            <Stack.Screen name="IncomeList" component={IncomeListScreen} />
+            <Stack.Screen name="IncomeDetail" component={IncomeDetailScreen} />
+            <Stack.Screen name="Attendance" component={AttendanceScreen} />
+            <Stack.Screen name="Team" component={TeamListScreen} />
+            <Stack.Screen name="TeamList" component={TeamListScreen} />
+            <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
+            <Stack.Screen name="TeamCreate" component={TeamCreateScreen} />
+            <Stack.Screen name="TeamInvite" component={TeamInviteScreen} />
+            <Stack.Screen name="TeamJoin" component={TeamJoinScreen} />
+            <Stack.Screen name="QuoteList" component={QuoteListScreen} />
+            <Stack.Screen name="QuoteDetail" component={QuoteDetailScreen} />
+            <Stack.Screen name="QuoteEdit" component={QuoteFormScreen} />
+            <Stack.Screen name="QuotePreview" component={QuotePreviewScreen} />
+            <Stack.Screen name="BusinessCard" component={BusinessCardScreen} />
+            <Stack.Screen name="TaxSummary" component={TaxHomeScreen} />
+            <Stack.Screen name="TaxMonthDetail" component={TaxMonthDetailScreen} />
+            <Stack.Screen name="TaxExport" component={TaxExportScreen} />
             {/* ★ v11.7: 아래 화면들은 각자 AppHeader(leftType="back")를 자체 렌더링 */}
             <Stack.Screen name="ScheduleDetail" component={ScheduleDetailScreen} />
+            <Stack.Screen name="ScheduleDay" component={ScheduleDayScreen} />
+            <Stack.Screen
+              name="QuickCreate"
+              component={QuickCreateScreen}
+              options={{ presentation: 'transparentModal', animation: 'fade' }}
+            />
             <Stack.Screen
               name="ScheduleCreate"
               component={ScheduleCreateScreen}
               options={{ presentation: 'modal' }}
             />
-            <Stack.Screen name="WageSettings" component={WageSettingsScreen} />
+            <Stack.Screen name="MyRates" component={MyRatesScreen} />
+            <Stack.Screen name="TradeRates" component={TradeRatesScreen} />
+            <Stack.Screen name="WageSettings" component={TradeRatesScreen} />
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+            <Stack.Screen name="ProfilePublic" component={ProfilePublicScreen} />
             <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} />
             {/* ★ 이번 작업 추가 */}
-            <Stack.Screen name="QuoteCreate" component={QuoteCreateScreen} />
+            <Stack.Screen name="QuoteCreate" component={QuoteFormScreen} />
             <Stack.Screen name="ScheduleReports" component={ScheduleReportsScreen} />
             {/* ★ v18.1 추가 */}
             <Stack.Screen name="SiteList" component={SiteListScreen} />
+            <Stack.Screen name="SiteDetail" component={SiteDetailScreen} />
+            <Stack.Screen name="SiteCreate" component={SiteFormScreen} />
+            <Stack.Screen name="SiteEdit" component={SiteFormScreen} />
             <Stack.Screen
               name="NotificationSettings"
               component={NotificationSettingsScreen}
             />
+            <Stack.Screen name="AppInfo" component={AppInfoScreen} />
+            <Stack.Screen name="OpenSourceLicenses" component={OpenSourceLicensesScreen} />
           </>
         ) : (
           <>

@@ -11,6 +11,12 @@ class Site extends Model
 
     protected $fillable = [
         'address', 'apt_name', 'dong', 'ho', 'area_m2', 'team_id', 'owner_id', 'created_by', 'memo',
+        'start_date', 'end_date', 'customer', 'status',
+    ];
+
+    protected $casts = [
+        'start_date' => 'date:Y-m-d',
+        'end_date'   => 'date:Y-m-d',
     ];
 
     // ────────────────────────────────────────────────

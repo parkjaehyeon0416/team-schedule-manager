@@ -40,6 +40,11 @@ class NotificationSettingController extends Controller
             'team_activity'     => 'sometimes|boolean',
             'quote_update'      => 'sometimes|boolean',
             'report_view'       => 'sometimes|boolean',
+            // ★ DESIGN-CANVAS(NOTIFICATION_SETTINGS) 추가
+            'tax_reminder'            => 'sometimes|boolean',
+            'marketing_opt_in'        => 'sometimes|boolean',
+            'night_quiet_hours'       => 'sometimes|boolean',
+            'schedule_reminder_time'  => 'sometimes|string|max:30',
         ]);
 
         if ($validator->fails()) {

@@ -7,17 +7,22 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
 import { signInWithGoogle, signInWithKakao } from '../api/socialAuthApi';
 import { useNavigation } from '@react-navigation/native';
+import { colors, radius, spacing, typography } from '../theme/designTokens';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<'google' | 'kakao' | null>(null);
 
@@ -27,7 +32,7 @@ export default function LoginScreen() {
       const data =
         provider === 'google' ? await signInWithGoogle() : await signInWithKakao();
       if (data.success) {
-        setAuth(data.data.user, data.data.token);
+        setAuth(data.data.user, data.data.token, keepLoggedIn);
       }
     } catch (error: any) {
       if (error?.code === 'SIGN_IN_CANCELLED' || error?.message?.includes('cancel')) {
@@ -42,7 +47,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('오류', '이메일과 비밀번호를 입력해주세요.');
+      Alert.alert('오류', '아이디(이메일)와 비밀번호를 입력해주세요.');
       return;
     }
     setLoading(true);
@@ -53,7 +58,7 @@ export default function LoginScreen() {
         platform: 'mobile',
       });
       if (res.data.success) {
-        setAuth(res.data.data.user, res.data.data.token);
+        setAuth(res.data.data.user, res.data.data.token, keepLoggedIn);
       }
     } catch (error: any) {
       const errCode = error.response?.data?.error_code;
@@ -74,74 +79,66 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📋 Team Schedule</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="이메일"
-        placeholderTextColor="#999999"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        placeholderTextColor="#999999"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <View style={styles.logoRow}>
+        <Image
+          source={require('../assets/images/logo_icon.png')}
+          style={styles.logoImage}
+        />
+        <Text style={styles.logoText}>WorkMate</Text>
+      </View>
+
+      <View style={styles.inputWrap}>
+        <Icon name="account-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder="아이디 또는 이메일"
+          placeholderTextColor={colors.textSecondary}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={styles.inputWrap}>
+        <Icon name="lock-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호"
+          placeholderTextColor={colors.textSecondary}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!passwordVisible}
+        />
+        <TouchableOpacity onPress={() => setPasswordVisible(v => !v)} hitSlop={8}>
+          <Icon
+            name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+            size={20}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={styles.keepLoggedInRow}
+        onPress={() => setKeepLoggedIn(v => !v)}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.checkbox, keepLoggedIn && styles.checkboxChecked]}>
+          {keepLoggedIn && <Icon name="check" size={14} color={colors.surface} />}
+        </View>
+        <Text style={styles.keepLoggedInText}>로그인 상태 유지</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.button}
         onPress={handleLogin}
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.surface} />
         ) : (
           <Text style={styles.buttonText}>로그인</Text>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.registerLink}
-        onPress={() => navigation.navigate('Register')}
-        disabled={loading}
-      >
-        <Text style={styles.registerLinkText}>
-          계정이 없으신가요?{' '}
-          <Text style={styles.registerLinkBold}>회원가입</Text>
-        </Text>
-      </TouchableOpacity>
-
-      <View style={styles.socialDivider}>
-        <View style={styles.socialDividerLine} />
-        <Text style={styles.socialDividerText}>또는</Text>
-        <View style={styles.socialDividerLine} />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.socialButton, styles.googleButton]}
-        onPress={() => handleSocialLogin('google')}
-        disabled={loading || socialLoading !== null}
-      >
-        {socialLoading === 'google' ? (
-          <ActivityIndicator color="#222" />
-        ) : (
-          <Text style={styles.googleButtonText}>Google로 계속하기</Text>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.socialButton, styles.kakaoButton]}
-        onPress={() => handleSocialLogin('kakao')}
-        disabled={loading || socialLoading !== null}
-      >
-        {socialLoading === 'kakao' ? (
-          <ActivityIndicator color="#3C1E1E" />
-        ) : (
-          <Text style={styles.kakaoButtonText}>카카오로 계속하기</Text>
         )}
       </TouchableOpacity>
 
@@ -160,6 +157,49 @@ export default function LoginScreen() {
           <Text style={styles.findLinkText}>비밀번호 찾기</Text>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.socialDivider}>
+        <View style={styles.socialDividerLine} />
+        <Text style={styles.socialDividerText}>또는 간편 로그인</Text>
+        <View style={styles.socialDividerLine} />
+      </View>
+
+      <View style={styles.socialRow}>
+        <TouchableOpacity
+          style={[styles.socialCircle, styles.kakaoCircle]}
+          onPress={() => handleSocialLogin('kakao')}
+          disabled={loading || socialLoading !== null}
+        >
+          {socialLoading === 'kakao' ? (
+            <ActivityIndicator color="#3C1E1E" size="small" />
+          ) : (
+            <Icon name="chat" size={24} color="#3C1E1E" />
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.socialCircle, styles.googleCircle]}
+          onPress={() => handleSocialLogin('google')}
+          disabled={loading || socialLoading !== null}
+        >
+          {socialLoading === 'google' ? (
+            <ActivityIndicator color={colors.textPrimary} size="small" />
+          ) : (
+            <Icon name="google" size={22} color="#EA4335" />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={styles.registerLink}
+        onPress={() => navigation.navigate('Register')}
+        disabled={loading}
+      >
+        <Text style={styles.registerLinkText}>
+          계정이 없으신가요?{' '}
+          <Text style={styles.registerLinkBold}>회원가입</Text>
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -168,98 +208,134 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#f0f2f5',
+    padding: spacing.xl,
+    backgroundColor: colors.background,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#1F3864',
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xxl,
+    gap: spacing.sm,
   },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    fontSize: 16,
-    color: '#222222',
+  logoImage: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+  },
+  logoText: {
+    ...typography.h1,
+    color: colors.textPrimary,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    height: 52,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
+  },
+  inputIcon: { marginRight: spacing.sm },
+  input: {
+    flex: 1,
+    fontSize: typography.body.fontSize,
+    color: colors.textPrimary,
+  },
+  keepLoggedInRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: radius.xs - 2,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  keepLoggedInText: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   button: {
-    backgroundColor: '#1F3864',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    height: 52,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  registerLink: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  registerLinkText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  registerLinkBold: {
-    color: '#1F3864',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  },
+  buttonText: { color: colors.surface, fontSize: 17, fontWeight: '700' },
   findRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: spacing.lg,
   },
   findLinkText: {
-    color: '#666',
+    color: colors.textSecondary,
     fontSize: 13,
   },
   findDivider: {
-    color: '#ccc',
-    marginHorizontal: 10,
+    color: colors.border,
+    marginHorizontal: spacing.md,
   },
   socialDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 16,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
   },
   socialDividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd',
+    backgroundColor: colors.border,
   },
   socialDividerText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 12,
-    marginHorizontal: 10,
+    marginHorizontal: spacing.md,
   },
-  socialButton: {
-    borderRadius: 8,
-    padding: 14,
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  socialCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.pill,
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
     borderWidth: 1,
   },
-  googleButton: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-  },
-  googleButtonText: {
-    color: '#222222',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  kakaoButton: {
+  kakaoCircle: {
     backgroundColor: '#FEE500',
     borderColor: '#FEE500',
   },
-  kakaoButtonText: {
-    color: '#3C1E1E',
-    fontSize: 15,
-    fontWeight: '600',
+  googleCircle: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  registerLink: {
+    marginTop: spacing.xxl,
+    alignItems: 'center',
+  },
+  registerLinkText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  registerLinkBold: {
+    color: colors.primary,
+    fontWeight: '700',
   },
 });

@@ -21,7 +21,7 @@ interface AuthState {
   token: string | null;
   isLoggedIn: boolean;
   isLoading: boolean; // ★ 추가 — 앱 시작 시 토큰 복원 중인지 여부
-  setAuth: (user: User, token: string) => Promise<void>;
+  setAuth: (user: User, token: string, persist?: boolean) => Promise<void>;
   updateUser: (partial: Partial<User>) => Promise<void>; // ★ v18.23 — 프로필 수정 후 로컬 상태 갱신
   logout: () => Promise<void>;
   restoreAuth: () => Promise<void>; // ★ 추가 — 앱 시작 시 토큰 복원
@@ -33,10 +33,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   isLoggedIn: false,
   isLoading: true, // 앱 시작 시 '복원 중' 상태로 시작
 
-  // 로그인 성공 시 호출 — 토큰 영구 저장 + 메모리 상태 업데이트
-  setAuth: async (user: User, token: string) => {
-    await AsyncStorage.setItem('token', token);
-    await AsyncStorage.setItem('user', JSON.stringify(user)); // ★ 사용자 정보도 저장
+  // 로그인 성공 시 호출 — 토큰 저장 + 메모리 상태 업데이트
+  //   ★ persist=false("로그인 상태 유지" 체크 해제) — AsyncStorage에 안 남겨서
+  //   앱을 재시작하면 다시 로그인해야 함(메모리 상태로만 이번 세션 유지).
+  setAuth: async (user: User, token: string, persist: boolean = true) => {
+    if (persist) {
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+    }
     set({ user, token, isLoggedIn: true, isLoading: false });
   },
 

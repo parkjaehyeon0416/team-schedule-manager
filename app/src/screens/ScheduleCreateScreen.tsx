@@ -408,10 +408,10 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
                 <Text style={styles.label}>구분 (세무용)</Text>
                 <View style={styles.tabRow}>
                   <Pressable style={[styles.tabBtn, employmentType === 'daily' && styles.tabBtnOn]} onPress={() => setEmploymentType('daily')}>
-                    <Text style={[styles.tabText, employmentType === 'daily' && styles.tabTextOn]}>일용근로</Text>
+                    <Text style={[styles.tabText, employmentType === 'daily' && styles.tabTextOn]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>일용근로</Text>
                   </Pressable>
                   <Pressable style={[styles.tabBtn, employmentType === 'freelance' && styles.tabBtnOn]} onPress={() => setEmploymentType('freelance')}>
-                    <Text style={[styles.tabText, employmentType === 'freelance' && styles.tabTextOn]}>프리랜서(3.3%)</Text>
+                    <Text style={[styles.tabText, employmentType === 'freelance' && styles.tabTextOn]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>프리랜서(3.3%)</Text>
                   </Pressable>
                 </View>
               </View>
@@ -419,10 +419,10 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
                 <Text style={styles.label}>지급 상태</Text>
                 <View style={styles.tabRow}>
                   <Pressable style={[styles.tabBtn, paymentStatus === 'pending' && styles.tabBtnOn]} onPress={() => setPaymentStatus('pending')}>
-                    <Text style={[styles.tabText, paymentStatus === 'pending' && styles.tabTextOn]}>미지급</Text>
+                    <Text style={[styles.tabText, paymentStatus === 'pending' && styles.tabTextOn]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>미지급</Text>
                   </Pressable>
                   <Pressable style={[styles.tabBtn, paymentStatus === 'paid' && styles.tabBtnOn]} onPress={() => setPaymentStatus('paid')}>
-                    <Text style={[styles.tabText, paymentStatus === 'paid' && styles.tabTextOn]}>지급완료</Text>
+                    <Text style={[styles.tabText, paymentStatus === 'paid' && styles.tabTextOn]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>지급완료</Text>
                   </Pressable>
                 </View>
               </View>
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   inputPlaceholder: { fontSize: 14, color: colors.muted },
 
   tabRow: { flexDirection: 'row', gap: 4, padding: 4, backgroundColor: '#EEF5FD', borderRadius: 12 },
-  tabBtn: { flex: 1, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  tabBtn: { flex: 1, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   tabBtnOn: { backgroundColor: '#FFFFFF' },
   tabText: { fontSize: 14, fontWeight: '500', color: colors.textSecondary },
   tabTextOn: { fontWeight: '700', color: colors.primaryDark },

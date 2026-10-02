@@ -32,5 +32,9 @@ class AppServiceProvider extends ServiceProvider
         // Schedule 모델에 ScheduleObserver를 붙임
         // → Schedule이 saved/deleted/restored 될 때 Observer의 메서드가 자동 호출
         Schedule::observe(ScheduleObserver::class);
+
+        // ★ v18.35 — PDF(보고서/견적서/세무)에 한글 폰트(맑은고딕 13MB)를 통째로 임베드하다가
+        //   PHP 메모리(128M) 초과로 500이 나던 문제 수정. 실제 쓰인 글자만 임베드(서브셋)하도록 함.
+        config(['dompdf.options.enable_font_subsetting' => true]);
     }
 }

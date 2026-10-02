@@ -61,7 +61,7 @@
         </td>
     </tr>
     <tr>
-        <td class="label">작업일</td><td>{{ IlluminateSupportCarbon::parse($schedule->date)->format('Y-m-d') }}</td>
+        <td class="label">작업일</td><td>{{ \Illuminate\Support\Carbon::parse($schedule->date)->format('Y-m-d') }}</td>
         <td class="label">공정</td><td>{{ $schedule->workTypeRelation?->name ?? $schedule->work_type ?? '-' }}</td>
     </tr>
     <tr>

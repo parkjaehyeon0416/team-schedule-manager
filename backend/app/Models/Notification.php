@@ -20,4 +20,22 @@ class Notification extends Model
     protected $casts = [
         'is_read' => 'boolean',
     ];
+
+    /**
+     * ★ v18.38 — 알림 피드에 쌓일 때 휴대폰 푸시도 함께 발송.
+     *   견적(quote) 알림은 본인이 한 행동 기록이라 푸시하지 않음.
+     *   응답을 늦추지 않도록 응답이 나간 뒤(afterResponse) 발송.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Notification $n) {
+            if (!in_array($n->category, ['team', 'schedule'], true)) {
+                return;
+            }
+            $data = array_filter(['link_type' => $n->link_type, 'link_id' => $n->link_id], fn($v) => $v !== null);
+            dispatch(fn() => \App\Services\PushService::sendToUsers(
+                [$n->user_id], $n->category, $n->title, $n->body, $data,
+            ))->afterResponse();
+        });
+    }
 }

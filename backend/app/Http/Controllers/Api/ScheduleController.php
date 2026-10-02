@@ -269,7 +269,12 @@ class ScheduleController extends Controller
             ? $schedule->date->format('Y-m')
             : substr((string) $schedule->date, 0, 7);
 
-        $schedule->update($data);
+        // ★ v18.38 — 날짜/시작시간/알림설정이 바뀌면 일정 알림을 새로 보내도록 발송 기록 초기화
+        $schedule->fill($data);
+        if ($schedule->isDirty(['date', 'start_time', 'reminder_time'])) {
+            $schedule->reminder_sent_at = null;
+        }
+        $schedule->save();
 
         $newYearMonth = $schedule->date instanceof \Carbon\Carbon
             ? $schedule->date->format('Y-m')

@@ -55,6 +55,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::delete('/account',   [AuthController::class, 'withdraw']); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
 
+    // ★ v18.38 — 휴대폰 푸시 기기 토큰
+    Route::post('/device-tokens',   [\App\Http\Controllers\Api\DeviceTokenController::class, 'store']);
+    Route::delete('/device-tokens', [\App\Http\Controllers\Api\DeviceTokenController::class, 'destroy']);
+
     Route::get('/notifications',             [NotificationController::class, 'index']);
     Route::patch('/notifications/read-all',  [NotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);

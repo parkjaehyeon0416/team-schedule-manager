@@ -61,7 +61,7 @@ export default function TeamDetailScreen() {
         onPress: async () => {
           try {
             await leaveTeam(team.id);
-            navigation.navigate('TeamList');
+            navigation.popTo('TeamList');
           } catch (e: any) {
             Alert.alert('실패', e?.response?.data?.message || '팀 나가기에 실패했습니다.');
           }

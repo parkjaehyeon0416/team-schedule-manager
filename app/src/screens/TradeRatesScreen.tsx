@@ -68,7 +68,7 @@ export default function TradeRatesScreen() {
           memo: existing?.memo ?? undefined,
         });
       }
-      Alert.alert('완료', '공정별 단가가 저장되었습니다.', [{ text: '확인', onPress: () => navigation.navigate('MyRates') }]);
+      Alert.alert('완료', '공정별 단가가 저장되었습니다.', [{ text: '확인', onPress: () => navigation.goBack() }]);
     } catch (e: any) {
       Alert.alert('저장 실패', e?.response?.data?.message || '저장에 실패했습니다.');
     } finally {

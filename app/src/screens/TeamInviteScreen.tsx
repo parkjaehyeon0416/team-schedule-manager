@@ -69,7 +69,7 @@ export default function TeamInviteScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="back" title="팀 초대" onBackPress={() => navigation.navigate('TeamDetail', { teamId })} />
+      <AppHeader leftType="back" title="팀 초대" />
       <View style={styles.content}>
         <View style={styles.introBlock}>
           <View style={styles.introIcon}>

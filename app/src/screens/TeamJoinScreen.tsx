@@ -51,7 +51,7 @@ export default function TeamJoinScreen() {
     try {
       await joinTeam(code.trim().toUpperCase());
       Alert.alert('참여 완료', '팀에 가입되었습니다.', [
-        { text: '확인', onPress: () => navigation.navigate('TeamList') },
+        { text: '확인', onPress: () => navigation.popTo('TeamList') },
       ]);
     } catch (e: any) {
       Alert.alert('가입 실패', e?.response?.data?.message || '초대 코드를 확인해주세요.');
@@ -64,7 +64,7 @@ export default function TeamJoinScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="back" title="팀 참여" onBackPress={() => navigation.navigate('TeamList')} />
+      <AppHeader leftType="back" title="팀 참여" />
       <View style={styles.content}>
         <View style={styles.titleBlock}>
           <Text style={styles.title}>초대 코드 입력</Text>

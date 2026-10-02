@@ -193,7 +193,7 @@ export default function ScheduleDetailScreen({ route }: any) {
           setDeleting(true);
           try {
             await deleteSchedule(id);
-            navigation.navigate('MainTabs', { screen: 'Schedule' });
+            navigation.popTo('MainTabs', { screen: 'Schedule' });
           } catch (e: any) {
             Alert.alert('삭제 실패', e?.response?.data?.message || '권한이 없거나 오류가 발생했습니다.');
           } finally {

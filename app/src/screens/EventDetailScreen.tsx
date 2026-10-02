@@ -49,7 +49,7 @@ export default function EventDetailScreen() {
   const handleCta = () => {
     const target = event?.cta_route;
     if (!target) return;
-    if (TAB_ROUTES.includes(target)) navigation.navigate('MainTabs', { screen: target });
+    if (TAB_ROUTES.includes(target)) navigation.popTo('MainTabs', { screen: target });
     else navigation.navigate(target);
   };
 

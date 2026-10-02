@@ -70,7 +70,7 @@ export default function QuotePreviewScreen() {
           try {
             await updateQuoteStatus(quoteId, 'sent');
             Alert.alert('완료', '발송 상태로 변경되었습니다.');
-            navigation.navigate('QuoteDetail', { quoteId });
+            navigation.goBack();
           } catch (e: any) {
             Alert.alert('실패', e?.response?.data?.message || '상태 변경에 실패했습니다.');
           } finally {
@@ -94,7 +94,7 @@ export default function QuotePreviewScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="back" title="견적서 미리보기" onBackPress={() => navigation.navigate('QuoteDetail', { quoteId })} />
+      <AppHeader leftType="back" title="견적서 미리보기" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.sheet}>
           <View style={styles.sheetTop}>

@@ -108,7 +108,7 @@ export default function QuoteFormScreen() {
       };
       if (isEdit) {
         await updateQuote(editing!.id, payload);
-        navigation.navigate('QuoteDetail', { quoteId: editing!.id });
+        navigation.goBack();
       } else {
         const created = await createQuote(payload);
         navigation.replace('QuoteDetail', { quoteId: created.id });

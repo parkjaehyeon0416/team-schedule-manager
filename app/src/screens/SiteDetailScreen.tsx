@@ -71,7 +71,7 @@ export default function SiteDetailScreen() {
         onPress: async () => {
           try {
             await deleteSite(siteId);
-            navigation.navigate('SiteList');
+            navigation.goBack();
           } catch (e: any) {
             Alert.alert('삭제 실패', e?.response?.data?.message || '삭제에 실패했습니다.');
           }
@@ -83,7 +83,7 @@ export default function SiteDetailScreen() {
   if (loading || !site) {
     return (
       <View style={styles.screen}>
-        <AppHeader leftType="back" title="현장 상세" onBackPress={() => navigation.navigate('SiteList')} />
+        <AppHeader leftType="back" title="현장 상세" />
         <View style={styles.centerBox}><ActivityIndicator color={colors.primary} /></View>
       </View>
     );
@@ -137,7 +137,6 @@ export default function SiteDetailScreen() {
       <AppHeader
         leftType="back"
         title="현장 상세"
-        onBackPress={() => navigation.navigate('SiteList')}
         rightContent={
           <Pressable onPress={() => setMenuOpen(v => !v)} style={styles.headerRightBtn}>
             <Icon name="dots-horizontal" size={22} color={colors.textPrimary} />
@@ -204,7 +203,7 @@ export default function SiteDetailScreen() {
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>일정 이력</Text>
-          <Pressable onPress={() => navigation.navigate('MainTabs', { screen: 'Schedule' })}>
+          <Pressable onPress={() => navigation.popTo('MainTabs', { screen: 'Schedule' })}>
             <Text style={styles.sectionLink}>전체 ›</Text>
           </Pressable>
         </View>

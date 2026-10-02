@@ -76,7 +76,7 @@ export default function TaxExportScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="back" title="자료 내보내기" onBackPress={() => navigation.navigate('TaxSummary')} />
+      <AppHeader leftType="back" title="자료 내보내기" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.field}>
           <Text style={styles.label}>기간</Text>

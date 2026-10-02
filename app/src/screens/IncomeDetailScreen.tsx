@@ -39,7 +39,7 @@ export default function IncomeDetailScreen() {
         onPress: async () => {
           try {
             await deleteSchedule(scheduleId);
-            navigation.navigate('IncomeList');
+            navigation.goBack();
           } catch (e: any) {
             Alert.alert('삭제 실패', e?.response?.data?.message || '삭제에 실패했습니다.');
           }
@@ -51,7 +51,7 @@ export default function IncomeDetailScreen() {
   if (loading || !schedule) {
     return (
       <View style={styles.screen}>
-        <AppHeader leftType="back" title="수입 상세" onBackPress={() => navigation.navigate('IncomeList')} />
+        <AppHeader leftType="back" title="수입 상세" />
         <View style={styles.centerBox}><ActivityIndicator color={colors.primary} /></View>
       </View>
     );
@@ -65,7 +65,7 @@ export default function IncomeDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="back" title="수입 상세" onBackPress={() => navigation.navigate('IncomeList')} />
+      <AppHeader leftType="back" title="수입 상세" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerCard}>
           <View style={styles.headerIcon}><Icon name="currency-krw" size={28} color={colors.secondary} /></View>

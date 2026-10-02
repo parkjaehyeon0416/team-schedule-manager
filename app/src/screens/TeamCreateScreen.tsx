@@ -70,7 +70,7 @@ export default function TeamCreateScreen() {
         navigation.goBack();
       } else {
         await createTeam(payload);
-        navigation.navigate('TeamList');
+        navigation.popTo('TeamList');
       }
     } catch (e: any) {
       Alert.alert('실패', e?.response?.data?.message || '요청에 실패했습니다.');

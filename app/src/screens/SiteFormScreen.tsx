@@ -132,7 +132,7 @@ export default function SiteFormScreen() {
       };
       if (isEdit) {
         await updateSite(editing!.id, payload);
-        navigation.navigate('SiteDetail', { siteId: editing!.id });
+        navigation.goBack();
       } else {
         const created = await createSite(payload);
         for (const p of queuedBefore) {

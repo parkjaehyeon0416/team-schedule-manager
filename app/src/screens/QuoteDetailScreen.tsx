@@ -88,7 +88,7 @@ export default function QuoteDetailScreen() {
   if (loading || !quote) {
     return (
       <View style={styles.screen}>
-        <AppHeader leftType="back" title="견적서 상세" onBackPress={() => navigation.navigate('QuoteList')} />
+        <AppHeader leftType="back" title="견적서 상세" />
         <View style={styles.centerBox}><ActivityIndicator color={colors.primary} /></View>
       </View>
     );
@@ -102,7 +102,6 @@ export default function QuoteDetailScreen() {
       <AppHeader
         leftType="back"
         title="견적서 상세"
-        onBackPress={() => navigation.navigate('QuoteList')}
         rightContent={
           <Pressable onPress={() => setMenuOpen(v => !v)} style={styles.headerRightBtn}>
             <Icon name="dots-horizontal" size={22} color={colors.textPrimary} />

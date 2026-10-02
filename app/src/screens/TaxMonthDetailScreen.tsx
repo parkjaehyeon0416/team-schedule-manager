@@ -43,7 +43,7 @@ export default function TaxMonthDetailScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <AppHeader leftType="back" title={`${year}년 ${month}월`} onBackPress={() => navigation.navigate('TaxSummary')} />
+        <AppHeader leftType="back" title={`${year}년 ${month}월`} />
         <View style={styles.centerBox}><ActivityIndicator color={colors.primary} /></View>
       </View>
     );
@@ -51,7 +51,7 @@ export default function TaxMonthDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader leftType="back" title={`${year}년 ${month}월`} onBackPress={() => navigation.navigate('TaxSummary')} />
+      <AppHeader leftType="back" title={`${year}년 ${month}월`} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>{year}년 {month}월 총 수입</Text>

@@ -1,20 +1,40 @@
+// ★ v18.40 — 운영자 전용 관리 화면 레이아웃 (메뉴 그룹: 현황 / 회원 / 콘텐츠 / 고객지원 / 매출)
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu, Button, Avatar, Typography, Space } from "antd";
+import { Layout, Menu, Button, Avatar, Typography, Space, Tag } from "antd";
+import type { MenuProps } from "antd";
 import {
-  CalendarOutlined,
-  HomeOutlined,
-  ShopOutlined,
-  TeamOutlined,
-  ClockCircleOutlined,
-  LogoutOutlined,
-  IdcardOutlined,
-  FileTextOutlined,
-  FileDoneOutlined,
+  DashboardOutlined,
+  UserOutlined,
   NotificationOutlined,
+  GiftOutlined,
+  CustomerServiceOutlined,
+  MessageOutlined,
+  CreditCardOutlined,
+  LineChartOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../../store/authStore";
 
 const { Sider, Header, Content } = Layout;
+
+// soon: 아직 준비 중인 메뉴 — 이름 옆에 표시
+const label = (text: string, soon = false) =>
+  soon ? <Space size={6}>{text}<Tag style={{ fontSize: 10, lineHeight: "16px", marginInlineEnd: 0 }}>준비 중</Tag></Space> : text;
+
+const menuItems: MenuProps["items"] = [
+  { key: "/", icon: <DashboardOutlined />, label: label("대시보드") },
+  { key: "/stats", icon: <LineChartOutlined />, label: label("통계 관리", true) },
+  { type: "divider" },
+  { key: "/members", icon: <UserOutlined />, label: label("회원 관리", true) },
+  { type: "divider" },
+  { key: "/notices", icon: <NotificationOutlined />, label: label("공지 관리") },
+  { key: "/events", icon: <GiftOutlined />, label: label("이벤트 관리") },
+  { type: "divider" },
+  { key: "/inquiries", icon: <CustomerServiceOutlined />, label: label("고객 문의 관리", true) },
+  { key: "/sms", icon: <MessageOutlined />, label: label("문자 발송 관리", true) },
+  { type: "divider" },
+  { key: "/payments", icon: <CreditCardOutlined />, label: label("결제 관리", true) },
+];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -26,31 +46,11 @@ export default function AdminLayout() {
     navigate("/login");
   };
 
-  // ★ v18.40 — 웹 로그인은 운영자 전용이라 운영자에게는 운영 메뉴만 표시
-  const operatorMenu = [
-    { key: "/notices", icon: <NotificationOutlined />, label: "공지 · 이벤트" },
-  ];
-
-  const teamMenu = [
-    { key: "/", icon: <HomeOutlined />, label: "대시보드" },
-    { key: "/schedule", icon: <CalendarOutlined />, label: "스케줄 관리" },
-    { key: "/quotes", icon: <FileDoneOutlined />, label: "견적서 관리" },
-    { key: "/sites", icon: <ShopOutlined />, label: "현장 목록" },
-    { key: "/teams", icon: <TeamOutlined />, label: "팀/팀원 관리" },
-    { key: "/attendance", icon: <ClockCircleOutlined />, label: "근태 현황" },
-    { key: "/business-card", icon: <IdcardOutlined />, label: "내 명함" },
-    { key: "/tax-summary", icon: <FileTextOutlined />, label: "세무 자료" },
-  ];
-
-  const menuItems = user?.user_type === "operator" ? operatorMenu : teamMenu;
-
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Sider width={220} theme="dark">
-        <div
-          style={{ padding: "20px 16px", color: "white", fontWeight: "bold" }}
-        >
-          WorkMate 운영
+      <Sider width={230} theme="dark">
+        <div style={{ padding: "20px 16px", color: "white", fontWeight: 800, fontSize: 17 }}>
+          Work<span style={{ color: "#4DA3FF" }}>Mate</span> 운영
         </div>
         <Menu
           theme="dark"
@@ -79,14 +79,7 @@ export default function AdminLayout() {
             </Button>
           </Space>
         </Header>
-        <Content
-          style={{
-            margin: "24px",
-            background: "white",
-            padding: "24px",
-            borderRadius: 8,
-          }}
-        >
+        <Content style={{ margin: "24px", background: "white", padding: "24px", borderRadius: 8 }}>
           <Outlet />
         </Content>
       </Layout>

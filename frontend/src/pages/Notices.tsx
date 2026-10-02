@@ -42,12 +42,16 @@ function eventStatus(n: AdminNotice): { label: string; color: string } | null {
   return { label: "진행중", color: "orange" };
 }
 
-export default function Notices() {
+// fixedType: 메뉴를 공지 관리 / 이벤트 관리로 나눠 쓸 때 해당 종류만 다룸
+export default function Notices({ fixedType }: { fixedType?: NoticeType }) {
   const { message } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const [items, setItems] = useState<AdminNotice[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState<NoticeType | "all">("all");
+  const [filter, setFilter] = useState<NoticeType | "all">(fixedType ?? "all");
+  const label = fixedType === "event" ? "이벤트" : fixedType === "notice" ? "공지" : "공지 · 이벤트";
+
+  useEffect(() => setFilter(fixedType ?? "all"), [fixedType]);
   const [editing, setEditing] = useState<AdminNotice | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -76,7 +80,7 @@ export default function Notices() {
     setBannerFile([]);
     setRemoveBanner(false);
     form.resetFields();
-    form.setFieldsValue({ type: "notice", published: true, is_pinned: false, info: [], steps: [], cautions: [] });
+    form.setFieldsValue({ type: fixedType ?? "notice", published: true, is_pinned: false, info: [], steps: [], cautions: [] });
     setOpen(true);
   };
 
@@ -151,10 +155,12 @@ export default function Notices() {
   return (
     <div>
       <Space style={{ width: "100%", justifyContent: "space-between", marginBottom: 16 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>공지 · 이벤트 관리</Typography.Title>
+        <Typography.Title level={4} style={{ margin: 0 }}>{label} 관리</Typography.Title>
         <Space>
-          <Radio.Group value={filter} onChange={e => setFilter(e.target.value)} optionType="button"
-            options={[{ label: "전체", value: "all" }, { label: "공지", value: "notice" }, { label: "이벤트", value: "event" }]} />
+          {!fixedType && (
+            <Radio.Group value={filter} onChange={e => setFilter(e.target.value)} optionType="button"
+              options={[{ label: "전체", value: "all" }, { label: "공지", value: "notice" }, { label: "이벤트", value: "event" }]} />
+          )}
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>새로 작성</Button>
         </Space>
       </Space>
@@ -214,7 +220,7 @@ export default function Notices() {
       />
 
       <Modal
-        title={editing ? "공지 · 이벤트 수정" : "공지 · 이벤트 작성"}
+        title={editing ? `${label} 수정` : `${label} 작성`}
         open={open}
         onCancel={() => setOpen(false)}
         onOk={handleSave}
@@ -225,7 +231,7 @@ export default function Notices() {
         destroyOnHidden
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="type" label="구분">
+          <Form.Item name="type" label="구분" hidden={!!fixedType}>
             <Radio.Group optionType="button" options={[{ label: "공지", value: "notice" }, { label: "이벤트", value: "event" }]} />
           </Form.Item>
           <Form.Item name="title" label="제목" rules={[{ required: true, message: "제목을 입력하세요" }, { max: 150 }]}>

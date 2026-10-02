@@ -22,7 +22,7 @@ export default function Login() {
       if (result.success) {
         setAuth(result.data.user, result.data.token);
         message.success("로그인 성공!");
-        navigate(result.data.user.user_type === "operator" ? "/notices" : "/");
+        navigate("/");
       }
     } catch (error: any) {
       const errCode = error.response?.data?.error_code;

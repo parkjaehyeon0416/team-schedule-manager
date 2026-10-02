@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ★ v18.40 — 웹 관리자(운영자 전용) 공지·이벤트 관리
     Route::middleware('operator')->prefix('admin')->group(function () {
+        Route::get('/dashboard',       [\App\Http\Controllers\Api\Admin\AdminDashboardController::class, 'index']);
         Route::get('/notices',         [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'index']);
         Route::post('/notices',        [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'store']);
         Route::post('/notices/{id}',   [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'update']);

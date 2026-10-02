@@ -75,12 +75,23 @@ export default function QuotePreviewScreen() {
 
       const result = await Share.share({ message });
       if (result.action === Share.dismissedAction) return;
+      if (quote.status !== 'draft') return;
 
-      if (quote.status === 'draft') {
-        await updateQuoteStatus(quoteId, 'sent');
-        setQuote({ ...quote, status: 'sent' });
-      }
-      Alert.alert('발송 완료', '견적서를 발송 상태로 표시했어요. 링크는 30일 동안 열 수 있어요.');
+      // 안드로이드는 공유창을 그냥 닫아도 "공유함"으로 돌아와서, 실제로 보냈는지 한 번 확인
+      Alert.alert('발송 확인', '고객에게 견적서를 보내셨나요?\n발송 상태로 표시할게요. (링크는 30일 동안 열 수 있어요)', [
+        { text: '아니요', style: 'cancel' },
+        {
+          text: '네, 보냈어요',
+          onPress: async () => {
+            try {
+              await updateQuoteStatus(quoteId, 'sent');
+              setQuote({ ...quote, status: 'sent' });
+            } catch (e: any) {
+              Alert.alert('실패', e?.response?.data?.message || '상태 변경에 실패했습니다.');
+            }
+          },
+        },
+      ]);
     } catch (e: any) {
       Alert.alert('발송 실패', e?.response?.data?.message || '견적서 링크를 만들지 못했습니다.');
     } finally {

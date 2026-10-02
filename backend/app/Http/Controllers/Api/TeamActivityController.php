@@ -46,9 +46,14 @@ class TeamActivityController extends Controller
                 DB::raw('NULL as schedule_id'), 'team_members.joined_at as created_at',
             ]);
 
+        // 시간대(+09:00)를 붙여서 보냄 — 기기 시간대가 달라도 "n분 전"이 정확하도록
         $items = $schedules->concat($joins)
             ->sortByDesc('created_at')
             ->take(5)
+            ->map(function ($row) {
+                $row->created_at = \Carbon\Carbon::parse($row->created_at)->toIso8601String();
+                return $row;
+            })
             ->values();
 
         return ApiResponse::success($items, '팀 활동 조회 성공');

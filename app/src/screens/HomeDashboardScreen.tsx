@@ -11,6 +11,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { getMonthlySummary, getSchedules } from '../api/schedulesApi';
 import { getQuotes } from '../api/quoteApi';
+import { getTeamActivities } from '../api/teamApi';
+import type { TeamActivity } from '../api/teamApi';
 import { getLatestEvent, getLatestNotice } from '../api/noticesApi';
 import type { NoticeSummary } from '../api/noticesApi';
 import type { MonthlySummary, Schedule } from '../types/api';
@@ -33,6 +35,24 @@ const MENU_ITEMS: { key: string; label: string; image?: IconKey; icon?: string; 
   { key: 'notice', label: '공지·이벤트', icon: 'bullhorn-outline', route: 'NoticeList' },
 ];
 
+// 팀 활동 아바타 색 (디자인 HOME의 주황/민트 번갈아)
+const ACTIVITY_COLORS = [
+  { bg: '#FFE3C2', fg: '#B95E00' },
+  { bg: '#D9F6F1', fg: '#0B8574' },
+];
+
+// "10분 전", "1시간 전", "3일 전", 일주일 넘으면 "9.28"
+function timeAgo(iso: string): string {
+  const diffMin = dayjs().diff(dayjs(iso), 'minute');
+  if (diffMin < 1) return '방금 전';
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}시간 전`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay}일 전`;
+  return dayjs(iso).format('M.D');
+}
+
 export default function HomeDashboardScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -40,6 +60,7 @@ export default function HomeDashboardScreen() {
   const [prevSummary, setPrevSummary] = useState<MonthlySummary | null>(null);
   const [latestNotice, setLatestNotice] = useState<NoticeSummary | null>(null);
   const [latestEvent, setLatestEvent] = useState<NoticeSummary | null>(null);
+  const [teamActivities, setTeamActivities] = useState<TeamActivity[]>([]);
   const [todaySchedules, setTodaySchedules] = useState<Schedule[]>([]);
   const [quoteCounts, setQuoteCounts] = useState<{ draft: number; sent: number; done: number } | null>(null);
 
@@ -83,6 +104,11 @@ export default function HomeDashboardScreen() {
       setLatestEvent(await getLatestEvent());
     } catch {
       setLatestEvent(null);
+    }
+    try {
+      setTeamActivities(await getTeamActivities());
+    } catch {
+      setTeamActivities([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
@@ -284,9 +310,42 @@ export default function HomeDashboardScreen() {
           <Icon name="chevron-right" size={14} color={colors.textSecondary} />
         </Pressable>
       </View>
-      <View style={styles.emptyCard}>
-        <Text style={styles.emptyText}>최근 팀 활동 내역이 없습니다.</Text>
-      </View>
+      {/* ★ v18.38 — 실제 팀 활동(일정 추가·팀원 참여) 표시 */}
+      {teamActivities.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>최근 팀 활동 내역이 없습니다.</Text>
+        </View>
+      ) : (
+        <View style={styles.listCard}>
+          {teamActivities.map((a, i) => {
+            const palette = ACTIVITY_COLORS[i % ACTIVITY_COLORS.length];
+            return (
+              <React.Fragment key={`${a.type}-${a.schedule_id ?? a.team_id}-${a.created_at}`}>
+                {i > 0 && <View style={styles.hairline} />}
+                <Pressable
+                  style={({ pressed }) => [styles.activityRow, pressed && { opacity: 0.8 }]}
+                  onPress={() =>
+                    a.type === 'schedule' && a.schedule_id
+                      ? navigation.navigate('ScheduleDetail', { id: a.schedule_id })
+                      : navigation.navigate('TeamDetail', { teamId: a.team_id })
+                  }
+                >
+                  <View style={[styles.activityAvatar, { backgroundColor: palette.bg }]}>
+                    <Text style={[styles.activityAvatarText, { color: palette.fg }]}>{a.actor_name.charAt(0)}</Text>
+                  </View>
+                  <View style={styles.scheduleTextBox}>
+                    <Text style={styles.scheduleTitle} numberOfLines={1}>
+                      {a.actor_name}님이 {a.type === 'schedule' ? '일정을 추가했어요' : '팀에 참여했어요'}
+                    </Text>
+                    <Text style={styles.scheduleSub} numberOfLines={1}>{a.team_name} · {timeAgo(a.created_at)}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={16} color={colors.muted} />
+                </Pressable>
+              </React.Fragment>
+            );
+          })}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -383,6 +442,9 @@ const styles = StyleSheet.create({
   eventTextBox: { flex: 1, gap: 4 },
   eventLabel: { fontSize: 12, fontWeight: '700', color: '#B95E00' },
   eventTitle: { fontSize: 15, fontWeight: '800', lineHeight: 21, color: colors.textPrimary },
+  activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  activityAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  activityAvatarText: { fontSize: 13, fontWeight: '700' },
   eventImage: { width: 64, height: 64, resizeMode: 'contain' },
   menuLabel: { fontSize: 12, color: colors.textPrimary },
 

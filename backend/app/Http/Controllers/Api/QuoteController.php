@@ -355,6 +355,23 @@ class QuoteController extends Controller
     }
 
     /**
+     * ★ v18.38 — 고객에게 보낼 견적서 링크(30일 유효). 앱이 카톡·문자 공유창으로 전달.
+     *   다운로드용 pdf-link(10분)와 같은 서명 주소지만, 고객이 나중에 열 수 있게 기간만 길게.
+     * GET /api/quotes/{id}/share-link
+     */
+    public function shareLink(Request $request, string $id)
+    {
+        $quote = $this->findQuote($request, $id);
+        if (!$quote) {
+            return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
+
+        $path = URL::temporarySignedRoute('quotes.pdf.signed', now()->addDays(30), ['id' => $quote->id], absolute: false);
+
+        return ApiResponse::success(['path' => $path], '공유 링크 발급 성공');
+    }
+
+    /**
      * ★ v18.36 — 서명 링크로 여는 PDF (인증 대신 signed 미들웨어가 접근 검증)
      * GET /api/files/quotes/{id}/pdf
      */

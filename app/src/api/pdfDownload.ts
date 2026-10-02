@@ -16,6 +16,12 @@ export function downloadQuotePdf(quoteId: number): Promise<void> {
   return openSignedPath(`/quotes/${quoteId}/pdf-link`);
 }
 
+// ★ v18.38 — 고객에게 보낼 견적서 링크(30일 유효) 전체 주소
+export async function getQuoteShareUrl(quoteId: number): Promise<string> {
+  const res = await axios.get<ApiResponse<{ path: string }>>(`/quotes/${quoteId}/share-link`);
+  return `${SERVER_BASE_URL}${res.data.data.path}`;
+}
+
 export function downloadTaxPdf(year: number): Promise<void> {
   return openSignedPath('/tax-summary/pdf-link', { year });
 }

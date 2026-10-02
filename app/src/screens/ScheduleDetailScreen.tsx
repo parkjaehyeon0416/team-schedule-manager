@@ -8,7 +8,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImage } from '../utils/pickImage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 
@@ -103,9 +103,8 @@ export default function ScheduleDetailScreen({ route }: any) {
   };
 
   const handlePhotoUpload = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, maxWidth: 1600, maxHeight: 1600 });
-    if (!result.assets?.[0]) return;
-    const asset = result.assets[0];
+    const asset = await pickImage();
+    if (!asset) return;
     if (!asset.uri || !asset.fileName || !asset.type) {
       Alert.alert('오류', '사진 정보를 읽을 수 없습니다.');
       return;

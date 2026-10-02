@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import { getQuote, updateQuoteStatus } from '../api/quoteApi';
-import { downloadQuotePdf } from '../api/pdfDownload';
+import { downloadQuotePdf, getQuoteShareUrl } from '../api/pdfDownload';
 import { useAuthStore } from '../store/authStore';
 import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
@@ -60,25 +60,32 @@ export default function QuotePreviewScreen() {
     ]);
   };
 
-  const handleSend = () => {
-    Alert.alert('고객에게 발송', '이 견적서를 발송 상태로 변경할까요?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '발송',
-        onPress: async () => {
-          setSending(true);
-          try {
-            await updateQuoteStatus(quoteId, 'sent');
-            Alert.alert('완료', '발송 상태로 변경되었습니다.');
-            navigation.goBack();
-          } catch (e: any) {
-            Alert.alert('실패', e?.response?.data?.message || '상태 변경에 실패했습니다.');
-          } finally {
-            setSending(false);
-          }
-        },
-      },
-    ]);
+  // ★ v18.38 — 실제 발송: 견적서 PDF 링크(30일 유효)를 카톡·문자 공유창으로 고객에게 전달하고 발송 상태로 표시
+  const handleSend = async () => {
+    if (!quote) return;
+    setSending(true);
+    try {
+      const url = await getQuoteShareUrl(quoteId);
+      const message = [
+        `[견적서] ${quote.client_name ? `${quote.client_name}님, ` : ''}요청하신 견적서를 보내드립니다.`,
+        `총 견적가: ${formatMoney(quote.total_amount)}원`,
+        `견적서 보기(PDF): ${url}`,
+        user?.name ? `- ${user.name}${user.phone ? ` (${user.phone})` : ''} 드림` : '',
+      ].filter(Boolean).join('\n');
+
+      const result = await Share.share({ message });
+      if (result.action === Share.dismissedAction) return;
+
+      if (quote.status === 'draft') {
+        await updateQuoteStatus(quoteId, 'sent');
+        setQuote({ ...quote, status: 'sent' });
+      }
+      Alert.alert('발송 완료', '견적서를 발송 상태로 표시했어요. 링크는 30일 동안 열 수 있어요.');
+    } catch (e: any) {
+      Alert.alert('발송 실패', e?.response?.data?.message || '견적서 링크를 만들지 못했습니다.');
+    } finally {
+      setSending(false);
+    }
   };
 
   if (loading || !quote) {

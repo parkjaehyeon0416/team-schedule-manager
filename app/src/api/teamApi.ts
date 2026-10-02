@@ -12,6 +12,21 @@ export interface TeamFormPayload {
   photo?: { uri: string; name: string; type: string } | null;
 }
 
+// ★ v18.38 — 홈 "팀 활동": 내 팀들의 최근 일정 추가·팀원 참여 (최대 5건)
+export interface TeamActivity {
+  type: 'schedule' | 'join';
+  actor_name: string;
+  team_id: number;
+  team_name: string;
+  schedule_id: number | null;
+  created_at: string;
+}
+
+export async function getTeamActivities(): Promise<TeamActivity[]> {
+  const res = await axios.get<ApiResponse<TeamActivity[]>>('/team-activities');
+  return res.data.data;
+}
+
 export async function getMyTeams(): Promise<Team[]> {
   const res = await axios.get<ApiResponse<Team[]>>('/teams');
   return res.data.data;

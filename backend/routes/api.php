@@ -55,6 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::delete('/account',   [AuthController::class, 'withdraw']); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
 
+    // ★ v18.38 — 홈 팀 활동
+    Route::get('/team-activities', [\App\Http\Controllers\Api\TeamActivityController::class, 'index']);
+
     // ★ v18.38 — 휴대폰 푸시 기기 토큰
     Route::post('/device-tokens',   [\App\Http\Controllers\Api\DeviceTokenController::class, 'store']);
     Route::delete('/device-tokens', [\App\Http\Controllers\Api\DeviceTokenController::class, 'destroy']);
@@ -129,6 +132,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/quotes/{id}/approve', [QuoteController::class, 'approve']);
     Route::get('/quotes/{id}/pdf',     [QuoteController::class, 'downloadPdf']);
     Route::get('/quotes/{id}/pdf-link', [QuoteController::class, 'pdfLink']); // ★ v18.36
+    Route::get('/quotes/{id}/share-link', [QuoteController::class, 'shareLink']); // ★ v18.38 고객 발송용 30일 링크
     Route::delete('/quotes/{id}',      [QuoteController::class, 'destroy']);
 
     // 내 자재 목록 (견적 라인 자동완성용)

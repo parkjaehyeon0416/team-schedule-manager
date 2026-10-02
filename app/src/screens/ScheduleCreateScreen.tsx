@@ -44,10 +44,11 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
   const isEditMode = !!editingScheduleId;
 
   const user = useAuthStore(s => s.user);
-  const hasTeam = !!user?.team_id;
+  const [teams, setTeams] = useState<Team[] | null>(null);
+  // 로그인 시점 user.team_id는 팀 탈퇴/해체 후 갱신 안 될 수 있어, 실제 소속 팀 목록이 오면 그걸로 판단
+  const hasTeam = teams ? teams.length > 0 : !!user?.team_id;
 
-  const [isPersonal, setIsPersonal] = useState<boolean>(!hasTeam);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [isPersonal, setIsPersonal] = useState<boolean>(!user?.team_id);
   const [teamId, setTeamId] = useState<number | null>(null);
   const [teamPickerVisible, setTeamPickerVisible] = useState(false);
   const [title, setTitle] = useState('');
@@ -94,6 +95,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         setTeams(teamList);
         const activeTeam = teamList.find(t => t.is_active) ?? teamList[0];
         if (activeTeam) setTeamId(activeTeam.id);
+        else setIsPersonal(true); // 소속 팀이 없는 프리랜서는 항상 개인 일정
 
         if (isEditMode && editingScheduleId) {
           const data = await getScheduleById(editingScheduleId);
@@ -152,6 +154,10 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
       Alert.alert('입력 오류', '공정을 선택해주세요.');
       return;
     }
+    if (hasTeam && !isPersonal && !teamId) {
+      Alert.alert('입력 오류', '팀 일정은 팀을 선택해야 합니다.');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -205,7 +211,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
     );
   }
 
-  const selectedTeam = teams.find(t => t.id === teamId);
+  const selectedTeam = teams?.find(t => t.id === teamId);
 
   return (
     <View style={styles.screen}>
@@ -437,7 +443,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         <View style={styles.modalSheet}>
           <Text style={styles.modalTitle}>팀 선택</Text>
           <FlatList
-            data={teams}
+            data={teams ?? []}
             keyExtractor={t => String(t.id)}
             renderItem={({ item }) => (
               <Pressable style={styles.modalRow} onPress={() => { setTeamId(item.id); setTeamPickerVisible(false); }}>

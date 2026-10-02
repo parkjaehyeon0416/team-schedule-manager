@@ -90,8 +90,8 @@ class SiteController extends Controller
 
         $site = Site::create([
             ...$data,
-            'team_id'    => $wantsPersonal ? null : $user->team_id,
-            'owner_id'   => $wantsPersonal ? $user->id : null,
+            'team_id'    => $teamId,
+            'owner_id'   => $ownerId,
             'created_by' => $user->id,
         ]);
 

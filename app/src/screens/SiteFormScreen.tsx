@@ -246,12 +246,16 @@ export default function SiteFormScreen() {
 
         <View style={styles.field}>
           <Text style={styles.label}>팀</Text>
-          <Pressable style={styles.inputWrap} onPress={() => setTeamPickerVisible(true)}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={selectedTeam ? styles.addressText : styles.addressPlaceholder}>{selectedTeam ? selectedTeam.name : '팀을 선택하세요 (선택)'}</Text>
-              <Icon name="chevron-down" size={18} color={colors.muted} />
-            </View>
-          </Pressable>
+          {teams.length > 0 ? (
+            <Pressable style={styles.inputWrap} onPress={() => setTeamPickerVisible(true)}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={selectedTeam ? styles.addressText : styles.addressPlaceholder}>{selectedTeam ? selectedTeam.name : '팀을 선택하세요 (선택)'}</Text>
+                <Icon name="chevron-down" size={18} color={colors.muted} />
+              </View>
+            </Pressable>
+          ) : (
+            <Text style={styles.addressPlaceholder}>소속된 팀이 없어 개인 현장으로 등록돼요.</Text>
+          )}
         </View>
 
         {isEdit && (

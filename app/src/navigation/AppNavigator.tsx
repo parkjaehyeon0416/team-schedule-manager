@@ -59,12 +59,12 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { isLoggedIn, isLoading, restoreAuth } = useAuthStore();
 
-  // ★ v18.36 — 스플래시: 로그인 복원이 금방 끝나도 로고 애니메이션이 보이도록 최소 1.5초 유지
+  // ★ v18.36 — 스플래시: 로그인 복원이 금방 끝나도 로고 애니메이션이 보이도록 최소 2.5초 유지
   const [minSplashDone, setMinSplashDone] = useState(false);
 
   useEffect(() => {
     restoreAuth();
-    const t = setTimeout(() => setMinSplashDone(true), 1500);
+    const t = setTimeout(() => setMinSplashDone(true), 2500);
     return () => clearTimeout(t);
   }, [restoreAuth]);
 

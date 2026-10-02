@@ -236,7 +236,7 @@ export default function HomeDashboardScreen() {
             <Text style={styles.eventLabel}>
               EVENT{latestEvent.ends_at ? ` · ~${dayjs(latestEvent.ends_at).format('M.DD')}` : ''}
             </Text>
-            <Text style={styles.eventTitle} numberOfLines={2}>{latestEvent.summary || latestEvent.title}</Text>
+            <Text style={styles.eventTitle} numberOfLines={2}>{latestEvent.title}</Text>
           </View>
           <Image source={ICONS.gift} style={styles.eventImage} />
         </Pressable>

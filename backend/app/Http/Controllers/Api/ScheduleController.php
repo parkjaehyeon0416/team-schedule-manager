@@ -26,7 +26,7 @@ class ScheduleController extends Controller
         $query = Schedule::with([
             'users:id,name',
             'site:id,address,apt_name,dong,ho',
-            'workType', // ★ 공정 이름/색상 표시용 — 기존엔 누락되어 있었음
+            'workTypeRelation', // ★ 공정 이름/색상 표시용 — 기존엔 누락되어 있었음
         ])
             ->forUser($user, $scope)
             ->orderBy('date');
@@ -162,7 +162,7 @@ class ScheduleController extends Controller
         }
 
         // 3) 응답에 관계 데이터 포함
-        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workType']);
+        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workTypeRelation']);
 
         // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가 — 팀 일정이면 작성자 본인을 뺀 나머지 팀원에게 알림
         if ($schedule->team_id) {
@@ -192,7 +192,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
 
-        $schedule = Schedule::with(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workType'])
+        $schedule = Schedule::with(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workTypeRelation'])
             ->forUser($user)
             ->find($id);
 
@@ -294,7 +294,7 @@ class ScheduleController extends Controller
             }
         }
 
-        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workType']);
+        $schedule->load(['users:id,name', 'site:id,address,apt_name,dong,ho', 'workTypeRelation']);
 
         return ApiResponse::success($schedule, '일정이 수정되었습니다.');
     }

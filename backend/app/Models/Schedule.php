@@ -88,6 +88,13 @@ class Schedule extends Model
         return $this->belongsTo(WorkType::class, 'work_type_id');
     }
 
+    // API 응답용 — `workType`으로 로드하면 JSON 키가 기존 `work_type` 문자열 컬럼을 객체로 덮어써서
+    // 앱이 문자열로 렌더링하다 크래시함. 이 이름으로 로드하면 `work_type_relation` 키로 분리되어 나감.
+    public function workTypeRelation()
+    {
+        return $this->belongsTo(WorkType::class, 'work_type_id');
+    }
+
     // ────────────────────────────────────────────────
     // [스코프] 로그인 사용자 기준 조회 범위로 필터링
     //

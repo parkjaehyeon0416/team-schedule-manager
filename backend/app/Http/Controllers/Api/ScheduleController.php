@@ -157,6 +157,12 @@ class ScheduleController extends Controller
             'status'        => 'pending',
         ]);
 
+        // ★ v18.40 — 개인 일정은 주인 본인이 일한 것 — 투입 인원에 안 넣어도 본인 수입·공수에 잡히게 자동 포함
+        //   (이전엔 "추가 정보 > 투입 인원"에서 본인을 따로 골라야만 집계돼서 내 수입이 0원으로 나왔음)
+        if ($schedule->owner_id) {
+            $data['user_ids'] = array_values(array_unique(array_merge($data['user_ids'] ?? [], [$schedule->owner_id])));
+        }
+
         // 2) 투입 인원 배정
         if (!empty($data['user_ids'])) {
             $schedule->users()->attach($data['user_ids']);
@@ -279,6 +285,14 @@ class ScheduleController extends Controller
         $newYearMonth = $schedule->date instanceof \Carbon\Carbon
             ? $schedule->date->format('Y-m')
             : substr((string) $schedule->date, 0, 7);
+
+        // ★ v18.40 — 개인 일정이면 주인을 투입 인원에 항상 포함 (등록 때와 동일)
+        if ($schedule->owner_id) {
+            $base = $data['user_ids'] ?? $oldUserIds;
+            if (!in_array($schedule->owner_id, $base)) {
+                $data['user_ids'] = array_values(array_merge($base, [$schedule->owner_id]));
+            }
+        }
 
         // 투입 인원 재배정
         if (isset($data['user_ids'])) {

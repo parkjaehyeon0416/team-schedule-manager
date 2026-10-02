@@ -31,17 +31,20 @@ export default function QrCode({ value, size, color = '#102A56', background = '#
     return rows;
   }, [value]);
 
-  const cell = size / cells.length;
+  // 칸 크기를 정수 픽셀로 맞춰야 칸 사이에 틈·넘침이 안 생김
+  const cell = Math.floor(size / cells.length);
+  const drawn = cell * cells.length;
   return (
-    <View style={{ width: size, height: size, backgroundColor: background }}>
-      {cells.map((row, r) => (
-        <View key={r} style={{ flexDirection: 'row', height: cell }}>
-          {row.map((dark, c) => (
-            // 칸 사이 틈(안티에일리어싱 줄무늬)이 안 생기게 살짝 겹쳐 그림
-            <View key={c} style={{ width: cell + 0.3, height: cell + 0.3, backgroundColor: dark ? color : background }} />
-          ))}
-        </View>
-      ))}
+    <View style={{ width: size, height: size, backgroundColor: background, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: drawn, height: drawn }}>
+        {cells.map((row, r) => (
+          <View key={r} style={{ flexDirection: 'row', height: cell }}>
+            {row.map((dark, c) => (
+              <View key={c} style={{ width: cell, height: cell, backgroundColor: dark ? color : background }} />
+            ))}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }

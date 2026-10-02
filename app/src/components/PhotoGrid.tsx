@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
   },
-  viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+  viewer: { flex: 1, backgroundColor: '#000000', justifyContent: 'center' },
   viewerClose: { position: 'absolute', top: 48, right: 20, zIndex: 2, padding: 4 },
   viewerImage: { width: '100%', height: '75%' },
   viewerBar: { position: 'absolute', left: 0, right: 0, bottom: 40, flexDirection: 'row', justifyContent: 'center', gap: 12 },

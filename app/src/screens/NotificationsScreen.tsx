@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import dayjs from 'dayjs';
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from '../api/notificationsApi';
+import { useNotificationStore } from '../store/notificationStore';
 import type { AppNotification } from '../api/notificationsApi';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
 
@@ -45,7 +46,9 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState(0);
   const [items, setItems] = useState<AppNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  // 하단 탭 배지와 같은 값을 공유해서 읽음 처리 즉시 배지도 갱신
+  const unreadCount = useNotificationStore(s => s.unreadCount);
+  const setUnreadCount = useNotificationStore(s => s.setUnreadCount);
 
   const load = useCallback((category?: AppNotification['category']) => {
     getNotifications(category)
@@ -54,7 +57,7 @@ export default function NotificationsScreen() {
         setUnreadCount(feed.unread_count);
       })
       .catch(() => {});
-  }, []);
+  }, [setUnreadCount]);
 
   useFocusEffect(useCallback(() => { load(TABS[tab].category); }, [load, tab]));
 

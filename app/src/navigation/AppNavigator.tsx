@@ -45,6 +45,9 @@ import LegalDocumentScreen from '../screens/LegalDocumentScreen';
 import AppInfoScreen from '../screens/AppInfoScreen';
 import OpenSourceLicensesScreen from '../screens/OpenSourceLicensesScreen';
 import ProfilePublicScreen from '../screens/ProfilePublicScreen';
+import NoticeListScreen from '../screens/NoticeListScreen';
+import NoticeDetailScreen from '../screens/NoticeDetailScreen';
+import EventDetailScreen from '../screens/EventDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -125,6 +128,10 @@ export default function AppNavigator() {
             />
             <Stack.Screen name="AppInfo" component={AppInfoScreen} />
             <Stack.Screen name="OpenSourceLicenses" component={OpenSourceLicensesScreen} />
+            {/* ★ v18.33: 공지·이벤트 (홈 메뉴/공지 띠에서 진입) */}
+            <Stack.Screen name="NoticeList" component={NoticeListScreen} />
+            <Stack.Screen name="NoticeDetail" component={NoticeDetailScreen} />
+            <Stack.Screen name="EventDetail" component={EventDetailScreen} />
           </>
         ) : (
           <>

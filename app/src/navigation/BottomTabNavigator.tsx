@@ -3,13 +3,15 @@
  * 홈 / 일정 / 등록(+) / 알림 / 내정보
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/designTokens';
+import { useNotificationStore } from '../store/notificationStore';
 
 import HomeDashboardScreen from '../screens/HomeDashboardScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -26,8 +28,14 @@ function QuickCreatePlaceholder() {
 export default function BottomTabNavigator() {
   // 하단바가 숨겨지면 0, 기기 설정 등으로 보이는 경우엔 그 높이만큼 탭바를 올려 겹침 방지
   const insets = useSafeAreaInsets();
+  // 안 읽은 알림 수 → 알림 탭 배지. 탭 전환 시, 그리고 push 화면에서 돌아올 때마다 갱신
+  const unreadCount = useNotificationStore(s => s.unreadCount);
+  const refreshUnread = useNotificationStore(s => s.refreshUnread);
+  useFocusEffect(useCallback(() => { refreshUnread(); }, [refreshUnread]));
+
   return (
     <Tab.Navigator
+      screenListeners={{ focus: refreshUnread }}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -81,6 +89,8 @@ export default function BottomTabNavigator() {
         options={{
           tabBarLabel: '알림',
           tabBarIcon: ({ color, size }) => <Icon name="bell-outline" color={color} size={size} />,
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: styles.badge,
         }}
       />
       <Tab.Screen
@@ -104,6 +114,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.borderCard,
   },
   tabLabel: { fontSize: 10, fontWeight: '600' },
+  badge: { backgroundColor: colors.accent, color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   fab: {
     width: 54,
     height: 54,

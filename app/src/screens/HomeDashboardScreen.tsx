@@ -11,7 +11,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { getMonthlySummary, getSchedules } from '../api/schedulesApi';
 import { getQuotes } from '../api/quoteApi';
-import { getNotifications } from '../api/notificationsApi';
+import { getLatestNotice } from '../api/noticesApi';
+import type { NoticeSummary } from '../api/noticesApi';
 import type { MonthlySummary, Schedule } from '../types/api';
 import { formatShortKRW } from '../utils/format';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
@@ -24,7 +25,7 @@ const MENU_ITEMS: { key: string; label: string; icon: string; bg: string; fg: st
   { key: 'card', label: '내 명함', icon: 'card-account-details-outline', bg: '#E8F3FF', fg: colors.primaryDark, route: 'BusinessCard' },
   { key: 'tax', label: '세무 자료', icon: 'receipt', bg: colors.warningBg, fg: colors.accentDark, route: 'TaxSummary' },
   { key: 'site', label: '현장 목록', icon: 'map-marker-outline', bg: colors.successBg, fg: colors.secondary, route: 'SiteList' },
-  { key: 'more', label: '더보기', icon: 'dots-horizontal', bg: '#EEF2F7', fg: colors.textSecondary, route: 'Profile' },
+  { key: 'notice', label: '공지·이벤트', icon: 'bullhorn-outline', bg: '#EEF2F7', fg: colors.textSecondary, route: 'NoticeList' },
 ];
 
 export default function HomeDashboardScreen() {
@@ -32,7 +33,7 @@ export default function HomeDashboardScreen() {
   const insets = useSafeAreaInsets();
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [prevSummary, setPrevSummary] = useState<MonthlySummary | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [latestNotice, setLatestNotice] = useState<NoticeSummary | null>(null);
   const [todaySchedules, setTodaySchedules] = useState<Schedule[]>([]);
   const [quoteCounts, setQuoteCounts] = useState<{ draft: number; sent: number; done: number } | null>(null);
 
@@ -68,9 +69,9 @@ export default function HomeDashboardScreen() {
       setQuoteCounts({ draft: 0, sent: 0, done: 0 });
     }
     try {
-      setUnreadCount((await getNotifications()).unread_count);
+      setLatestNotice(await getLatestNotice());
     } catch {
-      setUnreadCount(0);
+      setLatestNotice(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
@@ -98,10 +99,6 @@ export default function HomeDashboardScreen() {
             Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
           </Text>
         </View>
-        <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8} style={styles.bellBtn}>
-          <Icon name="bell-outline" size={23} color={colors.textPrimary} />
-          {unreadCount > 0 && <View style={styles.bellDot} />}
-        </Pressable>
       </View>
 
       <Pressable
@@ -155,6 +152,20 @@ export default function HomeDashboardScreen() {
           ))}
         </View>
       </View>
+
+      {latestNotice && (
+        <Pressable
+          style={({ pressed }) => [styles.noticeStrip, pressed && { opacity: 0.8 }]}
+          onPress={() => navigation.navigate('NoticeList')}
+        >
+          <Icon name="bullhorn-outline" size={18} color={colors.primaryDark} />
+          <View style={styles.noticeBadge}>
+            <Text style={styles.noticeBadgeText}>공지</Text>
+          </View>
+          <Text style={styles.noticeStripText} numberOfLines={1}>{latestNotice.title}</Text>
+          <Icon name="chevron-right" size={16} color={colors.muted} />
+        </Pressable>
+      )}
 
       <View style={styles.sectionTitleRow}>
         <Text style={styles.sectionTitle}>오늘의 일정</Text>
@@ -261,18 +272,6 @@ const styles = StyleSheet.create({
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   brandText: { fontSize: 21, fontWeight: '800', letterSpacing: -0.4, color: colors.textPrimary },
-  bellBtn: { padding: 4 },
-  bellDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.accent,
-    borderWidth: 1.5,
-    borderColor: colors.background,
-  },
 
   heroCard: {
     backgroundColor: colors.primaryDark,
@@ -325,6 +324,22 @@ const styles = StyleSheet.create({
   menuItem: { width: '25%', alignItems: 'center', gap: 6, marginBottom: spacing.sm },
   menuIcon: { width: 52, height: 52, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
   menuLabel: { fontSize: 12, color: colors.textPrimary },
+
+  noticeStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 44,
+    paddingHorizontal: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderCard,
+    borderRadius: 12,
+    marginBottom: spacing.md,
+  },
+  noticeBadge: { height: 24, paddingHorizontal: 9, borderRadius: 7, backgroundColor: '#E8F3FF', justifyContent: 'center' },
+  noticeBadgeText: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
+  noticeStripText: { flex: 1, minWidth: 0, fontSize: 13, color: colors.textPrimary },
 
   sectionTitleRow: {
     flexDirection: 'row',

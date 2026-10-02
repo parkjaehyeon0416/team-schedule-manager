@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\UserMaterialController;            // ★ v12
 use App\Http\Controllers\Api\NotificationSettingController;     // ★ v18.1
 use App\Http\Controllers\Api\ProfileController;                 // ★ v18.23
 use App\Http\Controllers\Api\NotificationController;            // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가
+use App\Http\Controllers\Api\NoticeController;                  // ★ DESIGN-CANVAS(NOTICE_LIST) 추가
 use Illuminate\Support\Facades\Route;
 
 // ═══════════════════════════════════════════════════════════════
@@ -51,6 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications',             [NotificationController::class, 'index']);
     Route::patch('/notifications/read-all',  [NotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+
+    Route::get('/notices',        [NoticeController::class, 'index']);
+    Route::get('/notices/latest', [NoticeController::class, 'latest']);
+    Route::get('/notices/{id}',   [NoticeController::class, 'show']);
 
     // ★ v18.23 — 내 프로필 설정(연락처/카카오톡 아이디/아바타)
     Route::put('/profile',          [ProfileController::class, 'update']);

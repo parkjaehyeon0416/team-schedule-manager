@@ -8,6 +8,7 @@ import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/designTokens';
 
 import HomeDashboardScreen from '../screens/HomeDashboardScreen';
@@ -23,13 +24,15 @@ function QuickCreatePlaceholder() {
 }
 
 export default function BottomTabNavigator() {
+  // 하단바가 숨겨지면 0, 기기 설정 등으로 보이는 경우엔 그 높이만큼 탭바를 올려 겹침 방지
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { height: 68 + insets.bottom, paddingBottom: 8 + insets.bottom }],
         tabBarLabelStyle: styles.tabLabel,
       }}
     >

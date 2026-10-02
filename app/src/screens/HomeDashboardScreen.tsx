@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { getMonthlySummary, getSchedules } from '../api/schedulesApi';
 import { getQuotes } from '../api/quoteApi';
+import { getNotifications } from '../api/notificationsApi';
 import type { MonthlySummary, Schedule } from '../types/api';
 import { formatShortKRW } from '../utils/format';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
@@ -30,6 +31,8 @@ export default function HomeDashboardScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
+  const [prevSummary, setPrevSummary] = useState<MonthlySummary | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [todaySchedules, setTodaySchedules] = useState<Schedule[]>([]);
   const [quoteCounts, setQuoteCounts] = useState<{ draft: number; sent: number; done: number } | null>(null);
 
@@ -41,6 +44,12 @@ export default function HomeDashboardScreen() {
       setSummary(await getMonthlySummary(now.getFullYear(), now.getMonth() + 1));
     } catch {
       setSummary(null);
+    }
+    try {
+      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      setPrevSummary(await getMonthlySummary(prev.getFullYear(), prev.getMonth() + 1));
+    } catch {
+      setPrevSummary(null);
     }
     try {
       const list = await getSchedules(now.getFullYear(), now.getMonth() + 1);
@@ -58,6 +67,11 @@ export default function HomeDashboardScreen() {
     } catch {
       setQuoteCounts({ draft: 0, sent: 0, done: 0 });
     }
+    try {
+      setUnreadCount((await getNotifications()).unread_count);
+    } catch {
+      setUnreadCount(0);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
@@ -68,6 +82,9 @@ export default function HomeDashboardScreen() {
   );
 
   const totalIncome = parseFloat(summary?.total_income || '0');
+  const prevIncome = parseFloat(prevSummary?.total_income || '0');
+  // 지난달 수입이 0이면 비율이 의미 없어서(0으로 나눔) 배지를 숨김
+  const deltaPercent = prevIncome > 0 ? Math.round(((totalIncome - prevIncome) / prevIncome) * 100) : null;
 
   return (
     <ScrollView
@@ -83,7 +100,7 @@ export default function HomeDashboardScreen() {
         </View>
         <Pressable onPress={() => navigation.navigate('Notifications')} hitSlop={8} style={styles.bellBtn}>
           <Icon name="bell-outline" size={23} color={colors.textPrimary} />
-          <View style={styles.bellDot} />
+          {unreadCount > 0 && <View style={styles.bellDot} />}
         </Pressable>
       </View>
 
@@ -102,11 +119,13 @@ export default function HomeDashboardScreen() {
               {formatShortKRW(totalIncome)}
               <Text style={styles.heroWon}>원</Text>
             </Text>
-            {summary && (
+            {deltaPercent !== null && (
               <View style={styles.heroDeltaRow}>
                 <View style={styles.heroDeltaPill}>
-                  <Icon name="arrow-up" size={13} color="#FFFFFF" />
-                  <Text style={styles.heroDeltaText}>12%</Text>
+                  {deltaPercent !== 0 && (
+                    <Icon name={deltaPercent > 0 ? 'arrow-up' : 'arrow-down'} size={13} color="#FFFFFF" />
+                  )}
+                  <Text style={styles.heroDeltaText}>{Math.abs(deltaPercent)}%</Text>
                 </View>
                 <Text style={styles.heroDeltaLabel}>지난달 대비</Text>
               </View>

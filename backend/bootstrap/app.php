@@ -130,6 +130,17 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // ★ v18.36 — PDF 다운로드 서명 링크가 만료됐거나 변조됨 — 403 (캐치올에 걸려 500이 나가던 것 수정)
+        $exceptions->render(function (\Illuminate\Routing\Exceptions\InvalidSignatureException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '링크가 만료되었거나 올바르지 않습니다. 앱에서 다시 받아주세요.',
+                    'error_code' => ErrorCode::AUTH_NO_PERMISSION,
+                ], 403);
+            }
+        });
+
         // DB 쿼리 오류 — 500, 클라이언트에는 SQL/스키마 노출하지 않음
         $exceptions->render(function (QueryException $e, $request) {
             if ($request->is('api/*')) {

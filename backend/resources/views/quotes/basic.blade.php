@@ -101,12 +101,12 @@
 @if($cardQrDataUri)
 <div class="qr-block">
     <img src="{{ $cardQrDataUri }}" style="width:100px; height:100px;">
-    <div style="font-size:10px; color:#888; margin-top:4px;">📲 {{ $user->name }} 기사 명함 — 바로 연락하기</div>
+    <div style="font-size:10px; color:#888; margin-top:4px;">{{ $user?->name }} 기사 명함 — 바로 연락하기</div>
 </div>
 @endif
 
 <div class="footer">
-    이 견적서는 Team Schedule Manager로 작성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
+    이 견적서는 WorkMate로 작성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
 </div>
 
 </body>

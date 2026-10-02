@@ -18,6 +18,7 @@ class AdminMemberController extends Controller
     public function index(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
+        $digits = preg_replace('/\D/', '', $q); // 전화번호 검색은 숫자가 있을 때만
 
         $query = User::query()
             ->where('user_type', '!=', 'operator')
@@ -25,7 +26,7 @@ class AdminMemberController extends Controller
             ->when($q !== '', fn($w) => $w->where(fn($x) => $x
                 ->where('users.name', 'like', "%{$q}%")
                 ->orWhere('users.email', 'like', "%{$q}%")
-                ->orWhere('users.phone', 'like', '%' . preg_replace('/\D/', '', $q) . '%')))
+                ->when($digits !== '', fn($y) => $y->orWhere('users.phone', 'like', "%{$digits}%"))))
             ->when($request->query('type') === 'team', fn($w) => $w->whereExists(fn($s) => $s->select(DB::raw(1))
                 ->from('team_members')->whereColumn('team_members.user_id', 'users.id')->whereNull('team_members.deleted_at')))
             ->when($request->query('type') === 'freelancer', fn($w) => $w->whereNotExists(fn($s) => $s->select(DB::raw(1))

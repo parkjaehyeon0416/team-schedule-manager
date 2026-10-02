@@ -10,12 +10,14 @@ use App\Models\Quote;
 use App\Models\QuoteLine;
 use App\Models\Schedule;
 use App\Models\Site;
+use App\Models\User;
 use App\Models\UserMaterial;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 
 /**
  * 견적서(Quote) 컨트롤러 — ★ v12~v13 신규
@@ -331,6 +333,43 @@ class QuoteController extends Controller
             return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
         }
 
+        return $this->renderPdf($quote, $request->user());
+    }
+
+    /**
+     * ★ v18.36 — 앱 다운로드용 10분짜리 서명 링크 발급.
+     *   앱엔 파일 저장 라이브러리가 없고 브라우저로 열면 인증 토큰을 못 실으므로,
+     *   서명된 임시 주소를 만들어 앱이 브라우저로 열게 함(브라우저가 다운로드 폴더에 저장).
+     * GET /api/quotes/{id}/pdf-link
+     */
+    public function pdfLink(Request $request, string $id)
+    {
+        $quote = $this->findQuote($request, $id);
+        if (!$quote) {
+            return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
+
+        $path = URL::temporarySignedRoute('quotes.pdf.signed', now()->addMinutes(10), ['id' => $quote->id], absolute: false);
+
+        return ApiResponse::success(['path' => $path], 'PDF 링크 발급 성공');
+    }
+
+    /**
+     * ★ v18.36 — 서명 링크로 여는 PDF (인증 대신 signed 미들웨어가 접근 검증)
+     * GET /api/files/quotes/{id}/pdf
+     */
+    public function signedPdf(string $id)
+    {
+        $quote = Quote::find($id);
+        if (!$quote) {
+            return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
+
+        return $this->renderPdf($quote, User::find($quote->user_id));
+    }
+
+    private function renderPdf(Quote $quote, ?User $user)
+    {
         $quote->load(['lines', 'site']);
 
         try {
@@ -344,7 +383,7 @@ class QuoteController extends Controller
 
             $pdf = Pdf::loadView('quotes.basic', [
                 'quote'         => $quote,
-                'user'          => $request->user(),
+                'user'          => $user,
                 'cardQrDataUri' => $cardQrDataUri,
             ]);
         } catch (\Throwable $e) {

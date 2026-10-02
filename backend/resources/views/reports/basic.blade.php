@@ -7,17 +7,17 @@
     /* DomPDF 기본 내장 폰트는 한글(Hangul) 글리프가 없어 '?'로 깨짐 —
        윈도우 기본 한글 폰트(맑은 고딕)를 직접 임베드해서 해결. */
     @font-face {
-        font-family: 'malgun';
-        src: url('{{ public_path('fonts/malgun.ttf') }}');
+        font-family: 'nanumgothic';
+        src: url('{{ public_path('fonts/NanumGothic-Regular.ttf') }}');
         font-weight: normal;
     }
     @font-face {
-        font-family: 'malgun';
-        src: url('{{ public_path('fonts/malgunbd.ttf') }}');
+        font-family: 'nanumgothic';
+        src: url('{{ public_path('fonts/NanumGothic-Bold.ttf') }}');
         font-weight: bold;
     }
     @page { margin: 28px 32px; }
-    body { font-family: 'malgun', sans-serif; font-size: 12px; color: #222; }
+    body { font-family: 'nanumgothic', sans-serif; font-size: 12px; color: #222; }
     h1 { font-size: 20px; color: #1F3864; margin: 0 0 4px; }
     h2 { font-size: 14px; color: #1F3864; border-bottom: 1px solid #1F3864; padding-bottom: 4px; margin-top: 20px; }
     .cover { text-align: center; margin-bottom: 24px; }
@@ -31,8 +31,8 @@
     .photo-cell { display: inline-block; width: 32%; margin: 0 0.5% 8px; vertical-align: top; text-align: center; }
     .photo-cell img { width: 100%; height: 110px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px; }
     .photo-cell .cap { font-size: 10px; color: #888; margin-top: 2px; }
-    .compare-pair { width: 100%; margin-bottom: 10px; }
-    .compare-cell { display: inline-block; width: 48%; text-align: center; }
+    .compare-pair { width: 100%; margin: 8px 0 10px; border-collapse: separate; border-spacing: 6px 0; }
+    .compare-cell { width: 50%; text-align: center; vertical-align: top; padding: 0; }
     .compare-cell img { width: 100%; height: 160px; object-fit: cover; border-radius: 4px; }
     .compare-label { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
     .footer { margin-top: 24px; text-align: center; color: #999; font-size: 10px; }
@@ -77,16 +77,17 @@
 @if($pairs->count() > 0)
 <h2>시공 전 · 후 비교</h2>
 @foreach($pairs as $pair)
-<div class="compare-pair">
-    <div class="compare-cell">
-        <div class="compare-label" style="color:#C00000;">시공 전</div>
-        <img src="{{ $pair['before']->absolute_path }}">
-    </div>
-    <div class="compare-cell">
-        <div class="compare-label" style="color:#385723;">시공 후</div>
-        <img src="{{ $pair['after']->absolute_path }}">
-    </div>
-</div>
+{{-- ★ v18.36 — inline-block이면 dompdf에서 라벨이 h2 제목 줄로 끌려 올라가서 표로 배치 --}}
+<table class="compare-pair">
+    <tr>
+        <td class="compare-cell"><div class="compare-label" style="color:#C00000;">시공 전</div></td>
+        <td class="compare-cell"><div class="compare-label" style="color:#385723;">시공 후</div></td>
+    </tr>
+    <tr>
+        <td class="compare-cell"><img src="{{ $pair['before']->absolute_path }}"></td>
+        <td class="compare-cell"><img src="{{ $pair['after']->absolute_path }}"></td>
+    </tr>
+</table>
 @endforeach
 @endif
 

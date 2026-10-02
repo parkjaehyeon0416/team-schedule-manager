@@ -5,17 +5,17 @@
 <title>{{ $year }}년 수입·경비 정리</title>
 <style>
     @font-face {
-        font-family: 'malgun';
-        src: url('{{ public_path('fonts/malgun.ttf') }}');
+        font-family: 'nanumgothic';
+        src: url('{{ public_path('fonts/NanumGothic-Regular.ttf') }}');
         font-weight: normal;
     }
     @font-face {
-        font-family: 'malgun';
-        src: url('{{ public_path('fonts/malgunbd.ttf') }}');
+        font-family: 'nanumgothic';
+        src: url('{{ public_path('fonts/NanumGothic-Bold.ttf') }}');
         font-weight: bold;
     }
     @page { margin: 28px 32px; }
-    body { font-family: 'malgun', sans-serif; font-size: 12px; color: #222; }
+    body { font-family: 'nanumgothic', sans-serif; font-size: 12px; color: #222; }
     h1 { font-size: 19px; color: #1F3864; margin: 0 0 4px; }
     .subtitle { color: #666; font-size: 12px; margin-bottom: 18px; }
     table { width: 100%; border-collapse: collapse; }

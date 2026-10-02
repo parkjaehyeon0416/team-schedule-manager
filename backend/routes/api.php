@@ -39,6 +39,12 @@ Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
 // ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.
 Route::get('/report/{token}', [SiteReportController::class, 'publicView']);
 
+// ★ v18.36 — 앱에서 PDF 다운로드용 10분짜리 서명 링크(인증 대신 서명 검증). 링크는 로그인 라우트의 pdf-link에서 발급.
+Route::middleware('signed:relative')->group(function () {
+    Route::get('/files/quotes/{id}/pdf', [QuoteController::class, 'signedPdf'])->name('quotes.pdf.signed');
+    Route::get('/files/tax/{user}/{year}/pdf', [TaxSummaryController::class, 'signedPdf'])->name('tax.pdf.signed');
+});
+
 // ═══════════════════════════════════════════════════════════════
 // ─── 로그인 필수 라우트 ──
 // ═══════════════════════════════════════════════════════════════
@@ -117,6 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/quotes/{id}/status', [QuoteController::class, 'updateStatus']);
     Route::post('/quotes/{id}/approve', [QuoteController::class, 'approve']);
     Route::get('/quotes/{id}/pdf',     [QuoteController::class, 'downloadPdf']);
+    Route::get('/quotes/{id}/pdf-link', [QuoteController::class, 'pdfLink']); // ★ v18.36
     Route::delete('/quotes/{id}',      [QuoteController::class, 'destroy']);
 
     // 내 자재 목록 (견적 라인 자동완성용)
@@ -160,6 +167,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ═══════════════════════════════════════════════════════════
     Route::get('/tax-summary',     [TaxSummaryController::class, 'show']);
     Route::get('/tax-summary/pdf', [TaxSummaryController::class, 'downloadPdf']);
+    Route::get('/tax-summary/pdf-link', [TaxSummaryController::class, 'pdfLink']); // ★ v18.36
     Route::get('/tax-summary/export', [TaxSummaryController::class, 'exportCsv']); // ★ DESIGN-CANVAS(TAX_EXPORT) 추가
 
     // ═══════════════════════════════════════════════════════════

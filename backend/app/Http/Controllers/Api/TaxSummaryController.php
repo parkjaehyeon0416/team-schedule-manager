@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\MonthlySummary;
 use App\Models\Schedule;
+use App\Models\User;
 use App\Services\MonthlySummaryService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 
 /**
  * 수입·경비 정리 (세무사용) — ★ v17 신규
@@ -54,9 +56,45 @@ class TaxSummaryController extends Controller
             'year' => 'required|integer|min:2020|max:2099',
         ]);
 
-        $user = $request->user();
-        $year = (int) $request->query('year');
+        return $this->renderPdf($request->user(), (int) $request->query('year'));
+    }
 
+    /**
+     * ★ v18.36 — 앱 다운로드용 10분짜리 서명 링크 발급.
+     *   앱엔 파일 저장 라이브러리가 없고 브라우저로 열면 인증 토큰을 못 실으므로,
+     *   서명된 임시 주소를 만들어 앱이 브라우저로 열게 함(브라우저가 다운로드 폴더에 저장).
+     * GET /api/tax-summary/pdf-link?year=2026
+     */
+    public function pdfLink(Request $request)
+    {
+        $request->validate([
+            'year' => 'required|integer|min:2020|max:2099',
+        ]);
+
+        $path = URL::temporarySignedRoute('tax.pdf.signed', now()->addMinutes(10), [
+            'user' => $request->user()->id,
+            'year' => (int) $request->query('year'),
+        ], absolute: false);
+
+        return ApiResponse::success(['path' => $path], 'PDF 링크 발급 성공');
+    }
+
+    /**
+     * ★ v18.36 — 서명 링크로 여는 PDF (인증 대신 signed 미들웨어가 접근 검증)
+     * GET /api/files/tax/{user}/{year}/pdf
+     */
+    public function signedPdf(int $user, int $year)
+    {
+        $owner = User::find($user);
+        if (!$owner) {
+            return ApiResponse::error('존재하지 않는 사용자입니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        return $this->renderPdf($owner, $year);
+    }
+
+    private function renderPdf(User $user, int $year)
+    {
         $months = $this->buildYearlySummaries($user->id, $year);
         $totals = $this->sumTotals($months);
 

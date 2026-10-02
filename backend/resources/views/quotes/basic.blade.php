@@ -5,17 +5,17 @@
 <title>견적서 #{{ $quote->id }}</title>
 <style>
     @font-face {
-        font-family: 'malgun';
-        src: url('{{ public_path('fonts/malgun.ttf') }}');
+        font-family: 'nanumgothic';
+        src: url('{{ public_path('fonts/NanumGothic-Regular.ttf') }}');
         font-weight: normal;
     }
     @font-face {
-        font-family: 'malgun';
-        src: url('{{ public_path('fonts/malgunbd.ttf') }}');
+        font-family: 'nanumgothic';
+        src: url('{{ public_path('fonts/NanumGothic-Bold.ttf') }}');
         font-weight: bold;
     }
     @page { margin: 28px 32px; }
-    body { font-family: 'malgun', sans-serif; font-size: 12px; color: #222; }
+    body { font-family: 'nanumgothic', sans-serif; font-size: 12px; color: #222; }
     h1 { font-size: 22px; color: #1F3864; text-align: center; margin: 0 0 20px; letter-spacing: 4px; }
     .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
     .meta-table td { padding: 5px 8px; border: 1px solid #ddd; }

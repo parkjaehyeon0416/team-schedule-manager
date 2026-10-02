@@ -97,7 +97,7 @@ export default function TaxMonthDetailScreen() {
             schedules.map((s, i) => {
               const bg = ICON_BG[i % ICON_BG.length];
               const fg = ICON_FG[i % ICON_FG.length];
-              const siteLabel = scheduleLocationLabel(s) || s.work_type ?? s.district ?? '현장 미지정';
+              const siteLabel = scheduleLocationLabel(s) || s.work_type || s.district || '현장 미지정';
               return (
                 <Pressable
                   key={s.id}

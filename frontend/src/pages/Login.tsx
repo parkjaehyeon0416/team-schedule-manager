@@ -53,7 +53,7 @@ export default function Login() {
     >
       <Card style={{ width: 400 }}>
         <Typography.Title level={3} style={{ textAlign: "center" }}>
-          📋 Team Schedule
+          WorkMate 관리자
         </Typography.Title>
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Form.Item

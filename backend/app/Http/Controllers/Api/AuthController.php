@@ -292,7 +292,7 @@ class AuthController extends Controller
         //   대신 storage/logs/laravel.log에 코드가 찍힘. 나중에 다이렉트샌드 등
         //   실제 SMS 서비스를 붙일 땐 SmsServiceInterface 구현체 하나 추가하고
         //   .env의 SMS_DRIVER만 바꾸면 되고, 여기(AuthController)는 손댈 필요 없음.
-        $this->sms->send($phone, "[Team Schedule] 인증번호는 {$code} 입니다. (10분간 유효)");
+        $this->sms->send($phone, "[WorkMate] 인증번호는 {$code} 입니다. (10분간 유효)");
     }
 
     /**

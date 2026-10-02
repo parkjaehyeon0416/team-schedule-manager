@@ -1,31 +1,20 @@
 /**
  * 팀 초대 화면 — v18.34 (DESIGN-CANVAS 기준, TEAM_INVITE.dc.html)
- * ★ QR 코드는 실제 스캔 가능한 QR이 아니라 디자인 원본과 동일한 장식용 패턴임
- *   (원본 자체도 정적 장식 그리드였음 — 실제 QR 생성 라이브러리는 미설치).
+ * ★ QR 코드 — 휴대폰 카메라로 찍으면 팀 이름과 초대 코드가 보이는 진짜 QR (components/QrCode)
  *   카카오톡/문자/더보기는 카카오 전용 공유 SDK 연동 전이라 OS 공유 시트로 동작함.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Clipboard from '@react-native-clipboard/clipboard';
 import AppHeader from '../components/AppHeader';
+import QrCode from '../components/QrCode';
 import { getMyTeams } from '../api/teamApi';
 import type { Team } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
-
-function seededGrid(seed: string, size: number): boolean[] {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const cells: boolean[] = [];
-  for (let i = 0; i < size * size; i++) {
-    h = (h * 1103515245 + 12345) >>> 0;
-    cells.push((h >>> 16) % 3 !== 0);
-  }
-  return cells;
-}
 
 export default function TeamInviteScreen() {
   const navigation = useNavigation<any>();
@@ -41,8 +30,6 @@ export default function TeamInviteScreen() {
         .finally(() => setLoading(false));
     }, [teamId]),
   );
-
-  const grid = useMemo(() => seededGrid(team?.invite_code || 'WORKMATE', 15), [team?.invite_code]);
 
   const shareMessage = team
     ? `[WorkMate] "${team.name}" 팀 초대\n초대 코드: ${team.invite_code}\n앱에서 "코드로 참여"를 눌러 코드를 입력하면 바로 합류할 수 있어요.`
@@ -89,12 +76,7 @@ export default function TeamInviteScreen() {
           <Text style={styles.codeHint}>팀원에게 이 코드를 전달해 "코드로 참여"로 가입하게 하세요.</Text>
 
           <View style={styles.qrBox}>
-            {grid.map((on, i) => (
-              <View
-                key={i}
-                style={{ width: '6.666%', height: 8, backgroundColor: on ? colors.textPrimary : 'transparent' }}
-              />
-            ))}
+            <QrCode value={`[WorkMate 팀 초대]\n${team.name}\n초대 코드: ${team.invite_code}`} size={118} />
           </View>
         </View>
 
@@ -161,7 +143,7 @@ const styles = StyleSheet.create({
   codeHint: { fontSize: 12, color: colors.textSecondary, textAlign: 'center' },
   qrBox: {
     width: 140, height: 140, padding: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: colors.border,
-    borderRadius: radius.md, flexDirection: 'row', flexWrap: 'wrap',
+    borderRadius: radius.md,
   },
 
   shareRow: { flexDirection: 'row', justifyContent: 'space-around' },

@@ -26,10 +26,11 @@ export default function MyRatesScreen() {
     setLoading(true);
     getWageProfile()
       .then(p => {
-        setFullDay(String(p.full_day_wage));
-        setHalfDay(String(p.half_day_wage));
-        setOvertime(String(p.overtime_hourly_wage));
-        setPremium(String(p.night_holiday_premium_percent));
+        // 값이 비어 오면 화면 기본값 유지 (예전 서버는 저장 전이면 값을 안 보냈음 → "undefined" 표시 버그)
+        if (p.full_day_wage != null) setFullDay(String(p.full_day_wage));
+        if (p.half_day_wage != null) setHalfDay(String(p.half_day_wage));
+        if (p.overtime_hourly_wage != null) setOvertime(String(p.overtime_hourly_wage));
+        if (p.night_holiday_premium_percent != null) setPremium(String(p.night_holiday_premium_percent));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -77,7 +78,7 @@ export default function MyRatesScreen() {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>기본 일급 (1공수)</Text>
           <Text style={styles.summaryValue}>{formatMoney(parseMoney(fullDay))}원</Text>
-          <Text style={styles.summaryHint}>일정 등록 시 자동으로 입력돼요.</Text>
+          <Text style={styles.summaryHint}>저장하면 일정 등록 때 자동 입력돼요. (공정별 단가가 우선)</Text>
         </View>
 
         <View style={styles.listCard}>

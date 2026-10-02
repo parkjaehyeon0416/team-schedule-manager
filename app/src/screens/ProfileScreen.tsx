@@ -58,7 +58,7 @@ export default function ProfileScreen() {
       onPress: () => navigation.navigate('ProfileEdit'),
     },
     {
-      key: 'card', image: 'card', label: '내 명함', sub: 'QR 명함 공유',
+      key: 'card', image: 'card', label: '내 명함', sub: '명함 공유 · 이미지 저장',
       onPress: () => navigation.navigate('BusinessCard'),
     },
     {

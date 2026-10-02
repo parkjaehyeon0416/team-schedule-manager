@@ -17,6 +17,9 @@ import type { Schedule, Team } from '../types/api';
 import { formatMoney } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
 
+// 일정 1건의 수입 = 일당 × 공수 (서버 월 집계와 같은 식 — 0.5공수면 절반)
+const scheduleIncome = (s: Schedule) => (Number(s.daily_wage) || 0) * (Number(s.work_units) || 1);
+
 const TONES = ['#FFF1DE', '#DFF8F4', '#EFEAFF', '#E8F3FF'];
 const TONE_FG = ['#E07E00', '#0B9C8A', '#6B4FD8', '#0A6CE0'];
 const TABS = ['전체', '현장별', '팀별'] as const;
@@ -47,7 +50,7 @@ export default function IncomeListScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const total = useMemo(() => schedules.reduce((sum, s) => sum + Number(s.daily_wage ?? 0), 0), [schedules]);
+  const total = useMemo(() => schedules.reduce((sum, s) => sum + scheduleIncome(s), 0), [schedules]);
   const maxBar = useMemo(() => Math.max(1, ...monthlyTotals), [monthlyTotals]);
 
   const siteGroups = useMemo(() => {
@@ -57,7 +60,7 @@ export default function IncomeListScreen() {
       const label = s.site ? (s.site.apt_name || s.site.address) : '현장 미지정';
       const cur = map.get(s.site_id) ?? { label, count: 0, amount: 0 };
       cur.count += 1;
-      cur.amount += Number(s.daily_wage ?? 0);
+      cur.amount += scheduleIncome(s);
       map.set(s.site_id, cur);
     });
     return Array.from(map.entries()).map(([siteId, v]) => ({ siteId, ...v })).sort((a, b) => b.amount - a.amount);
@@ -70,7 +73,7 @@ export default function IncomeListScreen() {
       const team = teams.find(t => t.id === s.team_id);
       const cur = map.get(s.team_id) ?? { label: team?.name ?? '팀', count: 0, amount: 0 };
       cur.count += 1;
-      cur.amount += Number(s.daily_wage ?? 0);
+      cur.amount += scheduleIncome(s);
       map.set(s.team_id, cur);
     });
     return Array.from(map.entries()).map(([teamId, v]) => ({ teamId, ...v })).sort((a, b) => b.amount - a.amount);
@@ -130,7 +133,7 @@ export default function IncomeListScreen() {
                     <Text style={styles.rowTitle} numberOfLines={1}>{s.memo || s.work_type_relation?.name || '일정'}</Text>
                     <Text style={styles.rowSub}>{s.date.slice(5).replace('-', '.')}{team ? ` · ${team.name}` : ''}</Text>
                   </View>
-                  <Text style={styles.rowAmount}>{formatMoney(s.daily_wage)}원</Text>
+                  <Text style={styles.rowAmount}>{formatMoney(scheduleIncome(s))}원</Text>
                 </Pressable>
               );
             })

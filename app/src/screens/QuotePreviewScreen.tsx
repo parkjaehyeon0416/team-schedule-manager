@@ -3,6 +3,7 @@
  * 2026-10-02: "PDF 저장"은 인증이 필요한 다운로드라 모바일에서 바로 열 수 없어 제외하고,
  * 대신 CSV/엑셀(CSV)로만 저장 가능하도록 변경함 — 견적 내용을 클라이언트에서 바로 CSV로
  * 만들어 OS 공유 시트로 전달(세무자료 내보내기와 동일한 패턴, 별도 백엔드 호출 불필요).
+ * v18.36 이후 엑셀·PDF 둘 다 고를 수 있어 버튼 이름을 "파일 저장"으로 바꿈.
  */
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView, Share } from 'react-native';
@@ -149,7 +150,7 @@ export default function QuotePreviewScreen() {
         <View style={styles.footerRow}>
           <Pressable style={styles.pdfBtn} onPress={handleExport}>
             <Icon name="tray-arrow-down" size={18} color={colors.primaryDark} />
-            <Text style={styles.pdfBtnText}>CSV/엑셀 저장</Text>
+            <Text style={styles.pdfBtnText}>파일 저장</Text>
           </Pressable>
           <Pressable style={{ flex: 1 }} onPress={handleSend} disabled={sending}>
             <LinearGradient colors={[colors.primaryLight, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.sendBtn, sending && { opacity: 0.7 }]}>

@@ -88,9 +88,13 @@ export default function ScheduleDetailScreen({ route }: any) {
         setTeam(null);
       }
     } catch (e: any) {
-      Alert.alert('조회 실패', e?.response?.data?.message || '일정 정보를 불러오지 못했습니다.', [
-        { text: '확인', onPress: () => navigation.goBack() },
-      ]);
+      // 알림에서 이미 삭제된 일정을 눌렀을 때 등 — 404면 "삭제된 일정"으로 안내
+      const gone = e?.response?.status === 404;
+      Alert.alert(
+        gone ? '삭제된 일정' : '조회 실패',
+        gone ? '이미 삭제되었거나 볼 수 없는 일정이에요.' : e?.response?.data?.message || '일정 정보를 불러오지 못했습니다.',
+        [{ text: '확인', onPress: () => navigation.goBack() }],
+      );
     } finally {
       setLoading(false);
     }

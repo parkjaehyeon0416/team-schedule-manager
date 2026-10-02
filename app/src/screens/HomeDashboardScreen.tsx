@@ -16,7 +16,7 @@ import type { TeamActivity } from '../api/teamApi';
 import { getLatestEvent, getLatestNotice } from '../api/noticesApi';
 import type { NoticeSummary } from '../api/noticesApi';
 import type { MonthlySummary, Schedule } from '../types/api';
-import { formatShortKRW } from '../utils/format';
+import { formatMoney } from '../utils/format';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
 import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 import { ICONS } from '../assets/icons';
@@ -149,8 +149,8 @@ export default function HomeDashboardScreen() {
             style={[styles.heroCard, pressed && { opacity: 0.92 }]}
           >
             <Text style={styles.heroLabel}>이번 달 수입</Text>
-            <Text style={styles.heroAmount}>
-              {formatShortKRW(totalIncome)}
+            <Text style={styles.heroAmount} numberOfLines={1} adjustsFontSizeToFit>
+              {formatMoney(totalIncome) || '0'}
               <Text style={styles.heroWon}>원</Text>
             </Text>
             {deltaPercent !== null && (

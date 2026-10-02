@@ -24,6 +24,7 @@ export interface SitePayload {
   customer?: string | null;
   status?: 'scheduled' | 'in_progress' | 'done';
   team_id?: number | null;
+  is_personal?: boolean;
 }
 
 export async function createSite(payload: SitePayload): Promise<Site> {

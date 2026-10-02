@@ -21,7 +21,7 @@ import {
 } from '../api/schedulesApi';
 import { getSites } from '../api/siteApi';
 import { getMyTeams } from '../api/teamApi';
-import { getWageSettings } from '../api/wageSettingsApi';
+import { getWageProfile, getWageSettings } from '../api/wageSettingsApi';
 import WorkTypePicker from '../components/WorkTypePicker';
 import SitePickerModal from '../components/SitePickerModal';
 import AddressSearchModal from '../components/AddressSearchModal';
@@ -84,17 +84,23 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>('pending');
 
   const [wageSettings, setWageSettings] = useState<WageSetting[]>([]);
+  // 내 단가 설정의 기본 일급 — 저장한 적 있을 때만 (공정별 단가가 없을 때 대신 씀)
+  const [baseWage, setBaseWage] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditMode);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const [membersData, wageData, teamList] = await Promise.all([
+        const [membersData, wageData, teamList, profile] = await Promise.all([
           getTeamMembers(),
           getWageSettings(),
           getMyTeams().catch(() => []),
+          getWageProfile().catch(() => null),
         ]);
+        const base = profile?.is_saved ? Number(profile.full_day_wage) || 0 : 0;
+        setBaseWage(base);
+        if (!isEditMode && base > 0) setDailyWage(base);
         setMembers(membersData);
         setWageSettings(wageData);
         setTeams(teamList);
@@ -145,9 +151,11 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
     setWorkTypeId(id);
     if (id === null || !workTypeObj) return;
     const matched = wageSettings.find(s => s.work_type_id === id);
-    if (matched) {
+    if (matched && parseFloat(matched.default_wage) > 0) {
       setDailyWage(parseFloat(matched.default_wage));
       setWorkUnits(parseFloat(matched.default_work_units));
+    } else if (baseWage > 0) {
+      setDailyWage(baseWage);
     }
   };
 

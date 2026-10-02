@@ -42,6 +42,7 @@ export interface WageProfile {
   half_day_wage: number;
   overtime_hourly_wage: number;
   night_holiday_premium_percent: number;
+  is_saved?: boolean; // 직접 저장한 적 있는지 (GET 응답에만)
 }
 
 export interface WageSetting {

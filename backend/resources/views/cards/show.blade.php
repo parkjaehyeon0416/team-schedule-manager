@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $card->display_name ?? '명함' }} · Team Schedule Manager</title>
+<title>{{ $card->display_name ?? '명함' }} · WorkMate</title>
 
 <!-- Open Graph — 카카오톡/문자 미리보기용 (기획서 3-2절) -->
 <meta property="og:title" content="{{ $card->display_name ?? '기사' }}{{ $card->job_title ? ' — '.$card->job_title : '' }}">
-<meta property="og:description" content="{{ $card->specialty ?? ($card->tagline ?? 'Team Schedule Manager 명함') }}">
+<meta property="og:description" content="{{ $card->specialty ?? ($card->tagline ?? 'WorkMate 명함') }}">
 <meta property="og:type" content="profile">
 
 <style>
@@ -100,7 +100,7 @@
     @endif
 
     <div class="footer">
-        이 명함은 <a href="/">Team Schedule Manager</a>로 만들어졌습니다.
+        이 명함은 <a href="/">WorkMate</a>로 만들어졌습니다.
     </div>
 </div>
 </body>

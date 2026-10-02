@@ -24,6 +24,9 @@ import { colors, radius, spacing } from '../theme/designTokens';
 function parseDongHo(input: string): { dong: string | null; ho: string | null } {
   const trimmed = input.trim();
   if (!trimmed) return { dong: null, ho: null };
+  // "101-1203" / "101/1203" / "101 1203" → 101동 1203호
+  const pair = trimmed.match(/^([0-9A-Za-z]+)\s*[-/ ]\s*([0-9A-Za-z]+)$/);
+  if (pair) return { dong: pair[1], ho: pair[2] };
   const dongMatch = trimmed.match(/([0-9A-Za-z가-힣]+)\s*동/);
   const hoMatch = trimmed.match(/([0-9A-Za-z]+)\s*호/);
   if (dongMatch || hoMatch) {
@@ -43,7 +46,13 @@ export default function SiteFormScreen() {
   const [aptName, setAptName] = useState(editing?.apt_name ?? '');
   const [address, setAddress] = useState(editing?.address ?? '');
   const [addressSearchVisible, setAddressSearchVisible] = useState(false);
-  const [detailAddr, setDetailAddr] = useState([editing?.dong && `${editing.dong}동`, editing?.ho && `${editing.ho}호`].filter(Boolean).join(' '));
+  // 동이 "상가 A" 같은 자유 입력이면 "동"을 덧붙이지 않음 (저장 → 수정 반복 시 글자가 망가지지 않게)
+  const [detailAddr, setDetailAddr] = useState(
+    [
+      editing?.dong && (/^[0-9A-Za-z가-힣]+$/.test(editing.dong) ? `${editing.dong}동` : editing.dong),
+      editing?.ho && `${editing.ho}호`,
+    ].filter(Boolean).join(' '),
+  );
   const [startDate, setStartDate] = useState<Date | null>(editing?.start_date ? new Date(editing.start_date) : null);
   const [endDate, setEndDate] = useState<Date | null>(editing?.end_date ? new Date(editing.end_date) : null);
   const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end' | null>(null);
@@ -127,6 +136,8 @@ export default function SiteFormScreen() {
         end_date: endDate ? dayjs(endDate).format('YYYY-MM-DD') : null,
         customer: customer.trim() || null,
         team_id: teamId,
+        // 팀을 고르지 않으면 개인 현장 (안 보내면 서버가 활성 팀 현장으로 저장함)
+        is_personal: teamId === null,
         status,
       };
       if (isEdit) {
@@ -218,13 +229,13 @@ export default function SiteFormScreen() {
           <View style={[styles.field, { flex: 1 }]}>
             <Text style={styles.label}>시작일</Text>
             <Pressable style={styles.inputWrap} onPress={() => setDatePickerTarget('start')}>
-              <Text style={startDate ? styles.addressText : styles.addressPlaceholder}>{startDate ? dayjs(startDate).format('YYYY.MM.DD') : '2026.10.15'}</Text>
+              <Text style={startDate ? styles.addressText : styles.addressPlaceholder}>{startDate ? dayjs(startDate).format('YYYY.MM.DD') : '날짜 선택'}</Text>
             </Pressable>
           </View>
           <View style={[styles.field, { flex: 1 }]}>
             <Text style={styles.label}>종료일</Text>
             <Pressable style={styles.inputWrap} onPress={() => setDatePickerTarget('end')}>
-              <Text style={endDate ? styles.addressText : styles.addressPlaceholder}>{endDate ? dayjs(endDate).format('YYYY.MM.DD') : '2026.10.25'}</Text>
+              <Text style={endDate ? styles.addressText : styles.addressPlaceholder}>{endDate ? dayjs(endDate).format('YYYY.MM.DD') : '날짜 선택'}</Text>
             </Pressable>
           </View>
         </View>

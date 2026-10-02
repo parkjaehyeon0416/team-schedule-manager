@@ -4,7 +4,7 @@
 //   ★ v11.1.1 — 시공 후 사진 중 짝 없는 것에 시각적 배지 추가 (옵션 B)
 //   ★ v11.1.1 — 짝 없는 시공 후 길게 누름 시 "짝 지정하기" 메뉴 추가 (옵션 C)
 // ═══════════════════════════════════════════════════════════════
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Image,
@@ -14,6 +14,8 @@ import {
   Dimensions,
   Alert,
   AlertButton,
+  Modal,
+  Pressable,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { SiteFile } from '../types/api';
@@ -56,6 +58,8 @@ export default function PhotoGrid({
   onPress,
   emptyText = '아직 등록된 사진이 없습니다',
 }: Props) {
+  const [viewing, setViewing] = useState<SiteFile | null>(null);
+
   // ─── 빈 상태 ───
   if (photos.length === 0) {
     return (
@@ -99,9 +103,48 @@ export default function PhotoGrid({
     });
   };
 
+  const viewingCanPair =
+    viewing?.photo_category === 'after' && viewing.paired_with_id == null && onPairAssign != null;
+
+  const confirmDelete = (photo: SiteFile) => {
+    Alert.alert('사진 삭제', '이 사진을 삭제할까요?', [
+      { text: '취소', style: 'cancel' },
+      { text: '삭제', style: 'destructive', onPress: () => { setViewing(null); onDelete(photo.id); } },
+    ]);
+  };
+
   // ─── 그리드 렌더 ───
   return (
     <View style={styles.grid}>
+      {/* ★ v18.42 — 크게 보기 */}
+      <Modal visible={!!viewing} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setViewing(null)}>
+        <View style={styles.viewer}>
+          {viewing && (
+            <Image
+              source={{ uri: `${SERVER_BASE_URL}/storage/${viewing.file_path}` }}
+              style={styles.viewerImage}
+              resizeMode="contain"
+            />
+          )}
+          <Pressable style={styles.viewerClose} onPress={() => setViewing(null)} hitSlop={10}>
+            <Icon name="close" size={28} color="#FFF" />
+          </Pressable>
+          {viewing && (
+            <View style={styles.viewerBar}>
+              {viewingCanPair && (
+                <Pressable style={styles.viewerBtn} onPress={() => { const p = viewing; setViewing(null); onPairAssign!(p); }}>
+                  <Icon name="link-variant" size={18} color="#FFF" />
+                  <Text style={styles.viewerBtnText}>짝 지정</Text>
+                </Pressable>
+              )}
+              <Pressable style={[styles.viewerBtn, styles.viewerBtnDanger]} onPress={() => confirmDelete(viewing)}>
+                <Icon name="trash-can-outline" size={18} color="#FFF" />
+                <Text style={styles.viewerBtnText}>삭제</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </Modal>
       {photos.map((photo, idx) => {
         // 각 행의 마지막 칸은 우측 마진 제거
         const isLastInRow = (idx + 1) % COLUMNS === 0;
@@ -119,7 +162,7 @@ export default function PhotoGrid({
               { width: ITEM_SIZE, height: ITEM_SIZE },
               !isLastInRow && { marginRight: GAP },
             ]}
-            onPress={() => onPress?.(photo)}
+            onPress={() => (onPress ? onPress(photo) : setViewing(photo))}
             onLongPress={() => handleLongPress(photo)}
             activeOpacity={0.8}
           >
@@ -203,6 +246,13 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
   },
+  viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
+  viewerClose: { position: 'absolute', top: 48, right: 20, zIndex: 2, padding: 4 },
+  viewerImage: { width: '100%', height: '75%' },
+  viewerBar: { position: 'absolute', left: 0, right: 0, bottom: 40, flexDirection: 'row', justifyContent: 'center', gap: 12 },
+  viewerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 44, paddingHorizontal: 18, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.18)' },
+  viewerBtnDanger: { backgroundColor: 'rgba(211,47,47,0.85)' },
+  viewerBtnText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
   empty: {
     alignItems: 'center',
     justifyContent: 'center',

@@ -18,7 +18,11 @@ class WageProfileController extends Controller
     {
         $profile = WageProfile::firstOrNew(['user_id' => $request->user()->id]);
 
-        return ApiResponse::success($profile, '단가 프로필 조회 성공');
+        // is_saved — 직접 저장한 적이 있을 때만 앱이 일정 등록 단가를 자동으로 채움(기본값 25만원을 함부로 넣지 않게)
+        return ApiResponse::success(
+            $profile->toArray() + ['is_saved' => $profile->exists],
+            '단가 프로필 조회 성공',
+        );
     }
 
     // PUT /api/wage-profile — upsert

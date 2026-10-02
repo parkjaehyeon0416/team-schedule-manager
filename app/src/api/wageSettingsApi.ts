@@ -12,7 +12,7 @@ export async function getWageProfile(): Promise<WageProfile> {
   return res.data.data;
 }
 
-export async function saveWageProfile(payload: WageProfile): Promise<WageProfile> {
+export async function saveWageProfile(payload: Omit<WageProfile, 'is_saved'>): Promise<WageProfile> {
   const res = await axios.put<ApiResponse<WageProfile>>('/wage-profile', payload);
   return res.data.data;
 }

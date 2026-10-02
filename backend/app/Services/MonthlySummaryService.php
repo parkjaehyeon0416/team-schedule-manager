@@ -15,6 +15,15 @@ class MonthlySummaryService
      */
     private const TAX_RATE = 0.027;
     private const TAX_DEDUCTION = 150000;
+    private const FREELANCE_TAX_RATE = 0.033;
+
+    public static function estimateTax(float $wage, float $units, string $employmentType): float
+    {
+        if ($employmentType === 'freelance') {
+            return $wage * $units * self::FREELANCE_TAX_RATE;
+        }
+        return max(0, $wage - self::TAX_DEDUCTION) * self::TAX_RATE * $units;
+    }
 
     /**
      * 특정 사용자의 특정 월 집계를 처음부터 다시 계산해서 저장
@@ -75,11 +84,13 @@ class MonthlySummaryService
 
         // 4) 예상 소득세 계산 (기획서 3.8.1절)
         $estimatedTax = 0.0;
+        //   ★ 일용근로: (일당 − 15만원) × 2.7% / 프리랜서: 금액 × 3.3% — 앱 수입 상세와 같은 식
         foreach ($schedules as $schedule) {
-            $wage  = (float) ($schedule->daily_wage ?? 0);
-            $units = (float) ($schedule->work_units ?? 1);
-            $taxable = max(0, $wage - self::TAX_DEDUCTION);
-            $estimatedTax += $taxable * self::TAX_RATE * $units;
+            $estimatedTax += self::estimateTax(
+                (float) ($schedule->daily_wage ?? 0),
+                (float) ($schedule->work_units ?? 1),
+                $schedule->employment_type ?? 'daily',
+            );
         }
 
         // 5) 실수령액

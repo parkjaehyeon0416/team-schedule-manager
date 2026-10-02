@@ -58,8 +58,13 @@ export default function IncomeDetailScreen() {
   }
 
   const siteLabel = scheduleLocationLabel(schedule);
-  const income = Number(schedule.daily_wage) || 0;
-  const withholdingTax = Math.round(income * 0.033);
+  const wage = Number(schedule.daily_wage) || 0;
+  const units = Number(schedule.work_units) || 1;
+  const income = wage * units;
+  // 서버 MonthlySummaryService.estimateTax와 같은 식 — 일용근로: (일당 − 15만원) × 2.7%, 프리랜서: 3.3%
+  const withholdingTax = Math.round(
+    schedule.employment_type === 'freelance' ? income * 0.033 : Math.max(0, wage - 150000) * 0.027 * units,
+  );
   const netIncome = income - withholdingTax;
   const isPaid = schedule.payment_status === 'paid';
 
@@ -70,7 +75,7 @@ export default function IncomeDetailScreen() {
         <View style={styles.headerCard}>
           <View style={styles.headerIcon}><Icon name="currency-krw" size={28} color={colors.secondary} /></View>
           <Text style={styles.headerTitle}>{schedule.memo || schedule.work_type_relation?.name || '일정'}</Text>
-          <Text style={styles.headerAmount}>{formatMoney(schedule.daily_wage)}원</Text>
+          <Text style={styles.headerAmount}>{formatMoney(income)}원</Text>
           <View style={styles.badgeRow}>
             <View style={[styles.badge, isPaid ? styles.badgePaid : styles.badgePending]}>
               <Text style={[styles.badgeText, isPaid ? styles.badgeTextPaid : styles.badgeTextPending]}>

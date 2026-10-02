@@ -19,3 +19,9 @@ Route::get('/', function () {
 //   드러나지 않았던 환경 설정 누락. session:table로 마이그레이션 추가해서 해결함
 //   (php artisan session:table && php artisan migrate).
 Route::get('/c/{code}', [BusinessCardPageController::class, 'show']);
+
+// ★ v18.40 — 웹 관리자(운영자용, frontend 폴더 React 앱). 빌드 결과는 public/admin-app 에 있고,
+//   /admin 아래 모든 주소에서 같은 index.html을 돌려줘서 화면 이동(새로고침 포함)이 되게 함.
+Route::get('/admin/{any?}', function () {
+    return response()->file(public_path('admin-app/index.html'));
+})->where('any', '.*');

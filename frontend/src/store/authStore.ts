@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  user_type?: string; // ★ v18.40 — 'operator'면 운영자(공지·이벤트 관리)
 }
 
 interface AuthState {

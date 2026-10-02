@@ -10,6 +10,7 @@ import {
   IdcardOutlined,
   FileTextOutlined,
   FileDoneOutlined,
+  NotificationOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../../store/authStore";
 
@@ -25,7 +26,12 @@ export default function AdminLayout() {
     navigate("/login");
   };
 
-  const menuItems = [
+  // ★ v18.40 — 웹 로그인은 운영자 전용이라 운영자에게는 운영 메뉴만 표시
+  const operatorMenu = [
+    { key: "/notices", icon: <NotificationOutlined />, label: "공지 · 이벤트" },
+  ];
+
+  const teamMenu = [
     { key: "/", icon: <HomeOutlined />, label: "대시보드" },
     { key: "/schedule", icon: <CalendarOutlined />, label: "스케줄 관리" },
     { key: "/quotes", icon: <FileDoneOutlined />, label: "견적서 관리" },
@@ -36,13 +42,15 @@ export default function AdminLayout() {
     { key: "/tax-summary", icon: <FileTextOutlined />, label: "세무 자료" },
   ];
 
+  const menuItems = user?.user_type === "operator" ? operatorMenu : teamMenu;
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider width={220} theme="dark">
         <div
           style={{ padding: "20px 16px", color: "white", fontWeight: "bold" }}
         >
-          📋 Team Schedule
+          WorkMate 운영
         </div>
         <Menu
           theme="dark"
@@ -62,7 +70,7 @@ export default function AdminLayout() {
             alignItems: "center",
           }}
         >
-          <Typography.Text strong>Team Schedule Manager 관리자</Typography.Text>
+          <Typography.Text strong>WorkMate 관리자</Typography.Text>
           <Space>
             <Avatar>{user?.name?.[0]}</Avatar>
             <Typography.Text>{user?.name}</Typography.Text>

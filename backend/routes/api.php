@@ -55,6 +55,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::delete('/account',   [AuthController::class, 'withdraw']); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
 
+    // ★ v18.40 — 웹 관리자(운영자 전용) 공지·이벤트 관리
+    Route::middleware('operator')->prefix('admin')->group(function () {
+        Route::get('/notices',         [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'index']);
+        Route::post('/notices',        [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'store']);
+        Route::post('/notices/{id}',   [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'update']);
+        Route::delete('/notices/{id}', [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'destroy']);
+    });
+
     // ★ v18.38 — 홈 팀 활동
     Route::get('/team-activities', [\App\Http\Controllers\Api\TeamActivityController::class, 'index']);
 

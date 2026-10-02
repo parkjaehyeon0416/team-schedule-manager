@@ -4,6 +4,7 @@ export interface User {
   email: string;
   role: "superadmin" | "manager" | "member";
   team_id: number | null;
+  user_type?: "operator" | "team" | "freelancer"; // ★ v18.40
 }
 export interface Team {
   id: number;

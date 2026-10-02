@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ★ 아래 한 줄 추가
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'operator' => \App\Http\Middleware\OperatorMiddleware::class, // ★ v18.40 운영자 전용
         ]);
 
         // ★ v18.13 — 이 프로젝트는 순수 API 서버라 웹 로그인 페이지(named route

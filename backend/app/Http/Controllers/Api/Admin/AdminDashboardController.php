@@ -18,14 +18,14 @@ class AdminDashboardController extends Controller
         $today = now()->toDateString();
         $yesterday = now()->subDay()->toDateString();
         $monthStart = now()->startOfMonth()->toDateString();
-        $members = DB::table('users')->whereNull('deleted_at')->where('user_type', '!=', 'operator');
+        $members = DB::table('users')->whereNull('users.deleted_at')->where('users.user_type', '!=', 'operator');
         $published = Notice::published();
 
         $stats = [
             'members_total'        => (clone $members)->count(),
-            'members_today'        => (clone $members)->whereDate('created_at', $today)->count(),
-            'members_yesterday'    => (clone $members)->whereDate('created_at', $yesterday)->count(),
-            'members_this_month'   => (clone $members)->whereDate('created_at', '>=', $monthStart)->count(),
+            'members_today'        => (clone $members)->whereDate('users.created_at', $today)->count(),
+            'members_yesterday'    => (clone $members)->whereDate('users.created_at', $yesterday)->count(),
+            'members_this_month'   => (clone $members)->whereDate('users.created_at', '>=', $monthStart)->count(),
             'teams_total'          => DB::table('teams')->whereNull('deleted_at')->count(),
             'schedules_this_month' => DB::table('schedules')->whereNull('deleted_at')->where('date', '>=', $monthStart)->count(),
             'quotes_this_month'    => DB::table('quotes')->whereNull('deleted_at')->whereDate('created_at', '>=', $monthStart)->count(),

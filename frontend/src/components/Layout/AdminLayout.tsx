@@ -1,88 +1,102 @@
-// ★ v18.40 — 운영자 전용 관리 화면 레이아웃 (메뉴 그룹: 현황 / 회원 / 콘텐츠 / 고객지원 / 매출)
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Menu, Button, Avatar, Typography, Space, Tag } from "antd";
-import type { MenuProps } from "antd";
-import {
-  DashboardOutlined,
-  UserOutlined,
-  NotificationOutlined,
-  GiftOutlined,
-  CustomerServiceOutlined,
-  MessageOutlined,
-  CreditCardOutlined,
-  LineChartOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
+// ★ v18.41 — 운영자 웹 레이아웃 (DESIGN-CANVAS ADMIN_DASHBOARD: 왼쪽 메뉴 / 모바일은 상단 칩 메뉴)
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import Icon from "../Icon";
+import logo from "../../assets/icons/logo.png";
 import { useAuthStore } from "../../store/authStore";
 
-const { Sider, Header, Content } = Layout;
-
-// soon: 아직 준비 중인 메뉴 — 이름 옆에 표시
-const label = (text: string, soon = false) =>
-  soon ? <Space size={6}>{text}<Tag style={{ fontSize: 10, lineHeight: "16px", marginInlineEnd: 0 }}>준비 중</Tag></Space> : text;
-
-const menuItems: MenuProps["items"] = [
-  { key: "/", icon: <DashboardOutlined />, label: label("대시보드") },
-  { key: "/stats", icon: <LineChartOutlined />, label: label("통계 관리", true) },
-  { type: "divider" },
-  { key: "/members", icon: <UserOutlined />, label: label("회원 관리", true) },
-  { type: "divider" },
-  { key: "/notices", icon: <NotificationOutlined />, label: label("공지 관리") },
-  { key: "/events", icon: <GiftOutlined />, label: label("이벤트 관리") },
-  { type: "divider" },
-  { key: "/inquiries", icon: <CustomerServiceOutlined />, label: label("고객 문의 관리", true) },
-  { key: "/sms", icon: <MessageOutlined />, label: label("문자 발송 관리", true) },
-  { type: "divider" },
-  { key: "/payments", icon: <CreditCardOutlined />, label: label("결제 관리", true) },
+type Item = { to: string; label: string; icon: string; soon?: boolean };
+const GROUPS: { title?: string; items: Item[] }[] = [
+  { items: [{ to: "/", label: "대시보드", icon: "dashboard" }] },
+  { title: "콘텐츠", items: [{ to: "/notices", label: "공지 관리", icon: "notice" }, { to: "/events", label: "이벤트 관리", icon: "event" }] },
+  { title: "회원", items: [{ to: "/members", label: "회원 관리", icon: "members" }] },
+  {
+    title: "준비 중",
+    items: [
+      { to: "/stats", label: "통계", icon: "stats", soon: true },
+      { to: "/inquiries", label: "고객 문의", icon: "inquiry", soon: true },
+      { to: "/sms", label: "문자 발송", icon: "sms", soon: true },
+      { to: "/payments", label: "결제", icon: "payment", soon: true },
+    ],
+  },
 ];
+const ALL = GROUPS.flatMap(g => g.items);
+
+function isActive(pathname: string, to: string) {
+  return to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(to + "/");
+}
 
 export default function AdminLayout() {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, clearAuth } = useAuthStore();
-
-  const handleLogout = () => {
-    clearAuth();
-    navigate("/login");
-  };
+  const logout = () => { clearAuth(); navigate("/login"); };
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider width={230} theme="dark">
-        <div style={{ padding: "20px 16px", color: "white", fontWeight: 800, fontSize: 17 }}>
-          Work<span style={{ color: "#4DA3FF" }}>Mate</span> 운영
+    <div className="adm-root">
+      <aside className="adm-side">
+        <Link to="/" className="adm-brand">
+          <img src={logo} alt="WorkMate" />
+          <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+            <span className="adm-brand-name">Work<b>Mate</b></span>
+            <span className="adm-brand-sub">운영자 관리자</span>
+          </span>
+        </Link>
+        <nav aria-label="관리자 메뉴" className="adm-nav">
+          {GROUPS.map((g, gi) => (
+            <div key={gi} style={{ display: "contents" }}>
+              {g.title && <span className="adm-nav-group">{g.title}</span>}
+              {g.items.map(it => {
+                const on = isActive(pathname, it.to);
+                return (
+                  <Link key={it.to} to={it.to} className={`adm-nav-item${on ? " on" : ""}${it.soon ? " soon" : ""}`}>
+                    <Icon name={it.icon} size={19} width={on ? 2 : 1.8} />
+                    <span>{it.label}</span>
+                    {it.soon && <span className="adm-soon-tag">준비 중</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+        <div className="adm-me">
+          <div className="adm-avatar">{user?.name?.[0] ?? "운"}</div>
+          <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <span className="adm-me-name">{user?.name ?? "운영자"}</span>
+            <span className="adm-me-mail">{user?.email}</span>
+          </div>
+          <button type="button" aria-label="로그아웃" onClick={logout}
+            style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", color: "#5F7290", border: 0, background: "transparent", cursor: "pointer" }}>
+            <Icon name="logout" />
+          </button>
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-        />
-      </Sider>
-      <Layout>
-        <Header
-          style={{
-            background: "white",
-            padding: "0 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography.Text strong>WorkMate 관리자</Typography.Text>
-          <Space>
-            <Avatar>{user?.name?.[0]}</Avatar>
-            <Typography.Text>{user?.name}</Typography.Text>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-              로그아웃
-            </Button>
-          </Space>
-        </Header>
-        <Content style={{ margin: "24px", background: "white", padding: "24px", borderRadius: 8 }}>
+      </aside>
+
+      <div className="adm-mtop">
+        <div className="adm-mtop-row">
+          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <img src={logo} alt="WorkMate" width={30} height={30} style={{ objectFit: "contain" }} />
+            <span className="adm-brand-name" style={{ fontSize: 17 }}>Work<b>Mate</b></span>
+            <span className="adm-soon-tag" style={{ marginLeft: 0, fontSize: 11 }}>관리자</span>
+          </Link>
+          <button type="button" aria-label="로그아웃" onClick={logout}
+            style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "flex-end", color: "#5F7290", border: 0, background: "transparent" }}>
+            <Icon name="logout" size={20} />
+          </button>
+        </div>
+        <nav aria-label="관리자 메뉴" className="adm-chips">
+          {ALL.map(it => (
+            <Link key={it.to} to={it.to} className={`adm-chip${isActive(pathname, it.to) ? " on" : ""}${it.soon ? " soon" : ""}`}>
+              <Icon name={it.icon} size={15} />{it.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      <main className="adm-pad">
+        <div className="adm-wrap">
           <Outlet />
-        </Content>
-      </Layout>
-    </Layout>
+        </div>
+      </main>
+    </div>
   );
 }

@@ -36,8 +36,11 @@ export function eventDday(endsAt: string | null): string | null {
   return days === 0 ? 'D-DAY' : `D-${days}`;
 }
 
-// 본문: 빈 줄로 문단 구분, "- "로 시작하는 줄 묶음은 목록
-export type BodyBlock = { kind: 'p'; text: string } | { kind: 'ul'; items: string[] };
+// 본문: 빈 줄로 문단 구분, "- "/"• "/"· " 줄 묶음은 글머리 목록, "1. " 줄 묶음은 번호 목록
+//   ★ v18.41 — 웹 관리자(frontend/src/components/BodyPreview.tsx)와 같은 규칙. 글자 꾸밈(**굵게** *기울임* __밑줄__)은 splitInline
+export type BodyBlock = { kind: 'p'; text: string } | { kind: 'ul' | 'ol'; items: string[] };
+const BULLET = /^\s*[-•·]\s+/;
+const NUMBER = /^\s*\d+[.)]\s+/;
 
 export function parseNoticeBody(body: string | null): BodyBlock[] {
   if (!body) return [];
@@ -48,9 +51,31 @@ export function parseNoticeBody(body: string | null): BodyBlock[] {
     .filter(Boolean)
     .map(chunk => {
       const lines = chunk.split('\n');
-      if (lines.every(l => l.trim().startsWith('- '))) {
-        return { kind: 'ul', items: lines.map(l => l.trim().slice(2)) } as BodyBlock;
+      if (lines.every(l => BULLET.test(l))) {
+        return { kind: 'ul', items: lines.map(l => l.replace(BULLET, '')) } as BodyBlock;
+      }
+      if (lines.every(l => NUMBER.test(l))) {
+        return { kind: 'ol', items: lines.map(l => l.replace(NUMBER, '')) } as BodyBlock;
       }
       return { kind: 'p', text: chunk } as BodyBlock;
     });
+}
+
+// ★ v18.41 — 글자 꾸밈: **굵게** / __밑줄__ / *기울임* → 조각 배열
+export type InlinePart = { text: string; bold?: boolean; italic?: boolean; underline?: boolean };
+export function splitInline(text: string): InlinePart[] {
+  const parts: InlinePart[] = [];
+  const re = /(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push({ text: text.slice(last, m.index) });
+    const t = m[0];
+    if (t.startsWith('**')) parts.push({ text: t.slice(2, -2), bold: true });
+    else if (t.startsWith('__')) parts.push({ text: t.slice(2, -2), underline: true });
+    else parts.push({ text: t.slice(1, -1), italic: true });
+    last = m.index + t.length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last) });
+  return parts;
 }

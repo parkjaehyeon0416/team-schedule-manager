@@ -41,6 +41,10 @@ class DatabaseSeeder extends Seeder
         User::create(['name'=>'김팀원',    'email'=>'member@test.com',
             'password'=>Hash::make('password123'),'role_id'=>3,'team_id'=>$team->id]);
 
+        // ★ v18.41 — 로컬 개발용 웹 관리자(운영자) 계정. 운영 서버에서는 admin:invite-operator 로 만듦
+        User::create(['name'=>'운영자','email'=>'operator@test.com',
+            'password'=>Hash::make('password123'),'role_id'=>1,'user_type'=>'operator']);
+
         // 6. 테스트 현장
         Site::create(['address'=>'서울시 강남구 역삼동','apt_name'=>'테스트아파트',
             'dong'=>'101동','ho'=>'501호','area_m2'=>84.50,'team_id'=>$team->id]);

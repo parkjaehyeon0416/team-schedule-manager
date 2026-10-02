@@ -151,6 +151,12 @@ export default function EventDetailScreen() {
           </View>
         )}
 
+        {/* ★ v18.41 — 이벤트가 끝나면 버튼을 "종료된 이벤트"로 비활성화 (운영자 웹 안내와 동일) */}
+        {!!event.cta_route && ended && (
+          <View style={[styles.ctaBtn, styles.ctaEnded]}>
+            <Text style={[styles.ctaText, styles.ctaEndedText]}>종료된 이벤트</Text>
+          </View>
+        )}
         {!!event.cta_route && !ended && (
           <Pressable onPress={handleCta}>
             {({ pressed }) => (
@@ -208,4 +214,6 @@ const styles = StyleSheet.create({
 
   ctaBtn: { height: 52, borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   ctaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  ctaEnded: { backgroundColor: '#EEF2F7' },
+  ctaEndedText: { color: '#8FA3BF' },
 });

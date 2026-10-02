@@ -3,28 +3,45 @@
  * 본문은 빈 줄로 문단을 나누고 "- " 줄은 목록으로 표시, 정보표(info)는 첫 문단 다음에 표시(디자인 배치와 동일).
  */
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Share } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Share, Image } from 'react-native';
+import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../components/AppHeader';
 import { getNotice } from '../api/noticesApi';
 import type { NoticeDetail } from '../api/noticesApi';
-import { formatNoticeDate, parseNoticeBody } from '../utils/notice';
+import { formatNoticeDate, parseNoticeBody, splitInline } from '../utils/notice';
 import type { BodyBlock } from '../utils/notice';
 import { colors, radius, spacing } from '../theme/designTokens';
+
+// ★ v18.41 — 웹 관리자에서 넣은 글자 꾸밈(**굵게** *기울임* __밑줄__) 표시
+function RichText({ text, style }: { text: string; style: any }) {
+  return (
+    <Text style={style}>
+      {splitInline(text).map((p, k) => (
+        <Text
+          key={k}
+          style={[p.bold && { fontWeight: '700' }, p.italic && { fontStyle: 'italic' }, p.underline && { textDecorationLine: 'underline' }]}
+        >
+          {p.text}
+        </Text>
+      ))}
+    </Text>
+  );
+}
 
 export function NoticeBody({ blocks }: { blocks: BodyBlock[] }) {
   return (
     <>
       {blocks.map((b, i) =>
         b.kind === 'p' ? (
-          <Text key={i} style={bodyStyles.paragraph}>{b.text}</Text>
+          <RichText key={i} text={b.text} style={bodyStyles.paragraph} />
         ) : (
           <View key={i} style={{ gap: 4 }}>
             {b.items.map((item, j) => (
               <View key={j} style={bodyStyles.bulletRow}>
-                <Text style={bodyStyles.bullet}>•</Text>
-                <Text style={[bodyStyles.paragraph, { flex: 1 }]}>{item}</Text>
+                <Text style={bodyStyles.bullet}>{b.kind === 'ol' ? `${j + 1}.` : '•'}</Text>
+                <RichText text={item} style={[bodyStyles.paragraph, { flex: 1 }]} />
               </View>
             ))}
           </View>
@@ -97,6 +114,11 @@ export default function NoticeDetailScreen() {
           <Text style={styles.meta}>{notice.author} · {formatNoticeDate(notice.published_at)}</Text>
         </View>
 
+        {/* ★ v18.41 — 웹 관리자에서 올린 첨부 이미지 */}
+        {!!notice.banner_path && (
+          <Image source={{ uri: `${SERVER_BASE_URL}/storage/${notice.banner_path}` }} style={styles.attachImage} resizeMode="contain" />
+        )}
+
         {firstBlock && <NoticeBody blocks={[firstBlock]} />}
 
         {!!notice.info?.length && (
@@ -158,6 +180,7 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontWeight: '700' },
   title: { fontSize: 19, fontWeight: '800', color: colors.textPrimary, lineHeight: 27 },
   meta: { fontSize: 12, color: colors.textSecondary },
+  attachImage: { width: '100%', aspectRatio: 1.6, borderRadius: radius.md, backgroundColor: colors.background },
 
   infoCard: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.borderCard, borderRadius: radius.lg, paddingHorizontal: 16, paddingVertical: 4 },
   infoRow: { flexDirection: 'row', gap: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },

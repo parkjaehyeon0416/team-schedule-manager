@@ -18,6 +18,7 @@ export interface AdminNotice {
   cta_route: string | null;
   is_pinned: boolean;
   author: string;
+  view_count: number; // ★ v18.41 앱에서 열어본 횟수
   starts_at: string | null;
   ends_at: string | null;
   published_at: string | null;
@@ -78,6 +79,17 @@ export const updateNotice = async (id: number, input: NoticeInput) => {
   const res = await axiosInstance.post<ApiResponse<AdminNotice>>(`/api/admin/notices/${id}`, toFormData(input), {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data.data;
+};
+
+// ★ v18.41 — 수정 화면용 단건 조회 / 목록에서 바로 중요 고정 토글
+export const getAdminNotice = async (id: number) => {
+  const res = await axiosInstance.get<ApiResponse<AdminNotice>>(`/api/admin/notices/${id}`);
+  return res.data.data;
+};
+
+export const togglePin = async (id: number) => {
+  const res = await axiosInstance.patch<ApiResponse<AdminNotice>>(`/api/admin/notices/${id}/pin`);
   return res.data.data;
 };
 

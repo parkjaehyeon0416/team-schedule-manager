@@ -66,7 +66,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('operator')->prefix('admin')->group(function () {
         Route::get('/dashboard',       [\App\Http\Controllers\Api\Admin\AdminDashboardController::class, 'index']);
         Route::get('/notices',         [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'index']);
+        Route::get('/notices/{id}',    [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'show']);
+        Route::patch('/notices/{id}/pin', [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'togglePin']);
         Route::post('/notices',        [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'store']);
+        // ★ v18.41 회원 관리
+        Route::get('/members',                  [\App\Http\Controllers\Api\Admin\AdminMemberController::class, 'index']);
+        Route::get('/members/{id}',             [\App\Http\Controllers\Api\Admin\AdminMemberController::class, 'show']);
+        Route::post('/members/{id}/suspend',    [\App\Http\Controllers\Api\Admin\AdminMemberController::class, 'suspend']);
+        Route::post('/members/{id}/unsuspend',  [\App\Http\Controllers\Api\Admin\AdminMemberController::class, 'unsuspend']);
         Route::post('/notices/{id}',   [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'update']);
         Route::delete('/notices/{id}', [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'destroy']);
     });

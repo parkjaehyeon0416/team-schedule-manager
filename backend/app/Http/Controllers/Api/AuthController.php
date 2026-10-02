@@ -139,6 +139,11 @@ class AuthController extends Controller
             }
         }
 
+        // ★ v18.41 — 운영자가 정지한 계정은 로그인 차단
+        if ($user->suspended_at) {
+            return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
+        }
+
         // 5. Sanctum 토큰 발급
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -197,6 +202,11 @@ class AuthController extends Controller
                 ]);
                 $user->load('role');
             }
+        }
+
+        // ★ v18.41 — 운영자가 정지한 계정은 로그인 차단
+        if ($user->suspended_at) {
+            return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;

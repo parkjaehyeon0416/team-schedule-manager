@@ -56,6 +56,31 @@ class AdminNoticeController extends Controller
         return ApiResponse::success($notice->fresh(), '수정되었습니다.');
     }
 
+    // ★ v18.41 — GET /api/admin/notices/{id} (수정 화면 진입용)
+    public function show(string $id)
+    {
+        $notice = Notice::find($id);
+        if (!$notice) {
+            return ApiResponse::error('공지를 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        return ApiResponse::success($notice, '조회 성공');
+    }
+
+    // ★ v18.41 — PATCH /api/admin/notices/{id}/pin  목록에서 바로 "중요 고정" 켜고 끄기
+    public function togglePin(string $id)
+    {
+        $notice = Notice::find($id);
+        if (!$notice) {
+            return ApiResponse::error('공지를 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        $notice->is_pinned = !$notice->is_pinned;
+        $notice->save();
+
+        return ApiResponse::success($notice, $notice->is_pinned ? '중요 공지로 고정했어요.' : '고정을 해제했어요.');
+    }
+
     // DELETE /api/admin/notices/{id}
     public function destroy(string $id)
     {

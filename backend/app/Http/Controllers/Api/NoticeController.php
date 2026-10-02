@@ -62,6 +62,9 @@ class NoticeController extends Controller
             return ApiResponse::error('공지를 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
         }
 
+        // ★ v18.41 — 운영자 웹 목록의 "조회" 수 (수정 시각은 건드리지 않음)
+        Notice::whereKey($notice->id)->increment('view_count');
+
         $base = Notice::published()->where('type', $notice->type);
         $prev = (clone $base)->where('published_at', '<', $notice->published_at)
             ->orderByDesc('published_at')->first(['id', 'title']);

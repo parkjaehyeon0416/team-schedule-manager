@@ -39,6 +39,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'suspended_at' => 'datetime', // ★ v18.41 회원 관리 — 계정 정지
         'password' => 'hashed',
     ];
 

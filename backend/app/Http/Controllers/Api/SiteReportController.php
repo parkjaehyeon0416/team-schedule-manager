@@ -58,8 +58,9 @@ class SiteReportController extends Controller
             return ApiResponse::error('일정을 찾을 수 없습니다.', ErrorCode::SCHEDULE_NOT_FOUND, 404);
         }
 
-        if (!$schedule->site_id) {
-            return ApiResponse::error('현장이 연결되지 않은 일정은 보고서를 생성할 수 없습니다.',
+        // ★ v18.35 — 주소만 적은 일정이면 그 주소로 현장을 자동 생성해 연결
+        if (!$schedule->ensureSite($user->id)) {
+            return ApiResponse::error('일정에 현장이나 주소를 먼저 지정해야 보고서를 만들 수 있습니다.',
                 ErrorCode::REPORT_NO_SITE_LINKED, 422);
         }
 
@@ -206,6 +207,11 @@ class SiteReportController extends Controller
 
     private function renderAndStorePdf(SiteReport $report, Schedule $schedule): string
     {
+        // ★ v18.35 — 사진이 여러 장이면 이미지 디코딩에 메모리를 많이 써서 기본 128M로는 부족할 수 있음.
+        //   서버 RAM이 1GB라 이 요청에서만 256M로 올림.
+        ini_set('memory_limit', '256M');
+
+        $schedule->loadMissing('workTypeRelation');
         $site = $schedule->site;
 
         $photos = SiteFile::where('site_id', $schedule->site_id)

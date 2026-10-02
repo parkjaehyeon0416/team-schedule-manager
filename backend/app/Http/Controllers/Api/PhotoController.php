@@ -118,8 +118,9 @@ class PhotoController extends Controller
                 ErrorCode::SCHEDULE_NOT_FOUND, 404);
         }
 
-        if (!$schedule->site_id) {
-            return ApiResponse::error('이 일정에는 현장이 연결되어 있지 않아 사진을 업로드할 수 없습니다.',
+        // ★ v18.35 — 주소만 적은 일정이면 그 주소로 현장을 자동 생성해 연결
+        if (!$schedule->ensureSite($user->id)) {
+            return ApiResponse::error('일정에 현장이나 주소를 먼저 지정해야 사진을 올릴 수 있습니다.',
                 ErrorCode::PHOTO_NO_SITE_LINKED, 422);
         }
 

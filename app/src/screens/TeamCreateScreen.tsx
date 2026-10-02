@@ -44,7 +44,7 @@ export default function TeamCreateScreen() {
   };
 
   const handlePickPhoto = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
+    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, maxWidth: 800, maxHeight: 800 });
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
     setPhotoUri(asset.uri);

@@ -81,7 +81,7 @@ export default function SiteFormScreen() {
   };
 
   const pickPhoto = async (category: 'before' | 'after') => {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
+    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, maxWidth: 1600, maxHeight: 1600 });
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
     const photo: QueuedPhoto = { uri: asset.uri, name: asset.fileName ?? 'photo.jpg', type: asset.type ?? 'image/jpeg' };

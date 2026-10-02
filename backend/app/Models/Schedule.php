@@ -61,6 +61,38 @@ class Schedule extends Model
         return $this->belongsTo(Site::class);
     }
 
+    /**
+     * ★ v18.35 — 현장 등록 없이 주소만 적은 일정에서 사진 업로드/보고서 생성을 할 때,
+     *   그 주소로 현장을 자동 생성해 연결한다(사진·보고서가 현장 단위로 저장되는 구조라 필요).
+     *   주소/상세주소는 현장으로 옮기고 일정 쪽은 비움 — 표시할 때 중복되지 않게.
+     *   이미 현장이 있으면 그대로, 주소도 없으면 null.
+     */
+    public function ensureSite(int $userId): ?int
+    {
+        if ($this->site_id) {
+            return $this->site_id;
+        }
+        if (!$this->address) {
+            return null;
+        }
+
+        $site = Site::create([
+            'address'    => $this->address,
+            'apt_name'   => $this->address_detail,
+            'team_id'    => $this->team_id,
+            'owner_id'   => $this->team_id ? null : ($this->owner_id ?? $userId),
+            'created_by' => $userId,
+        ]);
+
+        $this->site_id        = $site->id;
+        $this->address        = null;
+        $this->address_detail = null;
+        // 위치 정보만 바뀌므로 공수 집계 Observer는 돌릴 필요 없음
+        $this->saveQuietly();
+
+        return $site->id;
+    }
+
     // ────────────────────────────────────────────────
     // [관계 2] 하나의 일정은 하나의 팀에 속함
     //   $schedule->team  →  Team 객체 반환

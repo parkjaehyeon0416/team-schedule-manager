@@ -42,7 +42,7 @@
 
 <div class="cover">
     <h1>{{ $report->title }}</h1>
-    <div class="subtitle">Team Schedule Manager · 시공 완료 보고서</div>
+    <div class="subtitle">WorkMate · 시공 완료 보고서</div>
 </div>
 
 <table class="meta-table">
@@ -54,15 +54,15 @@
         <td class="label">현장</td>
         <td colspan="3">
             @if($site)
-                {{ $site->apt_name }} {{ $site->dong }}동 {{ $site->ho }}호 ({{ $site->address }})
+                {{ collect([$site->apt_name, $site->dong ? $site->dong.'동' : null, $site->ho ? $site->ho.'호' : null])->filter()->implode(' ') ?: $site->address }}@if($site->apt_name || $site->dong || $site->ho) ({{ $site->address }})@endif
             @else
                 -
             @endif
         </td>
     </tr>
     <tr>
-        <td class="label">작업일</td><td>{{ $schedule->date }}</td>
-        <td class="label">공정</td><td>{{ $schedule->work_type ?? '-' }}</td>
+        <td class="label">작업일</td><td>{{ IlluminateSupportCarbon::parse($schedule->date)->format('Y-m-d') }}</td>
+        <td class="label">공정</td><td>{{ $schedule->workTypeRelation?->name ?? $schedule->work_type ?? '-' }}</td>
     </tr>
     <tr>
         <td class="label">면적</td><td>{{ $schedule->area_m2 ? $schedule->area_m2.'㎡' : '-' }}</td>
@@ -115,7 +115,7 @@
 @endif
 
 <div class="footer">
-    본 보고서는 Team Schedule Manager에서 자동 생성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
+    본 보고서는 WorkMate에서 자동 생성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
 </div>
 
 </body>

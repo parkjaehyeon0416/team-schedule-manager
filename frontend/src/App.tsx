@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Notices from "./pages/Notices";
 import ComingSoon from "./pages/ComingSoon";
+import SetPassword from "./pages/SetPassword";
 import { useAuthStore } from "./store/authStore";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
       <BrowserRouter basename="/admin">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/set-password" element={<SetPassword />} />
           <Route path="/" element={isLoggedIn ? <AdminLayout /> : <Navigate to="/login" />}>
             <Route index element={<Dashboard />} />
             <Route path="members" element={<ComingSoon title="회원 관리" description="회원 목록 조회·검색, 계정 정지/해제, 탈퇴 처리" />} />

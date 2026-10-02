@@ -39,6 +39,10 @@ Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
 // ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.
 Route::get('/report/{token}', [SiteReportController::class, 'publicView']);
 
+// ★ v18.40 — 운영자 비밀번호 설정(문자로 받은 1회용 링크에서 호출, 로그인 불필요)
+Route::post('/operator/set-password', [\App\Http\Controllers\Api\Admin\OperatorPasswordController::class, 'store'])
+    ->middleware('throttle:10,1');
+
 // ★ v18.36 — 앱에서 PDF 다운로드용 10분짜리 서명 링크(인증 대신 서명 검증). 링크는 로그인 라우트의 pdf-link에서 발급.
 Route::middleware('signed:relative')->group(function () {
     Route::get('/files/quotes/{id}/pdf', [QuoteController::class, 'signedPdf'])->name('quotes.pdf.signed');

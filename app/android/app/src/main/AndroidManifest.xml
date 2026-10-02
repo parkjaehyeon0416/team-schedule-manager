@@ -10,6 +10,8 @@
 
     <!-- ★ v11 추가 — 카메라 촬영 권한 -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- ★ v18.38 — 휴대폰 푸시 알림 표시(안드로이드 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- ★ v18.18 — 카카오톡 앱으로 로그인 전환(app switch)을 위한 패키지 가시성(Android 11+) -->

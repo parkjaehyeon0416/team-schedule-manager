@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services" // ★ v18.38 — 휴대폰 푸시(Firebase)
 
 // ★ v18.18 — 카카오 로그인 SDK 저장소 (전역 repositories에 없으므로 모듈에서 직접 추가)
 repositories {

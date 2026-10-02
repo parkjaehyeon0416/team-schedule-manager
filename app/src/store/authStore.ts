@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { unregisterPush } from '../utils/push';
 
 interface User {
   id: number;
@@ -60,6 +61,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   // 로그아웃 — 저장소 비우기 + 메모리 상태 리셋
   logout: async () => {
+    // ★ v18.38 — 서버 인증 토큰이 남아 있을 때 먼저 이 기기의 푸시 등록을 해제
+    await unregisterPush();
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
     set({ user: null, token: null, isLoggedIn: false, isLoading: false });

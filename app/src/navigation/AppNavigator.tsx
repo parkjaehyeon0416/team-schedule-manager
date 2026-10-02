@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { navigationRef, flushPendingNavigation } from './navigationRef';
+import { registerPush } from '../utils/push';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
 import BottomTabNavigator from './BottomTabNavigator';
@@ -68,12 +70,17 @@ export default function AppNavigator() {
     return () => clearTimeout(t);
   }, [restoreAuth]);
 
+  // ★ v18.38 — 로그인 상태가 되면 이 기기를 푸시 수신 기기로 등록
+  useEffect(() => {
+    if (isLoggedIn) registerPush();
+  }, [isLoggedIn]);
+
   if (isLoading || !minSplashDone) {
     return <SplashScreen />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>

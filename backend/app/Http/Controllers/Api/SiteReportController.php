@@ -85,6 +85,10 @@ class SiteReportController extends Controller
         try {
             $pdfPath = $this->renderAndStorePdf($report, $schedule);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('보고서 PDF 생성 실패', [
+                'report_id' => $report->id, 'schedule_id' => $schedule->id, 'error' => $e->getMessage(),
+                'at' => $e->getFile() . ':' . $e->getLine(),
+            ]);
             $report->delete();
             return ApiResponse::error('PDF 생성 중 오류가 발생했습니다.', ErrorCode::REPORT_PDF_FAILED, 500);
         }

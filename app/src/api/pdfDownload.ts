@@ -25,3 +25,12 @@ export async function getQuoteShareUrl(quoteId: number): Promise<string> {
 export function downloadTaxPdf(year: number): Promise<void> {
   return openSignedPath('/tax-summary/pdf-link', { year });
 }
+
+// ★ v18.40 — 진짜 엑셀(.xlsx) 다운로드 (PDF와 같은 10분 서명 링크 방식)
+export function downloadQuoteXlsx(quoteId: number): Promise<void> {
+  return openSignedPath(`/quotes/${quoteId}/xlsx-link`);
+}
+
+export function downloadTaxXlsx(from: string, to: string, items: string[]): Promise<void> {
+  return openSignedPath('/tax-summary/export-link', { from, to, items: items.join(',') });
+}

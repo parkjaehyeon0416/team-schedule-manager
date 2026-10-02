@@ -8,6 +8,7 @@ use App\Models\MonthlySummary;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Services\MonthlySummaryService;
+use App\Services\XlsxBuilder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -111,29 +112,92 @@ class TaxSummaryController extends Controller
     /**
      * CSV 자료 내보내기 — ★ DESIGN-CANVAS(TAX_EXPORT) 추가 (2026-10-02)
      * GET /api/tax-summary/export?from=2026-01&to=2026-09&items=income,wage,tax,schedule
-     *   PhpSpreadsheet 등 엑셀 생성 패키지가 설치돼 있지 않아 "엑셀" 선택도 CSV로 생성함
-     *   (대부분의 스프레드시트 프로그램이 CSV를 그대로 열 수 있어 실사용엔 문제 없음).
-     *   파일 자체를 응답으로 반환(download)하지 않고 텍스트로 반환 — 모바일에서 인증 토큰
-     *   없이 여는 문제(PDF 다운로드와 동일한 제약)를 피하기 위해, 앱이 받은 텍스트를
-     *   OS 공유 시트(Share)로 저장/전달하도록 함.
+     *   텍스트로 반환 → 앱이 OS 공유 시트로 저장/전달. (★ v18.40 엑셀은 아래 export-link로 진짜 .xlsx)
      */
     public function exportCsv(Request $request)
     {
-        $data = $request->validate([
+        $data = $this->validateExport($request);
+        [$summary, $schedules] = $this->buildExportRows($request->user()->id, $data);
+
+        $lines = array_map(fn($r) => implode(',', $r), $summary);
+        if ($schedules !== null) {
+            $lines[] = '';
+            $lines[] = '원본 일정';
+            foreach ($schedules as $r) {
+                $lines[] = implode(',', array_map(fn($v) => str_replace(',', ' ', (string) $v), $r));
+            }
+        }
+
+        $csv = "ï»¿" . implode("
+", $lines); // UTF-8 BOM — 엑셀에서 한글 깨짐 방지
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * ★ v18.40 — 엑셀(.xlsx) 다운로드용 10분짜리 서명 링크 (PDF와 같은 방식: 앱이 브라우저로 열어 저장)
+     * GET /api/tax-summary/export-link?from=2026-01&to=2026-09&items=income,wage
+     */
+    public function exportLink(Request $request)
+    {
+        $data = $this->validateExport($request);
+
+        $path = URL::temporarySignedRoute('tax.xlsx.signed', now()->addMinutes(10), [
+            'user'  => $request->user()->id,
+            'from'  => $data['from'],
+            'to'    => $data['to'],
+            'items' => $data['items'] ?? '',
+        ], absolute: false);
+
+        return ApiResponse::success(['path' => $path], '엑셀 링크 발급 성공');
+    }
+
+    /**
+     * ★ v18.40 — 서명 링크로 여는 세무 자료 엑셀 (요약 시트 + 원본 일정 시트)
+     * GET /api/files/tax/{user}/xlsx?from=..&to=..&items=..
+     */
+    public function signedXlsx(Request $request, int $user)
+    {
+        $owner = User::find($user);
+        if (!$owner) {
+            return ApiResponse::error('존재하지 않는 사용자입니다.', 'ERR_NOT_FOUND', 404);
+        }
+
+        $data = $this->validateExport($request);
+        [$summary, $schedules] = $this->buildExportRows($owner->id, $data);
+
+        $sheets = ['월별 요약' => $summary];
+        if ($schedules !== null) {
+            $sheets['원본 일정'] = $schedules;
+        }
+
+        return XlsxBuilder::download("세무자료_{$data['from']}_{$data['to']}.xlsx", $sheets);
+    }
+
+    private function validateExport(Request $request): array
+    {
+        return $request->validate([
             'from'  => 'required|date_format:Y-m',
             'to'    => 'required|date_format:Y-m',
             'items' => 'nullable|string',
         ]);
+    }
 
-        $user = $request->user();
-        $items = $data['items'] ? explode(',', $data['items']) : ['income', 'wage', 'tax'];
+    /**
+     * 내보내기 공통 데이터 — [월별 요약 행들(첫 행은 헤더), 원본 일정 행들(선택 안 했으면 null)]
+     */
+    private function buildExportRows(int $userId, array $data): array
+    {
+        $items = !empty($data['items']) ? explode(',', $data['items']) : ['income', 'wage', 'tax'];
 
         [$fromYear, $fromMonth] = array_map('intval', explode('-', $data['from']));
         [$toYear, $toMonth] = array_map('intval', explode('-', $data['to']));
 
         $rows = [];
         for ($y = $fromYear; $y <= $toYear; $y++) {
-            foreach ($this->buildYearlySummaries($user->id, $y) as $row) {
+            foreach ($this->buildYearlySummaries($userId, $y) as $row) {
                 $ym = $y * 100 + $row['month'];
                 if ($ym < $fromYear * 100 + $fromMonth || $ym > $toYear * 100 + $toMonth) {
                     continue;
@@ -147,40 +211,34 @@ class TaxSummaryController extends Controller
         if (in_array('income', $items)) { $header[] = '총수입'; $header[] = '경비'; }
         if (in_array('tax', $items)) { $header[] = '예상원천세'; $header[] = '실수령액'; }
 
-        $lines = [implode(',', $header)];
+        $summary = [$header];
         foreach ($rows as $row) {
             $line = [$row['year_month']];
             if (in_array('wage', $items)) { $line[] = $row['total_work_units']; $line[] = $row['work_days']; }
             if (in_array('income', $items)) { $line[] = $row['total_income']; $line[] = $row['total_expenses']; }
             if (in_array('tax', $items)) { $line[] = $row['estimated_tax']; $line[] = $row['net_income']; }
-            $lines[] = implode(',', $line);
+            $summary[] = $line;
         }
 
+        $schedules = null;
         if (in_array('schedule', $items)) {
-            $schedules = Schedule::query()
+            $list = Schedule::query()
                 ->join('schedule_users', 'schedules.id', '=', 'schedule_users.schedule_id')
                 ->whereNull('schedules.deleted_at')
                 ->whereNull('schedule_users.deleted_at')
-                ->where('schedule_users.user_id', $user->id)
+                ->where('schedule_users.user_id', $userId)
                 ->whereBetween('schedules.date', ["{$data['from']}-01", "{$data['to']}-31"])
                 ->orderBy('schedules.date')
                 ->select('schedules.date', 'schedules.memo', 'schedules.daily_wage')
                 ->get();
 
-            $lines[] = '';
-            $lines[] = '원본 일정';
-            $lines[] = '날짜,메모,금액';
-            foreach ($schedules as $s) {
-                $memo = str_replace(',', ' ', (string) $s->memo);
-                $lines[] = "{$s->date},{$memo},{$s->daily_wage}";
+            $schedules = [['날짜', '메모', '금액']];
+            foreach ($list as $s) {
+                $schedules[] = [substr((string) $s->date, 0, 10), (string) $s->memo, $s->daily_wage];
             }
         }
 
-        $csv = "\xEF\xBB\xBF" . implode("\n", $lines); // UTF-8 BOM — 엑셀에서 한글 깨짐 방지
-
-        return response($csv, 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return [$summary, $schedules];
     }
 
     /**

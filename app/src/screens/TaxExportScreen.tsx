@@ -6,18 +6,18 @@
  */
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ScrollView, ActivityIndicator, Share } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
 import { exportTaxCsv } from '../api/taxSummaryApi';
-import { downloadTaxPdf } from '../api/pdfDownload';
+import { downloadTaxPdf, downloadTaxXlsx } from '../api/pdfDownload';
 import { colors, radius, spacing } from '../theme/designTokens';
 
 const FORMATS = [
-  { key: 'xlsx', title: 'Excel', sub: '엑셀에서 바로 열리는 CSV로 생성돼요' },
+  { key: 'xlsx', title: 'Excel', sub: '엑셀 파일(.xlsx)로 저장돼요' },
   { key: 'pdf', title: 'PDF', sub: '보관 · 출력용' },
   { key: 'csv', title: 'CSV', sub: '다른 프로그램 연동용' },
 ] as const;
@@ -31,7 +31,6 @@ const ITEMS = [
 ] as const;
 
 export default function TaxExportScreen() {
-  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const now = new Date();
   const [from, setFrom] = useState(new Date(route.params?.year ?? now.getFullYear(), 0, 1));
@@ -59,9 +58,21 @@ export default function TaxExportScreen() {
       }
       return;
     }
+    const selectedItems = Object.entries(items).filter(([, on]) => on).map(([key]) => key);
+    if (format === 'xlsx') {
+      // ★ v18.40 — 진짜 엑셀 파일(월별 요약 시트 + 원본 일정 시트)
+      setGenerating(true);
+      try {
+        await downloadTaxXlsx(dayjs(from).format('YYYY-MM'), dayjs(to).format('YYYY-MM'), selectedItems);
+      } catch (e: any) {
+        Alert.alert('생성 실패', e?.response?.data?.message || '엑셀 파일을 만들지 못했습니다.');
+      } finally {
+        setGenerating(false);
+      }
+      return;
+    }
     setGenerating(true);
     try {
-      const selectedItems = Object.entries(items).filter(([, on]) => on).map(([key]) => key);
       const csv = await exportTaxCsv(dayjs(from).format('YYYY-MM'), dayjs(to).format('YYYY-MM'), selectedItems);
       await Share.share({
         title: `세무자료_${dayjs(from).format('YYYYMM')}-${dayjs(to).format('YYYYMM')}.csv`,

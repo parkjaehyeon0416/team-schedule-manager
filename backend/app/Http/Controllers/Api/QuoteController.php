@@ -12,6 +12,7 @@ use App\Models\Schedule;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\UserMaterial;
+use App\Services\XlsxBuilder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
@@ -352,6 +353,52 @@ class QuoteController extends Controller
         $path = URL::temporarySignedRoute('quotes.pdf.signed', now()->addMinutes(10), ['id' => $quote->id], absolute: false);
 
         return ApiResponse::success(['path' => $path], 'PDF 링크 발급 성공');
+    }
+
+    /**
+     * ★ v18.40 — 견적서 엑셀(.xlsx) 다운로드용 10분짜리 서명 링크
+     * GET /api/quotes/{id}/xlsx-link
+     */
+    public function xlsxLink(Request $request, string $id)
+    {
+        $quote = $this->findQuote($request, $id);
+        if (!$quote) {
+            return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
+
+        $path = URL::temporarySignedRoute('quotes.xlsx.signed', now()->addMinutes(10), ['id' => $quote->id], absolute: false);
+
+        return ApiResponse::success(['path' => $path], '엑셀 링크 발급 성공');
+    }
+
+    /**
+     * ★ v18.40 — 서명 링크로 여는 견적서 엑셀 (항목표 + 소계·할인·부가세·합계)
+     * GET /api/files/quotes/{id}/xlsx
+     */
+    public function signedXlsx(string $id)
+    {
+        $quote = Quote::with('lines')->find($id);
+        if (!$quote) {
+            return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
+
+        $rows = [['항목', '규격/설명', '수량', '단위', '단가', '금액']];
+        foreach ($quote->lines as $l) {
+            $amount = $l->amount ?? ((float) $l->quantity * (float) $l->unit_price);
+            $rows[] = [$l->name, $l->spec ?? '', $l->quantity, $l->unit, $l->unit_price, $amount];
+        }
+        $rows[] = [];
+        $rows[] = ['', '', '', '', '공급가', $quote->subtotal_amount];
+        if ((float) $quote->discount_amount > 0) {
+            $rows[] = ['', '', '', '', '할인', -1 * (float) $quote->discount_amount];
+        }
+        $rows[] = ['', '', '', '', '부가세', $quote->vat_amount ?? 0];
+        $rows[] = ['', '', '', '', '합계', $quote->total_amount];
+        $rows[] = [];
+        $rows[] = ['고객명', $quote->client_name ?? '-'];
+        $rows[] = ['작성일', $quote->created_at?->format('Y-m-d')];
+
+        return XlsxBuilder::download("견적서_E-{$quote->id}.xlsx", ['견적서' => $rows]);
     }
 
     /**

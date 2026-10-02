@@ -6,19 +6,18 @@
  */
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView, Share } from 'react-native';
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import { getQuote, updateQuoteStatus } from '../api/quoteApi';
-import { downloadQuotePdf, getQuoteShareUrl } from '../api/pdfDownload';
+import { downloadQuotePdf, downloadQuoteXlsx, getQuoteShareUrl } from '../api/pdfDownload';
 import { useAuthStore } from '../store/authStore';
 import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
 
 export default function QuotePreviewScreen() {
-  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const quoteId: number = route.params?.quoteId;
   const { user } = useAuthStore();
@@ -33,25 +32,16 @@ export default function QuotePreviewScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const buildCsv = (q: Quote): string => {
-    const lines = ['항목,단위,수량,단가,금액'];
-    (q.lines ?? []).forEach(l => {
-      const amount = l.amount ?? Number(l.quantity) * Number(l.unit_price);
-      lines.push(`${l.name},${l.unit},${l.quantity},${l.unit_price},${amount}`);
-    });
-    lines.push('');
-    lines.push(`공급가,,,,${q.subtotal_amount}`);
-    if (Number(q.discount_amount) > 0) lines.push(`할인,,,,-${q.discount_amount}`);
-    lines.push(`부가세,,,,${q.vat_amount ?? 0}`);
-    lines.push(`합계,,,,${q.total_amount}`);
-    return "﻿" + lines.join('\n'); // UTF-8 BOM — 엑셀 한글 깨짐 방지
-  };
-
   const handleExport = () => {
-    // ★ v18.36 — PDF 추가. 안드로이드 알림창은 버튼 3개까지라 Excel/CSV는 하나로 합침(같은 CSV 파일)
+    // ★ v18.40 — 서버에서 만든 진짜 엑셀(.xlsx)과 PDF를 브라우저로 내려받음 (기존 CSV 텍스트 공유는 대체)
     Alert.alert('자료 저장', '어떤 형식으로 저장할까요?', [
       { text: '취소', style: 'cancel' },
-      { text: 'Excel·CSV', onPress: () => Share.share({ title: `견적서_E-${quote!.id}.csv`, message: buildCsv(quote!) }).catch(() => {}) },
+      // ★ v18.40 — 진짜 엑셀(.xlsx) 파일로 다운로드
+      {
+        text: 'Excel',
+        onPress: () => downloadQuoteXlsx(quote!.id).catch((e: any) =>
+          Alert.alert('엑셀 저장 실패', e?.response?.data?.message || '엑셀 파일을 만들지 못했습니다.')),
+      },
       {
         text: 'PDF',
         onPress: () => downloadQuotePdf(quote!.id).catch((e: any) =>

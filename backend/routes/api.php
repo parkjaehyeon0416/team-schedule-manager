@@ -43,6 +43,9 @@ Route::get('/report/{token}', [SiteReportController::class, 'publicView']);
 Route::middleware('signed:relative')->group(function () {
     Route::get('/files/quotes/{id}/pdf', [QuoteController::class, 'signedPdf'])->name('quotes.pdf.signed');
     Route::get('/files/tax/{user}/{year}/pdf', [TaxSummaryController::class, 'signedPdf'])->name('tax.pdf.signed');
+    // ★ v18.40 — 진짜 엑셀(.xlsx)
+    Route::get('/files/quotes/{id}/xlsx', [QuoteController::class, 'signedXlsx'])->name('quotes.xlsx.signed');
+    Route::get('/files/tax/{user}/xlsx', [TaxSummaryController::class, 'signedXlsx'])->name('tax.xlsx.signed');
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -140,6 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/quotes/{id}/approve', [QuoteController::class, 'approve']);
     Route::get('/quotes/{id}/pdf',     [QuoteController::class, 'downloadPdf']);
     Route::get('/quotes/{id}/pdf-link', [QuoteController::class, 'pdfLink']); // ★ v18.36
+    Route::get('/quotes/{id}/xlsx-link', [QuoteController::class, 'xlsxLink']); // ★ v18.40 엑셀
     Route::get('/quotes/{id}/share-link', [QuoteController::class, 'shareLink']); // ★ v18.38 고객 발송용 30일 링크
     Route::delete('/quotes/{id}',      [QuoteController::class, 'destroy']);
 
@@ -184,6 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ═══════════════════════════════════════════════════════════
     Route::get('/tax-summary',     [TaxSummaryController::class, 'show']);
     Route::get('/tax-summary/pdf', [TaxSummaryController::class, 'downloadPdf']);
+    Route::get('/tax-summary/export-link', [TaxSummaryController::class, 'exportLink']); // ★ v18.40 엑셀
     Route::get('/tax-summary/pdf-link', [TaxSummaryController::class, 'pdfLink']); // ★ v18.36
     Route::get('/tax-summary/export', [TaxSummaryController::class, 'exportCsv']); // ★ DESIGN-CANVAS(TAX_EXPORT) 추가
 

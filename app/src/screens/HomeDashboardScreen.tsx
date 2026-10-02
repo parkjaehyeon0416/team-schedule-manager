@@ -4,29 +4,33 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { getMonthlySummary, getSchedules } from '../api/schedulesApi';
 import { getQuotes } from '../api/quoteApi';
-import { getLatestNotice } from '../api/noticesApi';
+import { getLatestEvent, getLatestNotice } from '../api/noticesApi';
 import type { NoticeSummary } from '../api/noticesApi';
 import type { MonthlySummary, Schedule } from '../types/api';
 import { formatShortKRW } from '../utils/format';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
 import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
+import { ICONS } from '../assets/icons';
+import type { IconKey } from '../assets/icons';
+import dayjs from 'dayjs';
 
-const MENU_ITEMS: { key: string; label: string; icon: string; bg: string; fg: string; route: string }[] = [
-  { key: 'schedule', label: '일정', icon: 'calendar-month-outline', bg: '#E8F3FF', fg: colors.primaryDark, route: 'Schedule' },
-  { key: 'income', label: '내수입', icon: 'currency-krw', bg: colors.warningBg, fg: colors.accentDark, route: 'IncomeList' },
-  { key: 'team', label: '팀관리', icon: 'account-group-outline', bg: '#E8F3FF', fg: colors.primaryDark, route: 'Team' },
-  { key: 'quote', label: '견적서', icon: 'file-document-edit-outline', bg: colors.successBg, fg: colors.secondary, route: 'QuoteList' },
-  { key: 'card', label: '내 명함', icon: 'card-account-details-outline', bg: '#E8F3FF', fg: colors.primaryDark, route: 'BusinessCard' },
-  { key: 'tax', label: '세무 자료', icon: 'receipt', bg: colors.warningBg, fg: colors.accentDark, route: 'TaxSummary' },
-  { key: 'site', label: '현장 목록', icon: 'map-marker-outline', bg: colors.successBg, fg: colors.secondary, route: 'SiteList' },
-  { key: 'notice', label: '공지·이벤트', icon: 'bullhorn-outline', bg: '#EEF2F7', fg: colors.textSecondary, route: 'NoticeList' },
+// ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체. 마지막 공지·이벤트는 디자인처럼 선 아이콘 유지
+const MENU_ITEMS: { key: string; label: string; image?: IconKey; icon?: string; route: string }[] = [
+  { key: 'schedule', label: '일정', image: 'schedule', route: 'Schedule' },
+  { key: 'income', label: '내수입', image: 'income', route: 'IncomeList' },
+  { key: 'team', label: '팀관리', image: 'team', route: 'Team' },
+  { key: 'quote', label: '견적서', image: 'quote', route: 'QuoteList' },
+  { key: 'card', label: '내 명함', image: 'card', route: 'BusinessCard' },
+  { key: 'tax', label: '세무 자료', image: 'tax', route: 'TaxSummary' },
+  { key: 'site', label: '현장 목록', image: 'site', route: 'SiteList' },
+  { key: 'notice', label: '공지·이벤트', icon: 'bullhorn-outline', route: 'NoticeList' },
 ];
 
 export default function HomeDashboardScreen() {
@@ -35,6 +39,7 @@ export default function HomeDashboardScreen() {
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [prevSummary, setPrevSummary] = useState<MonthlySummary | null>(null);
   const [latestNotice, setLatestNotice] = useState<NoticeSummary | null>(null);
+  const [latestEvent, setLatestEvent] = useState<NoticeSummary | null>(null);
   const [todaySchedules, setTodaySchedules] = useState<Schedule[]>([]);
   const [quoteCounts, setQuoteCounts] = useState<{ draft: number; sent: number; done: number } | null>(null);
 
@@ -74,6 +79,11 @@ export default function HomeDashboardScreen() {
     } catch {
       setLatestNotice(null);
     }
+    try {
+      setLatestEvent(await getLatestEvent());
+    } catch {
+      setLatestEvent(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
@@ -95,7 +105,7 @@ export default function HomeDashboardScreen() {
     >
       <View style={styles.headerRow}>
         <View style={styles.brandRow}>
-          <Icon name="home-city-outline" size={26} color={colors.primary} />
+          <Image source={ICONS.logo} style={styles.brandLogo} />
           <Text style={styles.brandText}>
             Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
           </Text>
@@ -145,8 +155,12 @@ export default function HomeDashboardScreen() {
               style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.6 }]}
               onPress={() => navigation.navigate(item.route)}
             >
-              <View style={[styles.menuIcon, { backgroundColor: item.bg }]}>
-                <Icon name={item.icon} size={22} color={item.fg} />
+              <View style={styles.menuIcon}>
+                {item.image ? (
+                  <Image source={ICONS[item.image]} style={styles.menuImage} />
+                ) : (
+                  <Icon name={item.icon!} size={24} color={colors.textSecondary} />
+                )}
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
             </Pressable>
@@ -159,7 +173,7 @@ export default function HomeDashboardScreen() {
           style={({ pressed }) => [styles.noticeStrip, pressed && { opacity: 0.8 }]}
           onPress={() => navigation.navigate('NoticeList')}
         >
-          <Icon name="bullhorn-outline" size={18} color={colors.primaryDark} />
+          <Image source={ICONS.megaphone} style={styles.noticeStripIcon} />
           <View style={styles.noticeBadge}>
             <Text style={styles.noticeBadgeText}>공지</Text>
           </View>
@@ -210,6 +224,22 @@ export default function HomeDashboardScreen() {
             </React.Fragment>
           ))}
         </View>
+      )}
+
+      {/* ★ v18.36 — 디자인의 홈 이벤트 배너. 진행중 이벤트가 있을 때만 */}
+      {latestEvent && (
+        <Pressable
+          style={({ pressed }) => [styles.eventCard, pressed && { opacity: 0.85 }]}
+          onPress={() => navigation.navigate('EventDetail', { id: latestEvent.id })}
+        >
+          <View style={styles.eventTextBox}>
+            <Text style={styles.eventLabel}>
+              EVENT{latestEvent.ends_at ? ` · ~${dayjs(latestEvent.ends_at).format('M.DD')}` : ''}
+            </Text>
+            <Text style={styles.eventTitle} numberOfLines={2}>{latestEvent.summary || latestEvent.title}</Text>
+          </View>
+          <Image source={ICONS.gift} style={styles.eventImage} />
+        </Pressable>
       )}
 
       {quoteCounts && (
@@ -323,7 +353,37 @@ const styles = StyleSheet.create({
   },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   menuItem: { width: '25%', alignItems: 'center', gap: 6, marginBottom: spacing.sm },
-  menuIcon: { width: 52, height: 52, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
+  menuIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: '#E3EEFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#102A56',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuImage: { width: 41, height: 41, resizeMode: 'contain' },
+  brandLogo: { width: 32, height: 32, resizeMode: 'contain' },
+  noticeStripIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFF4E5',
+    marginBottom: spacing.md,
+  },
+  eventTextBox: { flex: 1, gap: 4 },
+  eventLabel: { fontSize: 12, fontWeight: '700', color: '#B95E00' },
+  eventTitle: { fontSize: 15, fontWeight: '800', lineHeight: 21, color: colors.textPrimary },
+  eventImage: { width: 64, height: 64, resizeMode: 'contain' },
   menuLabel: { fontSize: 12, color: colors.textPrimary },
 
   noticeStrip: {

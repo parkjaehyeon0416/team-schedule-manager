@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
@@ -45,6 +44,7 @@ import LegalDocumentScreen from '../screens/LegalDocumentScreen';
 import AppInfoScreen from '../screens/AppInfoScreen';
 import OpenSourceLicensesScreen from '../screens/OpenSourceLicensesScreen';
 import ProfilePublicScreen from '../screens/ProfilePublicScreen';
+import SplashScreen from '../screens/SplashScreen';
 import NoticeListScreen from '../screens/NoticeListScreen';
 import NoticeDetailScreen from '../screens/NoticeDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
@@ -59,16 +59,17 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { isLoggedIn, isLoading, restoreAuth } = useAuthStore();
 
+  // ★ v18.36 — 스플래시: 로그인 복원이 금방 끝나도 로고 애니메이션이 보이도록 최소 1.5초 유지
+  const [minSplashDone, setMinSplashDone] = useState(false);
+
   useEffect(() => {
     restoreAuth();
+    const t = setTimeout(() => setMinSplashDone(true), 1500);
+    return () => clearTimeout(t);
   }, [restoreAuth]);
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#2E75B6" />
-      </View>
-    );
+  if (isLoading || !minSplashDone) {
+    return <SplashScreen />;
   }
 
   return (

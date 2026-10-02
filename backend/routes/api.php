@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/notices',        [NoticeController::class, 'index']);
     Route::get('/notices/latest', [NoticeController::class, 'latest']);
+    Route::get('/notices/latest-event', [NoticeController::class, 'latestEvent']); // ★ v18.36
     Route::get('/notices/{id}',   [NoticeController::class, 'show']);
 
     // ★ v18.23 — 내 프로필 설정(연락처/카카오톡 아이디/아바타)

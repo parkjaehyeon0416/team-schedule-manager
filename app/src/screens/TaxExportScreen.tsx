@@ -13,6 +13,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
 import { exportTaxCsv } from '../api/taxSummaryApi';
+import { downloadTaxPdf } from '../api/pdfDownload';
 import { colors, radius, spacing } from '../theme/designTokens';
 
 const FORMATS = [
@@ -47,7 +48,15 @@ export default function TaxExportScreen() {
 
   const handleGenerate = async () => {
     if (format === 'pdf') {
-      Alert.alert('안내', 'PDF 다운로드는 웹 대시보드에서 가능합니다.');
+      // ★ v18.36 — 서버 PDF는 연 단위 정리본이라 기간 끝 연도 기준으로 받음
+      setGenerating(true);
+      try {
+        await downloadTaxPdf(dayjs(to).year());
+      } catch (e: any) {
+        Alert.alert('생성 실패', e?.response?.data?.message || 'PDF를 만들지 못했습니다.');
+      } finally {
+        setGenerating(false);
+      }
       return;
     }
     setGenerating(true);

@@ -9,6 +9,9 @@
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        <!-- ★ v18.36 — 앱 시작 직후(JS 스플래시가 뜨기 전) 배경을 스플래시와 같은 흰색으로 맞춤.
+             안드로이드 12+는 이 배경 위에 앱 아이콘을 띄우는 시스템 스플래시를 먼저 보여줌. -->
+        <item name="android:windowBackground">@android:color/white</item>
     </style>
 
 </resources>

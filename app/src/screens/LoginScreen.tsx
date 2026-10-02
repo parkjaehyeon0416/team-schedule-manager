@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuthStore } from '../store/authStore';
@@ -16,6 +17,7 @@ import { signInWithGoogle, signInWithKakao } from '../api/socialAuthApi';
 import { useNavigation } from '@react-navigation/native';
 import { colors, radius, spacing } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
+import { ICONS } from '../assets/icons';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
@@ -89,7 +91,7 @@ export default function LoginScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.logoWrap}>
-        <Icon name="home-city-outline" size={44} color={colors.primary} />
+        <Image source={ICONS.logo} style={styles.logoImage} />
         <Text style={styles.logoText}>
           Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
         </Text>
@@ -234,13 +236,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
+  logoImage: { width: 76, height: 76, resizeMode: 'contain' },
   logoWrap: {
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 12,
     marginBottom: spacing.xl,
   },
   logoText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
     letterSpacing: -0.4,
     color: colors.textPrimary,

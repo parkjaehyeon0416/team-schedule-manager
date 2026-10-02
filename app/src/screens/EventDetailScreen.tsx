@@ -15,6 +15,7 @@ import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { eventDday, eventStatus, formatEventPeriod, parseNoticeBody } from '../utils/notice';
 import { NoticeBody } from './NoticeDetailScreen';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { ICONS } from '../assets/icons';
 
 const TAB_ROUTES = ['HomeDashboard', 'Schedule', 'Notifications', 'Profile'];
 
@@ -87,9 +88,7 @@ export default function EventDetailScreen() {
               <Text style={styles.eventPillText}>EVENT</Text>
             </View>
             <Text style={styles.bannerTitle} numberOfLines={3}>{event.title}</Text>
-            <View style={styles.bannerIconBox}>
-              <Icon name="gift-outline" size={36} color="#B95E00" />
-            </View>
+            <Image source={ICONS.gift} style={styles.bannerIcon} />
           </LinearGradient>
         )}
 
@@ -182,10 +181,7 @@ const styles = StyleSheet.create({
   eventPill: { alignSelf: 'flex-start', height: 24, paddingHorizontal: 10, borderRadius: 12, backgroundColor: '#FFFFFF', justifyContent: 'center' },
   eventPillText: { fontSize: 12, fontWeight: '800', color: '#B95E00' },
   bannerTitle: { fontSize: 22, fontWeight: '800', lineHeight: 30, color: '#5A2E00', marginRight: 90 },
-  bannerIconBox: {
-    position: 'absolute', right: 18, bottom: 18, width: 72, height: 72, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center',
-  },
+  bannerIcon: { position: 'absolute', right: 14, bottom: 12, width: 104, height: 104, resizeMode: 'contain' },
 
   badgeRow: { flexDirection: 'row', gap: 6 },
   badge: { height: 24, paddingHorizontal: 9, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },

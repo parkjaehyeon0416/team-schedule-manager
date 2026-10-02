@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import { getQuote, updateQuoteStatus } from '../api/quoteApi';
+import { downloadQuotePdf } from '../api/pdfDownload';
 import { useAuthStore } from '../store/authStore';
 import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
@@ -47,10 +48,15 @@ export default function QuotePreviewScreen() {
   };
 
   const handleExport = () => {
+    // ★ v18.36 — PDF 추가. 안드로이드 알림창은 버튼 3개까지라 Excel/CSV는 하나로 합침(같은 CSV 파일)
     Alert.alert('자료 저장', '어떤 형식으로 저장할까요?', [
       { text: '취소', style: 'cancel' },
-      { text: 'Excel (CSV)', onPress: () => Share.share({ title: `견적서_E-${quote!.id}.csv`, message: buildCsv(quote!) }).catch(() => {}) },
-      { text: 'CSV', onPress: () => Share.share({ title: `견적서_E-${quote!.id}.csv`, message: buildCsv(quote!) }).catch(() => {}) },
+      { text: 'Excel·CSV', onPress: () => Share.share({ title: `견적서_E-${quote!.id}.csv`, message: buildCsv(quote!) }).catch(() => {}) },
+      {
+        text: 'PDF',
+        onPress: () => downloadQuotePdf(quote!.id).catch((e: any) =>
+          Alert.alert('PDF 저장 실패', e?.response?.data?.message || 'PDF를 만들지 못했습니다.')),
+      },
     ]);
   };
 

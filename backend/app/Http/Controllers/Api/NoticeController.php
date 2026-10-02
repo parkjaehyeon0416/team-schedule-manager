@@ -38,6 +38,22 @@ class NoticeController extends Controller
         return ApiResponse::success($notice, '최신 공지 조회 성공');
     }
 
+    // ★ v18.36 — GET /api/notices/latest-event — 홈 이벤트 배너용. 진행중(시작했고 안 끝난) 이벤트 중 최신 1건
+    public function latestEvent()
+    {
+        $today = now()->toDateString();
+
+        $event = Notice::published()
+            ->where('type', 'event')
+            ->where(fn($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', $today))
+            ->where(fn($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', $today))
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
+            ->first(['id', 'type', 'title', 'summary', 'banner_path', 'starts_at', 'ends_at', 'published_at']);
+
+        return ApiResponse::success($event, '진행중 이벤트 조회 성공');
+    }
+
     // GET /api/notices/{id} — 공지는 같은 종류 안에서 이전/다음 글 포함
     public function show(string $id)
     {

@@ -7,15 +7,18 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Linking, Modal, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Linking, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../components/AppHeader';
 import { withdrawAccount } from '../api/profileApi';
 import { useAuthStore } from '../store/authStore';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { ICONS } from '../assets/icons';
+import type { IconKey } from '../assets/icons';
 
-type Row = { key: string; icon: string; label: string; sub?: string; onPress: () => void };
+// ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
+type Row = { key: string; image: IconKey; label: string; sub?: string; onPress: () => void };
 
 const SUPPORT_EMAIL = '[support 이메일]';
 const SUPPORT_PHONE = '[고객센터 번호]';
@@ -53,11 +56,11 @@ export default function AppInfoScreen() {
   };
 
   const rows: Row[] = [
-    { key: 'terms', icon: 'file-document-outline', label: '이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'terms' }) },
-    { key: 'privacy', icon: 'shield-check-outline', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
-    { key: 'location', icon: 'file-document-outline', label: '위치기반서비스 이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'location' }) },
-    { key: 'oss', icon: 'view-grid-outline', label: '오픈소스 라이선스', onPress: () => navigation.navigate('OpenSourceLicenses') },
-    { key: 'contact', icon: 'email-outline', label: '문의하기', sub: '고객지원', onPress: handleContact },
+    { key: 'terms', image: 'doc', label: '이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'terms' }) },
+    { key: 'privacy', image: 'privacy', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
+    { key: 'location', image: 'doc', label: '위치기반서비스 이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'location' }) },
+    { key: 'oss', image: 'info', label: '오픈소스 라이선스', onPress: () => navigation.navigate('OpenSourceLicenses') },
+    { key: 'contact', image: 'megaphone', label: '문의하기', sub: '고객지원', onPress: handleContact },
   ];
 
   const bizRows: { label: string; value: string }[] = [
@@ -72,9 +75,7 @@ export default function AppInfoScreen() {
       <AppHeader leftType="back" title="앱 정보" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.brandBlock}>
-          <View style={styles.logoBadge}>
-            <Icon name="home-city-outline" size={40} color={colors.primary} />
-          </View>
+          <Image source={ICONS.logo} style={styles.logo} />
           <Text style={styles.brandText}>
             Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
           </Text>
@@ -89,7 +90,7 @@ export default function AppInfoScreen() {
               style={[styles.row, i !== rows.length - 1 && styles.rowDivider]}
             >
               <View style={styles.rowIcon}>
-                <Icon name={row.icon} size={18} color={colors.textSecondary} />
+                <Image source={ICONS[row.image]} style={styles.rowIconImage} />
               </View>
               <Text style={styles.rowLabel}>{row.label}</Text>
               {!!row.sub && <Text style={styles.rowSub}>{row.sub}</Text>}
@@ -147,10 +148,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
 
   brandBlock: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.md },
-  logoBadge: {
-    width: 80, height: 80, borderRadius: 22, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.borderCard, alignItems: 'center', justifyContent: 'center',
-  },
+  logo: { width: 80, height: 80, resizeMode: 'contain' },
   brandText: { fontSize: 21, fontWeight: '800', color: colors.textPrimary, marginTop: spacing.xs },
   versionText: { fontSize: 13, color: colors.textSecondary },
 
@@ -163,7 +161,8 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 13 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  rowIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#EEF2F7', alignItems: 'center', justifyContent: 'center' },
+  rowIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: '#F2F7FE', alignItems: 'center', justifyContent: 'center' },
+  rowIconImage: { width: 28, height: 28, resizeMode: 'contain' },
   rowLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   rowSub: { fontSize: 13, color: colors.textSecondary },
 

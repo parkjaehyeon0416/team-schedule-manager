@@ -15,8 +15,11 @@ import { getMyTeams } from '../api/teamApi';
 import { getSchedules } from '../api/schedulesApi';
 import { getSites } from '../api/siteApi';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
+import { ICONS } from '../assets/icons';
+import type { IconKey } from '../assets/icons';
 
-type MenuRow = { key: string; icon: string; label: string; sub?: string; iconBg: string; iconFg: string; onPress: () => void };
+// ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
+type MenuRow = { key: string; image: IconKey; label: string; sub?: string; onPress: () => void };
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -51,51 +54,53 @@ export default function ProfileScreen() {
 
   const profileMenu: MenuRow[] = [
     {
-      key: 'profile', icon: 'account-outline', label: '프로필 설정', sub: '이름 · 연락처 · 지역',
-      iconBg: '#E8F3FF', iconFg: colors.primaryDark, onPress: () => navigation.navigate('ProfileEdit'),
+      key: 'profile', image: 'profile', label: '프로필 설정', sub: '이름 · 연락처 · 지역',
+      onPress: () => navigation.navigate('ProfileEdit'),
     },
     {
-      key: 'card', icon: 'card-account-details-outline', label: '내 명함', sub: 'QR 명함 공유',
-      iconBg: '#E8F3FF', iconFg: colors.primaryDark, onPress: () => navigation.navigate('BusinessCard'),
+      key: 'card', image: 'card', label: '내 명함', sub: 'QR 명함 공유',
+      onPress: () => navigation.navigate('BusinessCard'),
     },
     {
-      key: 'public', icon: 'account-eye-outline', label: '공개 프로필 보기', sub: '다른 사람에게 보이는 모습',
-      iconBg: '#E8F3FF', iconFg: colors.primaryDark,
+      key: 'public', image: 'profile', label: '공개 프로필 보기', sub: '다른 사람에게 보이는 모습',
       onPress: () => navigation.navigate('ProfilePublic'),
     },
   ];
 
   const settingsMenu: MenuRow[] = [
     {
-      key: 'rates', icon: 'currency-krw', label: '내 단가 설정', sub: '공수 · 일급',
-      iconBg: colors.warningBg, iconFg: colors.accentDark, onPress: () => navigation.navigate('MyRates'),
+      key: 'rates', image: 'income', label: '내 단가 설정', sub: '공수 · 일급',
+      onPress: () => navigation.navigate('MyRates'),
     },
     {
-      key: 'tradeRates', icon: 'view-grid-outline', label: '공정별 단가 설정', sub: '도배 · 타일 · 필름',
-      iconBg: colors.warningBg, iconFg: colors.accentDark, onPress: () => navigation.navigate('TradeRates'),
+      key: 'tradeRates', image: 'rates', label: '공정별 단가 설정', sub: '도배 · 타일 · 필름',
+      onPress: () => navigation.navigate('TradeRates'),
     },
     {
-      key: 'notif', icon: 'bell-outline', label: '알림 설정', sub: '일정 · 팀 · 견적',
-      iconBg: colors.successBg, iconFg: colors.secondary, onPress: () => navigation.navigate('NotificationSettings'),
+      key: 'notif', image: 'bell', label: '알림 설정', sub: '일정 · 팀 · 견적',
+      onPress: () => navigation.navigate('NotificationSettings'),
     },
     {
-      key: 'tax', icon: 'file-chart-outline', label: '세무 자료', sub: '자료 조회 · 내보내기',
-      iconBg: colors.successBg, iconFg: colors.secondary, onPress: () => navigation.navigate('TaxSummary'),
+      key: 'tax', image: 'tax', label: '세무 자료', sub: '자료 조회 · 내보내기',
+      onPress: () => navigation.navigate('TaxSummary'),
     },
   ];
 
+  // ★ v18.36 — 디자인(MY_HOME)대로 공지·약관·개인정보 항목 추가
   const infoMenu: MenuRow[] = [
+    { key: 'notice', image: 'megaphone', label: '공지사항 · 이벤트', onPress: () => navigation.navigate('NoticeList') },
+    { key: 'terms', image: 'doc', label: '이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'terms' }) },
+    { key: 'privacy', image: 'privacy', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
     {
-      key: 'appInfo', icon: 'information-outline', label: '앱 정보', sub: 'v1.0.0',
-      iconBg: '#EEF2F7', iconFg: colors.textSecondary,
+      key: 'appInfo', image: 'info', label: '앱 정보', sub: 'v1.0.0',
       onPress: () => navigation.navigate('AppInfo'),
     },
   ];
 
   const renderRow = (row: MenuRow, isLast: boolean) => (
     <TouchableOpacity key={row.key} onPress={row.onPress} style={[styles.row, !isLast && styles.rowDivider]}>
-      <View style={[styles.rowIcon, { backgroundColor: row.iconBg }]}>
-        <Icon name={row.icon} size={18} color={row.iconFg} />
+      <View style={styles.rowIcon}>
+        <Image source={ICONS[row.image]} style={styles.rowIconImage} />
       </View>
       <View style={styles.rowTextBox}>
         <RNText style={styles.rowLabel}>{row.label}</RNText>
@@ -214,7 +219,8 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 11 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
-  rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  rowIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: '#F2F7FE', alignItems: 'center', justifyContent: 'center' },
+  rowIconImage: { width: 28, height: 28, resizeMode: 'contain' },
   rowTextBox: { flex: 1, minWidth: 0, gap: 2 },
   rowLabel: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   rowSub: { fontSize: 12, color: colors.textSecondary },

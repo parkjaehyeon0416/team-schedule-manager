@@ -40,6 +40,12 @@ export async function getLatestNotice(): Promise<NoticeSummary | null> {
   return res.data.data;
 }
 
+// ★ v18.36 — 홈 이벤트 배너용 진행중 이벤트 1건 (없으면 null)
+export async function getLatestEvent(): Promise<NoticeSummary | null> {
+  const res = await axios.get<ApiResponse<NoticeSummary | null>>('/notices/latest-event');
+  return res.data.data;
+}
+
 export async function getNotice(id: number): Promise<NoticeDetail> {
   const res = await axios.get<ApiResponse<NoticeDetail>>(`/notices/${id}`);
   return res.data.data;

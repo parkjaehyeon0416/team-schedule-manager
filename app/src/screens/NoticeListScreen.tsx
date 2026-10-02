@@ -6,13 +6,13 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import { getNotices } from '../api/noticesApi';
 import type { NoticeSummary } from '../api/noticesApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { eventStatus, formatEventPeriod, formatNoticeDate, isNewNotice } from '../utils/notice';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { ICONS } from '../assets/icons';
 
 const TABS = [
   { label: '전체', key: null },
@@ -76,9 +76,9 @@ export default function NoticeListScreen() {
                       {e.banner_path ? (
                         <Image source={{ uri: `${SERVER_BASE_URL}/storage/${e.banner_path}` }} style={styles.eventThumb} />
                       ) : (
-                        <LinearGradient colors={['#FFE8CC', '#FFD199']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.eventThumb}>
-                          <Icon name="gift-outline" size={26} color="#B95E00" />
-                        </LinearGradient>
+                        <View style={[styles.eventThumb, styles.eventThumbFallback]}>
+                          <Image source={ICONS.gift} style={styles.eventThumbIcon} />
+                        </View>
                       )}
                       <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                         <View style={styles.badgeRow}>
@@ -149,6 +149,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.borderCard, borderRadius: 14,
   },
   eventThumb: { width: 76, height: 64, borderRadius: 10, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  eventThumbFallback: { backgroundColor: '#FFF4E5' },
+  eventThumbIcon: { width: 46, height: 46, resizeMode: 'contain' },
   eventTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
 
   badgeRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },

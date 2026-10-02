@@ -144,6 +144,9 @@ export interface Schedule {
   team_id: number | null;
   owner_id: number | null;
   site_id: number | null;
+  // ★ v18.34 — 현장 등록 없이 적는 주소 / 동·호수
+  address?: string | null;
+  address_detail?: string | null;
   date: string; // "2026-04-15"
   // ★ DESIGN-CANVAS(SCHEDULE_DETAIL/CREATE/EDIT/DAY) 추가
   title?: string | null;

@@ -13,6 +13,9 @@ class Schedule extends Model
     // ★ 대량할당 허용 필드 (create(), update() 시 필요)
     protected $fillable = [
         'site_id',
+        // ★ v18.34 — 현장 등록 없이 적는 주소 / 동·호수
+        'address',
+        'address_detail',
         'team_id',
         'owner_id',
         'created_by',

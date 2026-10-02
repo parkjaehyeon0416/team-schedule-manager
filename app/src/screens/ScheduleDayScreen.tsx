@@ -9,6 +9,7 @@ import axios from '../api/axiosInstance';
 import AppHeader from '../components/AppHeader';
 import type { Schedule } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { scheduleLocationLabel } from '../utils/scheduleLocation';
 
 const WEEKDAY_LABEL = ['일', '월', '화', '수', '목', '금', '토'];
 const BAR_PALETTE = ['#FF9E2C', '#0B9C8A', '#8B6CF0', '#2CC4B2', '#168BFF', '#C026D3'];
@@ -94,7 +95,7 @@ export default function ScheduleDayScreen() {
             const isPersonal = !s.team_id;
             const bar = BAR_PALETTE[i % BAR_PALETTE.length];
             const title = s.title || s.work_type_relation?.name || s.memo || '일정';
-            const siteLabel = s.site ? (s.site.apt_name || s.site.address) : null;
+            const siteLabel = scheduleLocationLabel(s);
             return (
               <Pressable key={s.id} style={styles.itemRow} onPress={() => navigation.navigate('ScheduleDetail', { id: s.id })}>
                 <Text style={styles.itemTime}>{s.start_time?.slice(0, 5) ?? '-'}</Text>

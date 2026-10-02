@@ -18,6 +18,7 @@ import { getSchedules } from '../api/schedulesApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import type { Team, TeamMember, Schedule } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { scheduleLocationLabel } from '../utils/scheduleLocation';
 
 const TABS = ['팀 정보', '팀원', '팀 일정', '활동 내역'];
 
@@ -201,7 +202,7 @@ export default function TeamDetailScreen() {
                   </View>
                   <View style={styles.rowTextBox}>
                     <Text style={styles.memberName}>
-                      {s.site?.apt_name || s.work_type_relation?.name || s.work_type || '일정'}
+                      {scheduleLocationLabel(s) || s.work_type_relation?.name || s.work_type || '일정'}
                     </Text>
                     <Text style={styles.memberSub}>{s.date}</Text>
                   </View>

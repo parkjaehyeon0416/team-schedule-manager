@@ -65,6 +65,9 @@ class ScheduleController extends Controller
             'user_ids'      => 'nullable|array',
             'user_ids.*'    => 'integer|exists:users,id',
             'site_id'       => 'nullable|integer|exists:sites,id',
+            // ★ v18.34 — 현장 등록 없이 적는 주소 / 동·호수
+            'address'        => 'nullable|string|max:255',
+            'address_detail' => 'nullable|string|max:100',
             // ★ 팀 소속이어도 개인용으로 등록하고 싶을 때 true — team_id 없이 owner_id로 감
             'is_personal'   => 'nullable|boolean',
             // ★ DESIGN-CANVAS(SCHEDULE_CREATE) 추가
@@ -149,6 +152,8 @@ class ScheduleController extends Controller
             'owner_id'      => $data['owner_id'],
             'created_by'    => $data['created_by'],
             'site_id'       => $data['site_id']      ?? null,
+            'address'        => $data['address']        ?? null,
+            'address_detail' => $data['address_detail'] ?? null,
             'status'        => 'pending',
         ]);
 
@@ -231,6 +236,9 @@ class ScheduleController extends Controller
             'user_ids'      => 'nullable|array',
             'user_ids.*'    => 'integer|exists:users,id',
             'site_id'       => 'nullable|integer|exists:sites,id',
+            // ★ v18.34 — 현장 등록 없이 적는 주소 / 동·호수
+            'address'        => 'nullable|string|max:255',
+            'address_detail' => 'nullable|string|max:100',
             // ★ DESIGN-CANVAS(SCHEDULE_EDIT) 추가
             'title'          => 'nullable|string|max:100',
             'start_time'     => 'nullable|date_format:H:i',

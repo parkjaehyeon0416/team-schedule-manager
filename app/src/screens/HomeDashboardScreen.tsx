@@ -16,6 +16,7 @@ import type { NoticeSummary } from '../api/noticesApi';
 import type { MonthlySummary, Schedule } from '../types/api';
 import { formatShortKRW } from '../utils/format';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
+import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 
 const MENU_ITEMS: { key: string; label: string; icon: string; bg: string; fg: string; route: string }[] = [
   { key: 'schedule', label: '일정', icon: 'calendar-month-outline', bg: '#E8F3FF', fg: colors.primaryDark, route: 'Schedule' },
@@ -193,10 +194,10 @@ export default function HomeDashboardScreen() {
                 </View>
                 <View style={styles.scheduleTextBox}>
                   <Text style={styles.scheduleTitle} numberOfLines={1}>
-                    {s.site?.apt_name || s.work_type_relation?.name || s.work_type || '일정'}
+                    {scheduleLocationLabel(s) || s.work_type_relation?.name || s.work_type || '일정'}
                   </Text>
                   <Text style={styles.scheduleSub} numberOfLines={1}>
-                    {s.site?.address || s.memo || ''}
+                    {scheduleAddress(s) || s.memo || ''}
                   </Text>
                 </View>
                 <View style={[styles.scheduleTag, { backgroundColor: s.team_id ? '#E8F3FF' : '#F0EBFF' }]}>

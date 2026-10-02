@@ -14,6 +14,7 @@ import AppHeader from '../components/AppHeader';
 import type { Schedule } from '../types/api';
 import { formatMoney, formatWorkUnits } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { scheduleLocationLabel } from '../utils/scheduleLocation';
 
 export default function IncomeDetailScreen() {
   const navigation = useNavigation<any>();
@@ -56,7 +57,7 @@ export default function IncomeDetailScreen() {
     );
   }
 
-  const siteLabel = schedule.site ? (schedule.site.apt_name || schedule.site.address) : null;
+  const siteLabel = scheduleLocationLabel(schedule);
   const income = Number(schedule.daily_wage) || 0;
   const withholdingTax = Math.round(income * 0.033);
   const netIncome = income - withholdingTax;

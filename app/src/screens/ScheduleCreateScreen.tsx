@@ -24,6 +24,7 @@ import { getMyTeams } from '../api/teamApi';
 import { getWageSettings } from '../api/wageSettingsApi';
 import WorkTypePicker from '../components/WorkTypePicker';
 import SitePickerModal from '../components/SitePickerModal';
+import AddressSearchModal from '../components/AddressSearchModal';
 import AppHeader from '../components/AppHeader';
 import { formatMoney, parseMoney } from '../utils/format';
 import type { TeamMember, WageSetting, WorkType, Site, Team } from '../types/api';
@@ -54,6 +55,10 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
   const [title, setTitle] = useState('');
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [sitePickerVisible, setSitePickerVisible] = useState(false);
+  // ★ v18.34 — 일회성 현장은 현장 등록 없이 주소만 적음 (현장 선택 시 address는 비움)
+  const [address, setAddress] = useState('');
+  const [addressDetail, setAddressDetail] = useState('');
+  const [addressSearchVisible, setAddressSearchVisible] = useState(false);
   const [date, setDate] = useState<Date>(route.params?.date ? new Date(route.params.date) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
@@ -103,6 +108,8 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
           if (data.team_id) setTeamId(data.team_id);
           setTitle(data.title ?? '');
           setSelectedSite(data.site ?? null);
+          setAddress(data.address ?? '');
+          setAddressDetail(data.address_detail ?? '');
           setDate(new Date(data.date));
           setStartTime(data.start_time?.slice(0, 5) ?? '09:00');
           setEndTime(data.end_time?.slice(0, 5) ?? '17:00');
@@ -171,6 +178,8 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         reminder_time: reminderTime,
         user_ids: selectedUserIds,
         site_id: selectedSite?.id ?? null,
+        address: selectedSite ? null : address.trim() || null,
+        address_detail: addressDetail.trim() || null,
         work_type_id: workTypeId,
         daily_wage: dailyWage > 0 ? dailyWage : null,
         work_units: workUnits,
@@ -184,10 +193,13 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
 
       if (isEditMode && editingScheduleId) {
         await updateSchedule(editingScheduleId, payload);
-        Alert.alert('수정 완료', '일정이 수정되었습니다.', [{ text: '확인', onPress: () => navigation.navigate('ScheduleDetail', { id: editingScheduleId }) }]);
+        // 수정 화면은 상세 위에 열려 있으므로 닫기만 하면 상세로 돌아감(상세는 포커스 시 재조회).
+        //   navigate로 상세를 다시 쌓으면 뒤로가기 시 상세↔수정이 무한 반복됨.
+        Alert.alert('수정 완료', '일정이 수정되었습니다.', [{ text: '확인', onPress: () => navigation.goBack() }]);
       } else {
         const created = await createSchedule(payload);
-        Alert.alert('등록 완료', '일정이 등록되었습니다.', [{ text: '확인', onPress: () => navigation.navigate('ScheduleDetail', { id: created.id }) }]);
+        // 등록 화면을 상세로 교체 — 상세에서 뒤로가기 시 등록 화면이 아니라 진입 전 화면(홈/일정)으로 감
+        Alert.alert('등록 완료', '일정이 등록되었습니다.', [{ text: '확인', onPress: () => navigation.replace('ScheduleDetail', { id: created.id }) }]);
       }
     } catch (e: any) {
       if (e?.response?.status === 422) {
@@ -215,11 +227,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
 
   return (
     <View style={styles.screen}>
-      <AppHeader
-        leftType="back"
-        title={isEditMode ? '일정 수정' : '일정 등록'}
-        onBackPress={() => (isEditMode ? navigation.navigate('ScheduleDetail', { id: editingScheduleId }) : navigation.goBack())}
-      />
+      <AppHeader leftType="back" title={isEditMode ? '일정 수정' : '일정 등록'} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {hasTeam && (
           <View style={styles.field}>
@@ -260,11 +268,45 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
           <Pressable style={styles.inputWrap} onPress={() => setSitePickerVisible(true)}>
             <View style={styles.inputRow}>
               <Text style={selectedSite ? styles.inputText : styles.inputPlaceholder} numberOfLines={1}>
-                {selectedSite ? (selectedSite.apt_name || selectedSite.address) : '현장을 선택하세요 (선택)'}
+                {selectedSite ? (selectedSite.apt_name || selectedSite.address) : '등록된 현장 선택 (선택)'}
               </Text>
-              <Icon name="chevron-down" size={18} color={colors.muted} />
+              {selectedSite ? (
+                <Pressable onPress={() => setSelectedSite(null)} hitSlop={8}>
+                  <Icon name="close-circle" size={18} color={colors.muted} />
+                </Pressable>
+              ) : (
+                <Icon name="chevron-down" size={18} color={colors.muted} />
+              )}
             </View>
           </Pressable>
+          {!selectedSite && (
+            <>
+              <Pressable style={styles.inputWrap} onPress={() => setAddressSearchVisible(true)}>
+                <View style={styles.inputRow}>
+                  <Text style={address ? styles.inputText : styles.inputPlaceholder} numberOfLines={1}>
+                    {address || '또는 주소 검색 (현장 등록 없이)'}
+                  </Text>
+                  {address ? (
+                    <Pressable onPress={() => setAddress('')} hitSlop={8}>
+                      <Icon name="close-circle" size={18} color={colors.muted} />
+                    </Pressable>
+                  ) : (
+                    <Icon name="magnify" size={18} color={colors.primaryDark} />
+                  )}
+                </View>
+              </Pressable>
+            </>
+          )}
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.input}
+              value={addressDetail}
+              onChangeText={setAddressDetail}
+              placeholder="상세 주소 (예: 래미안 101동 1203호)"
+              placeholderTextColor={colors.muted}
+              maxLength={100}
+            />
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -436,7 +478,20 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         </Pressable>
       </ScrollView>
 
-      <SitePickerModal visible={sitePickerVisible} onClose={() => setSitePickerVisible(false)} onSelect={setSelectedSite} />
+      <SitePickerModal
+        visible={sitePickerVisible}
+        onClose={() => setSitePickerVisible(false)}
+        onSelect={site => { setSelectedSite(site); setAddress(''); }}
+      />
+      <AddressSearchModal
+        visible={addressSearchVisible}
+        onClose={() => setAddressSearchVisible(false)}
+        onSelect={result => {
+          setAddress(result.roadAddress || result.jibunAddress);
+          // 아파트명이 있으면 상세 주소 앞부분을 채워둠 — 동·호수만 이어서 적으면 되게
+          if (!addressDetail.trim() && result.buildingName) setAddressDetail(`${result.buildingName} `);
+        }}
+      />
 
       <Modal visible={teamPickerVisible} animationType="slide" transparent onRequestClose={() => setTeamPickerVisible(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setTeamPickerVisible(false)} />

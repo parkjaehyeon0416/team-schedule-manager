@@ -23,6 +23,9 @@ import type {
 export interface CreateSchedulePayload {
   date: string; // "2026-04-15"
   site_id?: number | null;
+  // ★ v18.34 — 현장 등록 없이 적는 주소 / 동·호수
+  address?: string | null;
+  address_detail?: string | null;
 
   // v7 기존 필드
   district?: string | null;

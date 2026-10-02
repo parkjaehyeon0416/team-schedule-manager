@@ -20,6 +20,7 @@ import axios from '../api/axiosInstance';
 import { getMyTeams } from '../api/teamApi';
 import type { Schedule, Team } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 
 const TEAM_PALETTE = ['#FF9E2C', '#0B9C8A', '#8B6CF0', '#E5484D', '#2492FF', '#C026D3'];
 const PCOLOR = colors.primary;
@@ -305,10 +306,10 @@ const CalendarScreen = forwardRef<CalendarHandle, Props>(
               <View style={[styles.evBar, { backgroundColor: teamColor(e.team_id) }]} />
               <View style={styles.evTextBox}>
                 <Text style={styles.evTitle} numberOfLines={1}>
-                  {e.site?.apt_name || e.work_type_relation?.name || e.work_type || '일정'}
+                  {scheduleLocationLabel(e) || e.work_type_relation?.name || e.work_type || '일정'}
                 </Text>
                 <Text style={styles.evSub} numberOfLines={1}>
-                  {e.site?.address || e.memo || ''}
+                  {scheduleAddress(e) || e.memo || ''}
                 </Text>
               </View>
               <View

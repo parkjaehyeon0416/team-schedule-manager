@@ -27,6 +27,7 @@ import PhotoCategoryTabs from '../components/PhotoCategoryTabs';
 import PhotoGrid from '../components/PhotoGrid';
 import PhotoPairPicker from '../components/PhotoPairPicker';
 import AppHeader from '../components/AppHeader';
+import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 import { colors, radius, spacing } from '../theme/designTokens';
 
 const WEEKDAY_LABEL = ['일', '월', '화', '수', '목', '금', '토'];
@@ -169,13 +170,15 @@ export default function ScheduleDetailScreen({ route }: any) {
   const handleComparePress = () => {
     navigation.navigate('PhotoCompare', {
       scheduleId: id,
-      siteName: schedule?.site ? `${schedule.site.apt_name} ${schedule.site.dong} ${schedule.site.ho}` : '현장',
+      siteName: (schedule && scheduleLocationLabel(schedule)) || '현장',
     });
   };
 
   const handleCopyAddress = () => {
-    if (!schedule?.site?.address) return;
-    Clipboard.setString(schedule.site.address);
+    if (!schedule) return;
+    const addr = scheduleAddress(schedule);
+    if (!addr) return;
+    Clipboard.setString([addr, schedule.address_detail].filter(Boolean).join(' '));
     Alert.alert('복사 완료', '주소가 복사되었습니다.');
   };
 
@@ -217,7 +220,8 @@ export default function ScheduleDetailScreen({ route }: any) {
   const totalPhotos = photos.counts.before + photos.counts.during + photos.counts.after + photos.counts.other;
 
   const titleText = schedule.title || schedule.work_type_relation?.name || schedule.memo || '일정';
-  const siteLabel = schedule.site ? [schedule.site.apt_name, schedule.site.dong && `${schedule.site.dong}동`, schedule.site.ho && `${schedule.site.ho}호`].filter(Boolean).join(' ') || schedule.site.address : null;
+  const siteLabel = scheduleLocationLabel(schedule);
+  const fullAddress = scheduleAddress(schedule);
   const timeLabel = schedule.start_time && schedule.end_time
     ? `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)} (${dayjs(`2000-01-01T${schedule.end_time}`).diff(dayjs(`2000-01-01T${schedule.start_time}`), 'hour', true)}시간)`
     : null;
@@ -262,8 +266,11 @@ export default function ScheduleDetailScreen({ route }: any) {
           {!!siteLabel && (
             <Pressable style={styles.infoRow} onPress={handleCopyAddress}>
               <Icon name="map-marker-outline" size={18} color={colors.primaryDark} />
-              <Text style={styles.infoText}>{siteLabel}</Text>
-              <Icon name="content-copy" size={14} color={colors.muted} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.infoText}>{siteLabel}</Text>
+                {!!fullAddress && fullAddress !== siteLabel && <Text style={styles.addressSub}>{fullAddress}</Text>}
+              </View>
+              {!!fullAddress && <Icon name="content-copy" size={14} color={colors.muted} />}
             </Pressable>
           )}
           {!!team && (
@@ -293,12 +300,17 @@ export default function ScheduleDetailScreen({ route }: any) {
           {Number(schedule.expenses) > 0 && (
             <View style={styles.row}><Text style={styles.rowLabel}>경비</Text><Text style={styles.rowValue}>{formatMoney(schedule.expenses)}원{schedule.expenses_memo ? ` (${schedule.expenses_memo})` : ''}</Text></View>
           )}
-          {!!siteLabel && (
-            <Pressable style={styles.row} onPress={() => schedule.site_id && navigation.navigate('SiteDetail', { siteId: schedule.site_id })}>
+          {!!siteLabel && (schedule.site_id ? (
+            <Pressable style={styles.row} onPress={() => navigation.navigate('SiteDetail', { siteId: schedule.site_id })}>
               <Text style={styles.rowLabel}>현장</Text>
               <Text style={[styles.rowValue, styles.rowLink]}>{siteLabel} ›</Text>
             </Pressable>
-          )}
+          ) : (
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>현장</Text>
+              <Text style={styles.rowValue}>{siteLabel}</Text>
+            </View>
+          ))}
           <View style={[styles.row, { borderBottomWidth: 0 }]}><Text style={styles.rowLabel}>알림</Text><Text style={styles.rowValue}>{REMINDER_TIME_LABEL[schedule.reminder_time ?? ''] ?? '하루 전 오후 8시'}</Text></View>
         </View>
 
@@ -379,6 +391,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 21, fontWeight: '800', color: colors.textPrimary },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   infoText: { fontSize: 14, color: colors.textPrimary, flex: 1 },
+  addressSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   avatarRow: { flexDirection: 'row', paddingLeft: 28 },
   avatar: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 12, fontWeight: '700' },

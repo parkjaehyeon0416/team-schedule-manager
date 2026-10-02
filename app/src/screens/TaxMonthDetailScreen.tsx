@@ -14,6 +14,7 @@ import AppHeader from '../components/AppHeader';
 import type { Schedule, TaxMonthRow } from '../types/api';
 import { formatMoney } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { scheduleLocationLabel } from '../utils/scheduleLocation';
 
 const ICON_BG = ['#FFF1DE', '#DFF8F4', '#EFEAFF', '#E8F3FF'];
 const ICON_FG = ['#E07E00', '#0B9C8A', '#6B4FD8', '#0A6CE0'];
@@ -96,7 +97,7 @@ export default function TaxMonthDetailScreen() {
             schedules.map((s, i) => {
               const bg = ICON_BG[i % ICON_BG.length];
               const fg = ICON_FG[i % ICON_FG.length];
-              const siteLabel = s.site ? [s.site.apt_name, s.site.dong, s.site.ho].filter(Boolean).join(' ') || s.site.address : s.work_type ?? s.district ?? '현장 미지정';
+              const siteLabel = scheduleLocationLabel(s) || s.work_type ?? s.district ?? '현장 미지정';
               return (
                 <Pressable
                   key={s.id}

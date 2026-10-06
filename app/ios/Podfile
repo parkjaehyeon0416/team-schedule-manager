@@ -10,6 +10,8 @@ prepare_react_native_project!
 
 # ★ v18.46 — @react-native-firebase(푸시)는 iOS에서 정적 프레임워크로 빌드해야 함 (공식 설치 안내)
 $RNFirebaseAsStaticFramework = true
+# 정적 링크에선 Firebase를 SPM이 아닌 CocoaPods로 받아야 중복 심볼 충돌이 안 남(pod install 안내 문구)
+$RNFirebaseDisableSPM = true
 use_frameworks! :linkage => :static
 
 target 'app' do

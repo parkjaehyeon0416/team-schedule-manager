@@ -19,6 +19,24 @@
 				<string>workmate</string>
 			</array>
 		</dict>
+		<!-- ★ v18.46 — 카카오 로그인 후 앱으로 돌아오는 주소(kakao + 네이티브 앱 키, 안드로이드와 같은 키) -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakaoa3f3101393404d683c0788cdfc7a06be</string>
+			</array>
+		</dict>
+	</array>
+	<key>KAKAO_APP_KEY</key>
+	<string>a3f3101393404d683c0788cdfc7a06be</string>
+	<!-- 카카오톡 앱이 깔려 있는지 확인(있으면 카카오톡으로 간편 로그인) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaokompassauth</string>
+		<string>storykompassauth</string>
+		<string>kakaolink</string>
 	</array>
 	<!-- ★ v18.46 — 앱 안 아이콘 글꼴(react-native-vector-icons). 없으면 아이콘이 전부 네모로 나옴 -->
 	<key>UIAppFonts</key>

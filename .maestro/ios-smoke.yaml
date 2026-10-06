@@ -2,6 +2,11 @@
 #   비밀번호는 입력하지 않음 — 화면 표시·이동·키보드 가림만 확인.
 appId: com.workmate.app
 ---
+# 앞 단계(링크 열기)에서 뜬 시스템 확인창이 남아 있으면 닫기
+- tapOn:
+    text: "Cancel"
+    optional: true
+- stopApp
 - launchApp
 - extendedWaitUntil:
     visible: "아이디 찾기"
@@ -34,3 +39,10 @@ appId: com.workmate.app
 - tapOn: "아이디 찾기"
 - waitForAnimationToEnd
 - takeScreenshot: 15_find_id
+# 초대 링크로 앱 열기 — 로그인 전이면 링크를 기억해 두고 로그인 화면을 보여줘야 함
+- openLink: "workmate://join/6NXTAX"
+- tapOn:
+    text: "Open"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 16_deeplink_open

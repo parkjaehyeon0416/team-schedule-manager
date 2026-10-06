@@ -142,7 +142,9 @@ export default function QuoteDetailScreen() {
           <Text style={styles.titleText}>{quote.client_name ? `${quote.client_name} 고객` : '견적서'}</Text>
           <Text style={styles.amountText}>{formatMoney(quote.total_amount)}원</Text>
           <Text style={styles.metaText}>
-            {quote.tax_type === 'exempt' ? '면세' : `부가세 ${formatMoney(quote.vat_amount ?? 0)}원 포함(${quote.tax_label ?? '부가세 별도'})`} · 희망일 {quote.desired_date ?? '미정'}
+            {quote.tax_type === 'exempt'
+              ? '면세'
+              : `공급가액 ${formatMoney(quote.supply_amount ?? Number(quote.total_amount) - Number(quote.vat_amount ?? 0))}원 + 부가세 ${formatMoney(quote.vat_amount ?? 0)}원`} · 희망일 {quote.desired_date ?? '미정'}
           </Text>
         </View>
 

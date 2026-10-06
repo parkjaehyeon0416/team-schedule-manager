@@ -85,7 +85,8 @@ export default function QuoteFormScreen() {
     setAddressSearchVisible(false);
   };
 
-  const handleSubmit = async () => {
+  // ★ v18.45 — "미리보기"도 먼저 저장 후 이동(예전엔 저장 없이 이동해서 바꾼 부가세 구분·금액이 안 보였음)
+  const handleSubmit = async (thenPreview = false) => {
     const validLines: QuoteLine[] = lines
       .filter(l => l.name.trim() && parseMoney(l.quantity) > 0)
       .map(l => ({ name: l.name.trim(), spec: null, quantity: parseMoney(l.quantity), unit: l.unit.trim() || '개', unit_price: parseMoney(l.unit_price) }));
@@ -108,7 +109,8 @@ export default function QuoteFormScreen() {
       };
       if (isEdit) {
         await updateQuote(editing!.id, payload);
-        navigation.goBack();
+        if (thenPreview) navigation.replace('QuotePreview', { quoteId: editing!.id });
+        else navigation.goBack();
       } else {
         const created = await createQuote(payload);
         navigation.replace('QuoteDetail', { quoteId: created.id });
@@ -258,7 +260,7 @@ export default function QuoteFormScreen() {
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>공급가</Text>
+            <Text style={styles.summaryLabel}>항목 합계</Text>
             <Text style={styles.summaryValue}>{formatMoney(subtotal)}원</Text>
           </View>
           {discountAmount > 0 && (
@@ -267,6 +269,11 @@ export default function QuoteFormScreen() {
               <Text style={styles.summaryValue}>-{formatMoney(discountAmount)}원</Text>
             </View>
           )}
+          {/* ★ v18.45 — 부가세 포함이면 공급가액은 합계에서 부가세를 뺀 금액 */}
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>공급가액</Text>
+            <Text style={styles.summaryValue}>{formatMoney(totalAmount - vatAmount)}원</Text>
+          </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>부가세 ({taxType === 'separate' ? '별도' : taxType === 'included' ? '포함' : '면세'})</Text>
             <Text style={styles.summaryValue}>{taxType === 'exempt' ? '-' : `${formatMoney(vatAmount)}원`}</Text>
@@ -279,11 +286,11 @@ export default function QuoteFormScreen() {
 
         <View style={styles.footerRow}>
           {isEdit && (
-            <Pressable style={styles.previewBtn} onPress={() => navigation.navigate('QuotePreview', { quoteId: editing!.id })}>
-              <Text style={styles.previewBtnText}>미리보기</Text>
+            <Pressable style={styles.previewBtn} onPress={() => handleSubmit(true)} disabled={saving}>
+              <Text style={styles.previewBtnText}>저장 후 미리보기</Text>
             </Pressable>
           )}
-          <Pressable style={{ flex: 1 }} onPress={handleSubmit} disabled={saving}>
+          <Pressable style={{ flex: 1 }} onPress={() => handleSubmit()} disabled={saving}>
             <LinearGradient colors={[colors.primaryLight, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.saveBtn, saving && { opacity: 0.7 }]}>
               {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveBtnText}>저장하기</Text>}
             </LinearGradient>

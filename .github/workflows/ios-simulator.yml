@@ -33,14 +33,17 @@ jobs:
           bundler-cache: true
           working-directory: app
 
+      # 실패 원인을 결과 브랜치에서 볼 수 있게 각 단계 출력을 ios-results에 남김
       - name: Install JS packages
-        run: npm ci
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/ios-results"
+          npm ci > "$GITHUB_WORKSPACE/ios-results/npm.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-results/npm.log"; exit 1; }
 
       - name: Tool versions
-        run: xcodebuild -version && node -v && xcrun simctl list runtimes
+        run: (xcodebuild -version && node -v && npm -v && xcrun simctl list runtimes) | tee "$GITHUB_WORKSPACE/ios-results/versions.txt"
 
       - name: Install pods
-        run: cd ios && bundle exec pod install
+        run: cd ios && (bundle exec pod install > "$GITHUB_WORKSPACE/ios-results/pod.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-results/pod.log"; exit 1; })
 
       - name: Build for simulator
         run: |
@@ -80,6 +83,8 @@ jobs:
         working-directory: .
         run: |
           mkdir -p ios-results
+          [ -f ios-results/npm.log ] && tail -150 ios-results/npm.log > ios-results/npm-tail.txt && rm ios-results/npm.log
+          [ -f ios-results/pod.log ] && tail -200 ios-results/pod.log > ios-results/pod-tail.txt && rm ios-results/pod.log
           cp app/build.log ios-results/build.log 2>/dev/null || true
           if [ -f ios-results/build.log ]; then grep -E "error:|fatal" ios-results/build.log | head -100 > ios-results/build-errors.txt || true; tail -150 ios-results/build.log > ios-results/build-tail.txt; rm ios-results/build.log; fi
           echo "${{ github.sha }} ${{ job.status }} $(date -u)" > ios-results/RUN.txt

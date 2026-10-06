@@ -41,7 +41,9 @@ h1 { margin: 0; font-size: 40px; font-weight: 800; line-height: 1.3; letter-spac
 .feat span { display: flex; flex-direction: column; gap: 2px; } .feat b { font-size: 14px; } .feat small { font-size: 12px; color: #5F7290; }
 footer { width: 100%; padding: 20px 24px 32px; text-align: center; font-size: 12px; color: #5F7290; }
 @media (max-width: 860px) {
-  .wrap { flex-direction: column; gap: 28px; padding-top: 16px; }
+  .wrap { flex-direction: column; gap: 24px; padding-top: 16px; }
+  /* 세로 배치에선 flex-basis 420px가 높이로 적용돼 타이틀 아래가 크게 비었음 → 내용 높이만큼만 */
+  .hero, .card { flex: 0 0 auto; }
   .hero { text-align: center; align-items: center; }
   h1 { font-size: 28px; }
   .steps { display: none; }

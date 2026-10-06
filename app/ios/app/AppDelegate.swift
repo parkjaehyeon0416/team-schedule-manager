@@ -4,6 +4,7 @@ import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import FirebaseCore
 import KakaoSDKAuth
+import KakaoSDKCommon
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,6 +20,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // ★ v18.46 — 푸시(Firebase). GoogleService-Info.plist를 넣기 전까지는 건너뜀(없이 configure하면 앱이 꺼짐)
     if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
       FirebaseApp.configure()
+    }
+    // ★ v18.46 — 카카오 SDK를 앱 시작 때 초기화. 안 하면 링크로 앱이 열릴 때 아래 isKakaoTalkLoginUrl에서
+    //   "MustInitAppKey"로 앱이 꺼짐(가상 아이폰 점검에서 발견). 키는 Info.plist의 KAKAO_APP_KEY.
+    if let kakaoKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String, !kakaoKey.isEmpty {
+      KakaoSDK.initSDK(appKey: kakaoKey)
     }
 
     let delegate = ReactNativeDelegate()
@@ -46,7 +52,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
     // 카카오톡으로 로그인하고 돌아온 경우 카카오 SDK가 처리
-    if AuthApi.isKakaoTalkLoginUrl(url) {
+    if url.scheme?.hasPrefix("kakao") == true && AuthApi.isKakaoTalkLoginUrl(url) {
       return AuthController.handleOpenUrl(url: url)
     }
     return RCTLinkingManager.application(app, open: url, options: options)

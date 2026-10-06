@@ -16,7 +16,8 @@ appId: com.workmate.app
 - inputText: "ios-check"
 - takeScreenshot: 11_login_keyboard
 - hideKeyboard
-- tapOn: "회원가입"
+# "계정이 없으신가요? 회원가입" 한 문장 안에 있어서 부분 일치로 찾음
+- tapOn: ".*회원가입"
 - waitForAnimationToEnd
 - takeScreenshot: 12_register
 # 맨 아래 입력칸을 눌렀을 때 키보드가 가리는지

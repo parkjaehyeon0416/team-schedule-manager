@@ -86,8 +86,13 @@ jobs:
           curl -fsSL "https://get.maestro.mobile.dev" | bash > /dev/null
           export PATH="$PATH:$HOME/.maestro/bin"
           maestro --version
-          maestro test "$GITHUB_WORKSPACE/.maestro/ios-smoke.yaml" > maestro.log 2>&1 || { tail -40 maestro.log; exit 1; }
-          tail -20 maestro.log
+          rc=0
+          maestro test --test-output-dir "$GITHUB_WORKSPACE/ios-results/maestro-out" "$GITHUB_WORKSPACE/.maestro/ios-smoke.yaml" > maestro.log 2>&1 || rc=$?
+          # takeScreenshot 결과(흐름 파일 폴더 또는 출력 폴더에 저장됨)를 결과 폴더로 모음
+          find "$GITHUB_WORKSPACE/.maestro" "$GITHUB_WORKSPACE/ios-results/maestro-out" "$HOME/.maestro/tests" -name "*.png" -exec cp {} . \; 2>/dev/null || true
+          rm -rf maestro-out
+          tail -40 maestro.log
+          exit $rc
 
       - name: Publish results
         if: always()

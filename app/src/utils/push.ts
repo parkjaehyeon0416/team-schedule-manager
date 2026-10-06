@@ -12,8 +12,10 @@ import {
   onMessage,
   onNotificationOpenedApp,
   getInitialNotification,
+  requestPermission,
+  AuthorizationStatus,
 } from '@react-native-firebase/messaging';
-import type { RemoteMessage } from '@react-native-firebase/messaging';
+import type { Messaging, RemoteMessage } from '@react-native-firebase/messaging';
 import axios from '../api/axiosInstance';
 import { useNotificationStore } from '../store/notificationStore';
 import { navigateFromOutside } from '../navigation/navigationRef';
@@ -33,11 +35,16 @@ function openFromNotification(msg: RemoteMessage | null) {
   else if (linkType === 'inquiry') navigateFromOutside('InquiryDetail', { id: linkId }); // ★ v18.43 문의 답변
 }
 
-async function ensurePermission(): Promise<boolean> {
+async function ensurePermission(messaging: Messaging): Promise<boolean> {
   // 안드로이드 13부터 알림 표시에 사용자 허용이 필요
   if (Platform.OS === 'android' && Platform.Version >= 33) {
     const res = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
     return res === PermissionsAndroid.RESULTS.GRANTED;
+  }
+  // ★ v18.46 — 아이폰은 Firebase로 알림 허용을 물어봄
+  if (Platform.OS === 'ios') {
+    const status = await requestPermission(messaging);
+    return status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL;
   }
   return true;
 }
@@ -58,7 +65,7 @@ export async function registerPush(): Promise<void> {
     // 앱을 보고 있을 때 온 알림은 시스템 알림이 안 뜨므로 배지만 갱신
     unsubscribers.push(onMessage(messaging, async () => useNotificationStore.getState().refreshUnread()));
 
-    if (!(await ensurePermission())) return;
+    if (!(await ensurePermission(messaging))) return;
 
     await sendToken(await getToken(messaging));
     unsubscribers.push(onTokenRefresh(messaging, token => { sendToken(token).catch(() => {}); }));

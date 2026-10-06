@@ -64,6 +64,13 @@ export default function TeamContactPickScreen() {
         setState('denied');
         return;
       }
+    } else {
+      // ★ v18.46 — 아이폰은 연락처 라이브러리로 권한을 물어봄(일부 연락처만 허용한 경우 'limited')
+      const perm = await Contacts.requestPermission().catch(() => 'denied');
+      if (perm !== 'authorized' && perm !== 'limited') {
+        setState('denied');
+        return;
+      }
     }
     try {
       setPeople(toPeople(await Contacts.getAllWithoutPhotos()));
@@ -90,7 +97,12 @@ export default function TeamContactPickScreen() {
 
   const send = async () => {
     if (!invite || chosen.length === 0) return;
-    const url = `sms:${chosen.map(p => p.digits).join(',')}?body=${encodeURIComponent(inviteMessage(invite))}`;
+    const numbers = chosen.map(p => p.digits).join(',');
+    const body = encodeURIComponent(inviteMessage(invite));
+    // ★ v18.46 — 아이폰 메시지 앱은 여러 명일 때 sms:/open?addresses= 형식이어야 전원이 받는 사람에 들어감
+    const url = Platform.OS === 'ios'
+      ? `sms:/open?addresses=${numbers}&body=${body}`
+      : `sms:${numbers}?body=${body}`;
     try {
       await Linking.openURL(url);
     } catch {

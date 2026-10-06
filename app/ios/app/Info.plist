@@ -5,9 +5,35 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>ko</string>
 	<key>CFBundleDisplayName</key>
-	<string>app</string>
+	<string>WorkMate</string>
+	<!-- ★ v18.46 — 초대·공지 링크(workmate://join/코드, workmate://notice/번호, workmate://event/번호)로 앱 열기 -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>workmate</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>workmate</string>
+			</array>
+		</dict>
+	</array>
+	<!-- ★ v18.46 — 앱 안 아이콘 글꼴(react-native-vector-icons). 없으면 아이콘이 전부 네모로 나옴 -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>MaterialCommunityIcons.ttf</string>
+	</array>
+	<!-- ★ v18.46 — 권한 안내문. 없으면 카메라·사진·연락처에 접근하는 순간 앱이 강제 종료됨 -->
+	<key>NSCameraUsageDescription</key>
+	<string>현장 사진을 바로 촬영하려면 카메라 접근이 필요해요.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>현장 사진·프로필 사진·문의 첨부 사진을 고르려면 사진 접근이 필요해요.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>명함 이미지를 사진첩에 저장하려면 사진 저장 권한이 필요해요.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>연락처에서 팀원을 골라 초대 문자를 보내려면 연락처 접근이 필요해요. 연락처는 휴대폰 안에서만 쓰이고 서버로 보내지 않아요.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,8 +60,6 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

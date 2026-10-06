@@ -20,7 +20,6 @@ import {
 import { Text, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getWorkTypes, createWorkType } from '../api/workTypesApi';
-import { useAuthStore } from '../store/authStore';
 import type { WorkType } from '../types/api';
 
 const COLOR_SWATCHES = [
@@ -34,6 +33,8 @@ interface Props {
   onChange: (id: number | null, workType: WorkType | null) => void;
   placeholder?: string;
   disabled?: boolean;
+  // ★ v18.44 — 팀 공정으로 추가할 팀(내가 팀장인 팀 일정을 등록 중일 때만). 없으면 개인 공정만
+  teamId?: number | null;
 }
 
 export default function WorkTypePicker({
@@ -41,9 +42,9 @@ export default function WorkTypePicker({
   onChange,
   placeholder = '공정 선택',
   disabled = false,
+  teamId = null,
 }: Props) {
-  const user = useAuthStore(s => s.user);
-  const hasTeam = !!user?.team_id;
+  const hasTeam = !!teamId;
 
   // ─── 상태 ───
   const [workTypes, setWorkTypes] = useState<WorkType[]>([]);
@@ -101,6 +102,7 @@ export default function WorkTypePicker({
         name: newName.trim(),
         color: newColor,
         is_personal: hasTeam ? newIsPersonal : true,
+        team_id: hasTeam && !newIsPersonal ? teamId : null,
       });
       await fetchWorkTypes();
       setAddingNew(false);

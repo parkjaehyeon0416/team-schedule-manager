@@ -27,9 +27,11 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSelect: (site: Site) => void;
+  // ★ v18.44 — 새로 등록하는 현장을 넣을 팀(팀 일정 등록 중일 때). 없으면 개인 현장
+  teamId?: number | null;
 }
 
-export default function SitePickerModal({ visible, onClose, onSelect }: Props) {
+export default function SitePickerModal({ visible, onClose, onSelect, teamId = null }: Props) {
   const insets = useSafeAreaInsets();
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,6 +66,8 @@ export default function SitePickerModal({ visible, onClose, onSelect }: Props) {
       const site = await createSite({
         address: result.roadAddress || result.jibunAddress,
         apt_name: result.buildingName || null,
+        team_id: teamId,
+        is_personal: !teamId,
       });
       handleSelect(site);
     } catch (e: any) {

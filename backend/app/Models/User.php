@@ -84,4 +84,40 @@ class User extends Authenticatable
     {
         return $this->teams()->pluck('teams.id')->all();
     }
+
+    /**
+     * ★ v18.44 — 팀별 역할로 권한 판단. 예전엔 전역 role_id(=활성 팀 역할) 하나로만 봐서,
+     *   A팀 팀장·B팀 팀원인 사람이 B팀을 활성으로 두면 A팀 일을 못 했음.
+     *   [team_id => role_id] (한 요청 안에서는 한 번만 조회)
+     */
+    private ?array $teamRoleMap = null;
+
+    public function teamRoles(): array
+    {
+        return $this->teamRoleMap ??= \Illuminate\Support\Facades\DB::table('team_members')
+            ->where('user_id', $this->id)
+            ->whereNull('deleted_at')
+            ->pluck('role_id', 'team_id')
+            ->map(fn($r) => (int) $r)
+            ->all();
+    }
+
+    /** 운영자(superadmin)이거나 그 팀에서 팀장이면 true */
+    public function isLeaderOf(?int $teamId): bool
+    {
+        if (!$teamId) {
+            return false;
+        }
+        if ((int) $this->role_id === 1) {
+            return true;
+        }
+        $role = $this->teamRoles()[$teamId] ?? null;
+        return $role !== null && $role <= 2;
+    }
+
+    /** 내가 팀장인 팀 id 목록 */
+    public function ledTeamIds(): array
+    {
+        return array_keys(array_filter($this->teamRoles(), fn($r) => $r <= 2));
+    }
 }

@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  *   그래서 attendances 테이블(check_in/check_out)은 이 기능에서 쓰지 않음 —
  *   실제 출퇴근 시각 기록 기능이 아니라 "일정 배정=근무일" 집계 조회임.
  *
- * GET /api/attendance?year=&month=  (manager 이상 전용 — 라우트 미들웨어)
+ * GET /api/attendance?year=&month=&team_id=  (★ v18.44 그 팀의 팀장만 — 컨트롤러에서 검사)
  */
 class AttendanceController extends Controller
 {
@@ -27,24 +27,38 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->team_id) {
-            return ApiResponse::error('소속된 팀이 없습니다.', 'ERR_TEAM_001', 404);
-        }
-
         $data = $request->validate([
-            'year'  => 'required|integer|min:2020|max:2099',
-            'month' => 'required|integer|min:1|max:12',
+            'year'    => 'required|integer|min:2020|max:2099',
+            'month'   => 'required|integer|min:1|max:12',
+            'team_id' => 'nullable|integer',
         ]);
+
+        // ★ v18.44 — 활성 팀이 아니어도 내가 팀장인 팀이면 조회 가능.
+        //   팀을 안 고르면 활성 팀(팀장일 때) → 아니면 내가 팀장인 첫 팀.
+        $led = $user->ledTeamIds();
+        $teamId = $data['team_id']
+            ?? ($user->isLeaderOf($user->team_id) ? $user->team_id : ($led[0] ?? null));
+
+        if (!$teamId) {
+            return ApiResponse::error('팀장으로 있는 팀이 없습니다.', 'ERR_TEAM_001', 404);
+        }
+        if (!$user->isLeaderOf((int) $teamId)) {
+            return ApiResponse::error('권한이 없습니다.', 'ERR_AUTH_002', 403);
+        }
 
         $start = Carbon::create($data['year'], $data['month'], 1)->startOfMonth();
         $end   = (clone $start)->endOfMonth();
 
-        // 1) 팀원 전체 (본인 포함)
-        $members = User::where('team_id', $user->team_id)
-            ->whereNull('deleted_at')
-            ->select('id', 'name', 'role_id')
-            ->orderBy('role_id')
-            ->orderBy('name')
+        // 1) 팀원 전체 (본인 포함) — ★ v18.44 team_members 기준(예전엔 users.team_id=활성 팀이라
+        //    이 팀을 활성으로 안 둔 팀원이 빠졌음). 역할도 이 팀 안에서의 역할.
+        $members = User::query()
+            ->join('team_members', 'team_members.user_id', '=', 'users.id')
+            ->where('team_members.team_id', $teamId)
+            ->whereNull('team_members.deleted_at')
+            ->whereNull('users.deleted_at')
+            ->select('users.id', 'users.name', 'team_members.role_id')
+            ->orderBy('team_members.role_id')
+            ->orderBy('users.name')
             ->get();
 
         // 2) 이 팀의 이번 달 일정에 배정된 (user_id, date) 전부 한 번에 조회
@@ -52,7 +66,7 @@ class AttendanceController extends Controller
             ->join('schedules', 'schedules.id', '=', 'schedule_users.schedule_id')
             ->whereNull('schedules.deleted_at')
             ->whereNull('schedule_users.deleted_at')
-            ->where('schedules.team_id', $user->team_id)
+            ->where('schedules.team_id', $teamId)
             ->whereBetween('schedules.date', [$start->toDateString(), $end->toDateString()])
             ->select('schedule_users.user_id', 'schedules.date')
             ->get();
@@ -78,6 +92,7 @@ class AttendanceController extends Controller
         })->values();
 
         return ApiResponse::success([
+            'team_id' => (int) $teamId,
             'year'    => $data['year'],
             'month'   => $data['month'],
             'members' => $result,

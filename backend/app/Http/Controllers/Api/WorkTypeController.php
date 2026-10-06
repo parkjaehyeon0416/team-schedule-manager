@@ -57,13 +57,15 @@ class WorkTypeController extends Controller
             'icon'        => 'nullable|string|max:30',
             'sort_order'  => 'nullable|integer',
             'is_personal' => 'nullable|boolean',
+            'team_id'     => 'nullable|integer', // ★ v18.44 어느 팀 공정으로 넣을지(생략 시 활성 팀)
         ]);
 
-        $wantsPersonal = $request->boolean('is_personal') || !$user->team_id;
+        $teamId = $data['team_id'] ?? $user->team_id;
+        $wantsPersonal = $request->boolean('is_personal') || !$teamId;
 
-        // 팀 전체가 공유하는 공정을 추가하는 거라면 manager 이상만 — 개인용은 누구나 가능
-        if (!$wantsPersonal && $user->role_id > 2) {
-            return ApiResponse::error('팀 공정 추가는 팀장 이상만 가능합니다.', 'ERR_AUTH_002', 403);
+        // 팀 전체가 공유하는 공정을 추가하는 거라면 그 팀의 팀장만 — 개인용은 누구나 가능
+        if (!$wantsPersonal && !$user->isLeaderOf((int) $teamId)) {
+            return ApiResponse::error('팀 공정 추가는 그 팀의 팀장만 가능합니다.', 'ERR_AUTH_002', 403);
         }
 
         $workType = WorkType::create([
@@ -73,7 +75,7 @@ class WorkTypeController extends Controller
             'icon'       => $data['icon'] ?? null,
             'sort_order' => $data['sort_order'] ?? 0,
             'is_active'  => true,
-            'team_id'    => $wantsPersonal ? null : $user->team_id,
+            'team_id'    => $wantsPersonal ? null : (int) $teamId,
             'owner_id'   => $wantsPersonal ? $user->id : null,
         ]);
 

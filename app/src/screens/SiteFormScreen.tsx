@@ -69,8 +69,15 @@ export default function SiteFormScreen() {
   const [queuedBefore, setQueuedBefore] = useState<QueuedPhoto[]>([]);
   const [queuedAfter, setQueuedAfter] = useState<QueuedPhoto[]>([]);
 
+  // ★ v18.44 — 팀 현장은 그 팀의 팀장만 등록할 수 있어 내가 팀장인 팀만 고를 수 있게
+  const [memberOnly, setMemberOnly] = useState(false);
   useEffect(() => {
-    getMyTeams().then(setTeams).catch(() => {});
+    getMyTeams()
+      .then(list => {
+        setTeams(list.filter(t => t.is_leader));
+        setMemberOnly(list.length > 0 && !list.some(t => t.is_leader));
+      })
+      .catch(() => {});
   }, []);
 
   const loadPhotos = React.useCallback(() => {
@@ -264,7 +271,9 @@ export default function SiteFormScreen() {
               </View>
             </Pressable>
           ) : (
-            <Text style={styles.addressPlaceholder}>소속된 팀이 없어 개인 현장으로 등록돼요.</Text>
+            <Text style={styles.addressPlaceholder}>
+              {memberOnly ? '팀 현장은 팀장만 등록할 수 있어 개인 현장으로 등록돼요.' : '소속된 팀이 없어 개인 현장으로 등록돼요.'}
+            </Text>
           )}
         </View>
 

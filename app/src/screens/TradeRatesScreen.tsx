@@ -46,7 +46,8 @@ export default function TradeRatesScreen() {
   const handleAddType = async () => {
     if (!newName.trim()) return;
     try {
-      const created = await createWorkType({ name: newName.trim() });
+      // 내 단가 화면에서 추가하는 공정은 나만 쓰는 개인 공정(★ v18.44 — 팀원이면 팀 공정 추가가 막혀 실패했었음)
+      const created = await createWorkType({ name: newName.trim(), is_personal: true });
       setWorkTypes(prev => [...prev, created]);
       setValues(prev => ({ ...prev, [created.id]: '0' }));
       setNewName('');

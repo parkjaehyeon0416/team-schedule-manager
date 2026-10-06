@@ -14,13 +14,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useAuthStore } from '../store/authStore';
 import {
-  getTeamMembers,
   createSchedule,
   updateSchedule,
   getScheduleById,
 } from '../api/schedulesApi';
 import { getSites } from '../api/siteApi';
-import { getMyTeams } from '../api/teamApi';
+import { getMyTeams, getTeamMembers } from '../api/teamApi';
 import { getWageProfile, getWageSettings } from '../api/wageSettingsApi';
 import WorkTypePicker from '../components/WorkTypePicker';
 import SitePickerModal from '../components/SitePickerModal';
@@ -46,8 +45,11 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
 
   const user = useAuthStore(s => s.user);
   const [teams, setTeams] = useState<Team[] | null>(null);
-  // 로그인 시점 user.team_id는 팀 탈퇴/해체 후 갱신 안 될 수 있어, 실제 소속 팀 목록이 오면 그걸로 판단
-  const hasTeam = teams ? teams.length > 0 : !!user?.team_id;
+  // ★ v18.44 — 팀 일정은 "그 팀에서" 팀장일 때만 등록 가능(활성 팀과 무관). 팀원으로만 있는 팀은
+  //   목록에 안 나오고, 팀장인 팀이 하나도 없으면 개인 일정으로만 저장됨.
+  const leaderTeams = (teams ?? []).filter(t => t.is_leader);
+  const hasTeam = leaderTeams.length > 0;
+  const memberOnly = !!teams && teams.length > 0 && !hasTeam;
 
   const [isPersonal, setIsPersonal] = useState<boolean>(!user?.team_id);
   const [teamId, setTeamId] = useState<number | null>(null);
@@ -92,8 +94,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
   useEffect(() => {
     const init = async () => {
       try {
-        const [membersData, wageData, teamList, profile] = await Promise.all([
-          getTeamMembers(),
+        const [wageData, teamList, profile] = await Promise.all([
           getWageSettings(),
           getMyTeams().catch(() => []),
           getWageProfile().catch(() => null),
@@ -101,12 +102,17 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         const base = profile?.is_saved ? Number(profile.full_day_wage) || 0 : 0;
         setBaseWage(base);
         if (!isEditMode && base > 0) setDailyWage(base);
-        setMembers(membersData);
         setWageSettings(wageData);
         setTeams(teamList);
-        const activeTeam = teamList.find(t => t.is_active) ?? teamList[0];
-        if (activeTeam) setTeamId(activeTeam.id);
-        else setIsPersonal(true); // 소속 팀이 없는 프리랜서는 항상 개인 일정
+        // 기본 팀: 활성 팀에서 팀장이면 그 팀, 아니면 내가 팀장인 첫 팀
+        const led = teamList.filter(t => t.is_leader);
+        const defaultTeam = led.find(t => t.is_active) ?? led[0];
+        if (defaultTeam) {
+          setTeamId(defaultTeam.id);
+          setIsPersonal(false);
+        } else {
+          setIsPersonal(true); // 팀이 없거나 팀원으로만 있으면 개인 일정
+        }
 
         if (isEditMode && editingScheduleId) {
           const data = await getScheduleById(editingScheduleId);
@@ -147,6 +153,16 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
     init();
   }, []);
 
+  // ★ v18.44 — 투입 인원은 고른 팀의 팀원 목록(예전엔 활성 팀 팀원만 나왔음)
+  useEffect(() => {
+    if (isPersonal || !teamId) { setMembers([]); return; }
+    let alive = true;
+    getTeamMembers(teamId)
+      .then(list => { if (alive) setMembers(list); })
+      .catch(() => alive && setMembers([]));
+    return () => { alive = false; };
+  }, [teamId, isPersonal]);
+
   const handleWorkTypeChange = (id: number | null, workTypeObj: WorkType | null) => {
     setWorkTypeId(id);
     if (id === null || !workTypeObj) return;
@@ -184,7 +200,8 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         area_m2: areaM2 ? parseFloat(areaM2) : null,
         memo: memo.trim() || null,
         reminder_time: reminderTime,
-        user_ids: selectedUserIds,
+        // 팀을 바꿨으면 그 팀 사람만 남김(개인 일정은 서버가 본인을 자동 포함)
+        user_ids: isPersonal ? [] : members.length ? selectedUserIds.filter(uid => members.some(m => m.id === uid)) : selectedUserIds,
         site_id: selectedSite?.id ?? null,
         address: selectedSite ? null : address.trim() || null,
         address_detail: addressDetail.trim() || null,
@@ -262,6 +279,10 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
             </Pressable>
             {!!selectedTeam && <Text style={styles.hint}>팀원들에게 일정이 공유됩니다.</Text>}
           </View>
+        )}
+
+        {memberOnly && (
+          <Text style={styles.hint}>팀 일정은 팀장만 등록할 수 있어요. 이 일정은 나만 보는 개인 일정으로 저장돼요.</Text>
         )}
 
         <View style={styles.field}>
@@ -371,7 +392,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
 
         <View style={styles.field}>
           <Text style={styles.label}>공정</Text>
-          <WorkTypePicker value={workTypeId} onChange={handleWorkTypeChange} disabled={saving} placeholder="공정 선택" />
+          <WorkTypePicker value={workTypeId} onChange={handleWorkTypeChange} disabled={saving} placeholder="공정 선택" teamId={hasTeam && !isPersonal ? teamId : null} />
         </View>
 
         <View style={styles.rowTwo}>
@@ -490,6 +511,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         visible={sitePickerVisible}
         onClose={() => setSitePickerVisible(false)}
         onSelect={site => { setSelectedSite(site); setAddress(''); }}
+        teamId={hasTeam && !isPersonal ? teamId : null}
       />
       <AddressSearchModal
         visible={addressSearchVisible}
@@ -506,7 +528,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         <View style={styles.modalSheet}>
           <Text style={styles.modalTitle}>팀 선택</Text>
           <FlatList
-            data={teams ?? []}
+            data={leaderTeams}
             keyExtractor={t => String(t.id)}
             renderItem={({ item }) => (
               <Pressable style={styles.modalRow} onPress={() => { setTeamId(item.id); setTeamPickerVisible(false); }}>

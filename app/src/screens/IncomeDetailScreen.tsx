@@ -132,14 +132,17 @@ export default function IncomeDetailScreen() {
           <Icon name="chevron-right" size={16} color={colors.muted} />
         </Pressable>
 
-        <View style={styles.footerRow}>
-          <Pressable style={styles.editBtn} onPress={() => navigation.navigate('ScheduleCreate', { scheduleId })}>
-            <Text style={styles.editBtnText}>수정</Text>
-          </Pressable>
-          <Pressable style={styles.deleteBtn} onPress={handleDelete}>
-            <Text style={styles.deleteBtnText}>삭제</Text>
-          </Pressable>
-        </View>
+        {/* ★ v18.44 — 팀원은 팀 일정을 수정·삭제할 수 없어 버튼 숨김 */}
+        {schedule.can_edit !== false && (
+          <View style={styles.footerRow}>
+            <Pressable style={styles.editBtn} onPress={() => navigation.navigate('ScheduleCreate', { scheduleId })}>
+              <Text style={styles.editBtnText}>수정</Text>
+            </Pressable>
+            <Pressable style={styles.deleteBtn} onPress={handleDelete}>
+              <Text style={styles.deleteBtnText}>삭제</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </View>
   );

@@ -30,7 +30,12 @@ class TeamController extends Controller
         }
 
         $teams = $user->teams()->orderByDesc('teams.id')->get();
-        $teams->each(fn ($team) => $team->is_active = $team->id === $user->team_id);
+        $teams->each(function ($team) use ($user) {
+            $team->is_active = $team->id === $user->team_id;
+            // ★ v18.44 — 팀마다 내 역할(활성 팀과 무관하게 앱이 팀장 기능을 보여줄지 판단)
+            $team->my_role_id = (int) $team->pivot->role_id;
+            $team->is_leader  = $team->my_role_id <= 2;
+        });
 
         return ApiResponse::success($teams, '팀 목록 조회 성공');
     }
@@ -103,14 +108,13 @@ class TeamController extends Controller
 
     /**
      * ─── ④ 팀 정보 수정 ───
-     *   manager 이상 전용(라우트 미들웨어에서 이미 검증). 본인 팀만 수정 가능(superadmin 제외).
+     *   ★ v18.44 — 그 팀의 팀장만(활성 팀과 무관). superadmin은 전체.
      */
     public function update(Request $request, string $id)
     {
         $user = $request->user();
 
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))
-            ->find($id);
+        $team = $this->ledTeam($user, $id);
 
         if (!$team) {
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
@@ -143,7 +147,7 @@ class TeamController extends Controller
     public function uploadPhoto(Request $request, string $id)
     {
         $user = $request->user();
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))->find($id);
+        $team = $this->ledTeam($user, $id);
 
         if (!$team) {
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
@@ -166,7 +170,7 @@ class TeamController extends Controller
     public function deletePhoto(Request $request, string $id)
     {
         $user = $request->user();
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->where('id', $user->team_id))->find($id);
+        $team = $this->ledTeam($user, $id);
 
         if (!$team) {
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
@@ -224,7 +228,8 @@ class TeamController extends Controller
 
     /**
      * ─── ⑤ 팀 삭제(해체) ───
-     *   manager 이상 전용(라우트 미들웨어). 본인 팀만 삭제 가능(superadmin 제외).
+     *   ★ v18.44 — 그 팀의 팀장만(예전엔 활성 팀에서 팀장이면 팀원으로만 있는 다른 팀도
+     *   해체할 수 있었던 구멍이 있었음). superadmin은 전체.
      *
      *   해체해도 팀 소속이었던 일정/현장의 team_id는 그대로 둠(데이터 삭제도,
      *   개인 전환도 안 함) — Team은 SoftDeletes라 이름도 보존되므로, 팀원이었던
@@ -237,8 +242,7 @@ class TeamController extends Controller
     {
         $user = $request->user();
 
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->teamIds()))
-            ->find($id);
+        $team = $this->ledTeam($user, $id);
 
         if (!$team) {
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
@@ -479,6 +483,12 @@ class TeamController extends Controller
         $user->role_id   = $membership->role_id ?? 3;
         $user->user_type = 'team';
         $user->save();
+    }
+
+    /** ★ v18.44 — 내가 팀장인 팀만 찾음(superadmin은 전체). 팀원이거나 남의 팀이면 null */
+    private function ledTeam(User $user, string $id): ?Team
+    {
+        return Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->ledTeamIds()))->find($id);
     }
 
     /**

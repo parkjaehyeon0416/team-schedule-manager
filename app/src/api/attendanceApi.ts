@@ -14,17 +14,20 @@ export interface AttendanceMember {
 }
 
 export interface AttendanceSummary {
+  team_id?: number;
   year: number;
   month: number;
   members: AttendanceMember[];
 }
 
+// ★ v18.44 — teamId로 내가 팀장인 팀 중 하나를 지정(활성 팀이 아니어도 됨)
 export async function getAttendance(
   year: number,
   month: number,
+  teamId?: number | null,
 ): Promise<AttendanceSummary> {
   const res = await axios.get<ApiResponse<AttendanceSummary>>('/attendance', {
-    params: { year, month },
+    params: teamId ? { year, month, team_id: teamId } : { year, month },
   });
   return res.data.data;
 }

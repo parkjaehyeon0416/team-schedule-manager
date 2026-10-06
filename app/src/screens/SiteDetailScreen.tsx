@@ -89,6 +89,8 @@ export default function SiteDetailScreen() {
     );
   }
 
+  // ★ v18.44 — 내 개인 현장이거나 그 팀의 팀장일 때만 수정·삭제·사진 추가
+  const canEdit = site.can_edit !== false;
   const title = site.apt_name || site.address;
   const subLine = [site.address, site.dong && `${site.dong}동`, site.ho && `${site.ho}호`].filter(Boolean).join(' ');
   const statusInfo = STATUS_LABEL[site.status ?? 'scheduled'];
@@ -137,13 +139,13 @@ export default function SiteDetailScreen() {
       <AppHeader
         leftType="back"
         title="현장 상세"
-        rightContent={
+        rightContent={canEdit ? (
           <Pressable onPress={() => setMenuOpen(v => !v)} style={styles.headerRightBtn}>
             <Icon name="dots-horizontal" size={22} color={colors.textPrimary} />
           </Pressable>
-        }
+        ) : undefined}
       />
-      {menuOpen && (
+      {menuOpen && canEdit && (
         <View style={styles.menuBox}>
           <Pressable style={styles.menuItem} onPress={handleDelete}><Text style={[styles.menuItemText, { color: colors.danger }]}>삭제</Text></Pressable>
         </View>
@@ -165,9 +167,11 @@ export default function SiteDetailScreen() {
         <View style={styles.photoCard}>
           <View style={styles.photoCardHeader}>
             <Text style={styles.sectionTitle}>시공 사진</Text>
-            <Pressable onPress={() => navigation.navigate('SiteEdit', { site })}>
-              <Text style={styles.photoAddLink}>사진 추가</Text>
-            </Pressable>
+            {canEdit && (
+              <Pressable onPress={() => navigation.navigate('SiteEdit', { site })}>
+                <Text style={styles.photoAddLink}>사진 추가</Text>
+              </Pressable>
+            )}
           </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {renderPhotoGroup('시공 전', { bg: 'rgba(16,42,86,0.72)', fg: '#FFFFFF' }, photos?.before ?? [])}
@@ -229,9 +233,11 @@ export default function SiteDetailScreen() {
         </View>
 
         <View style={styles.footerRow}>
-          <Pressable style={styles.editBtn} onPress={() => navigation.navigate('SiteEdit', { site })}>
-            <Text style={styles.editBtnText}>수정</Text>
-          </Pressable>
+          {canEdit && (
+            <Pressable style={styles.editBtn} onPress={() => navigation.navigate('SiteEdit', { site })}>
+              <Text style={styles.editBtnText}>수정</Text>
+            </Pressable>
+          )}
           <Pressable style={{ flex: 1 }} onPress={() => navigation.navigate('ScheduleCreate', { siteId })}>
             <LinearGradient colors={[colors.primaryLight, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.addBtn}>
               <Icon name="plus" size={18} color="#FFFFFF" />

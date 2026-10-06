@@ -230,9 +230,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tax-summary/export', [TaxSummaryController::class, 'exportCsv']); // ★ DESIGN-CANVAS(TAX_EXPORT) 추가
 
     // ═══════════════════════════════════════════════════════════
-    // ── 등록·수정·삭제 (manager 이상) ──
+    // ── 등록·수정·삭제 ──
+    //   ★ v18.44 — 전역 역할(role:manager, =활성 팀 역할) 검사를 없애고 컨트롤러에서
+    //   "그 데이터가 속한 팀에서의 역할"로 판단: 개인 일정/현장은 누구나, 팀 것은 그 팀 팀장만.
+    //   (A팀 팀장·B팀 팀원이 팀을 바꾸지 않고도 A팀 일을 하고, 팀원도 개인 일을 등록할 수 있게)
     // ═══════════════════════════════════════════════════════════
-    Route::middleware('role:manager')->group(function () {
+    Route::group([], function () {
         // 일정 CUD
         Route::post('/schedules',        [ScheduleController::class, 'store']);
         Route::put('/schedules/{id}',    [ScheduleController::class, 'update']);
@@ -245,13 +248,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sites/{id}/photos',               [PhotoController::class, 'siteStore']);   // ★ DESIGN-CANVAS 추가
         Route::delete('/sites/{id}/photos/{photoId}',    [PhotoController::class, 'siteDestroy']); // ★ DESIGN-CANVAS 추가
 
-        // 팀 관리 — 수정/삭제만 manager 이상 (조회/생성/가입은 위 member+ 그룹으로 이동됨)
+        // 팀 관리 — 수정/삭제/사진은 그 팀 팀장만 (TeamController::ledTeam)
         Route::put('/teams/{id}',    [TeamController::class, 'update']);
         Route::delete('/teams/{id}', [TeamController::class, 'destroy']);
         Route::post('/teams/{id}/photo',   [TeamController::class, 'uploadPhoto']); // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
         Route::delete('/teams/{id}/photo', [TeamController::class, 'deletePhoto']); // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
 
-        // ★ 근태 현황 — 팀장이 팀원들의 그 달 출근일(=일정 배정일)을 조회.
+        // ★ 근태 현황 — 팀장이 팀원들의 그 달 출근일(=일정 배정일)을 조회. ?team_id=로 팀 지정(그 팀 팀장만).
         //   팀원 개인은 본인 근무일을 이미 MySummaryScreen에서 보므로 접근 불필요.
         Route::get('/attendance', [AttendanceController::class, 'index']);
 

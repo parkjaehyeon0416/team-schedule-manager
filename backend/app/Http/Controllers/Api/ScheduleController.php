@@ -39,6 +39,7 @@ class ScheduleController extends Controller
         }
 
         $schedules = $query->get();
+        $schedules->each(fn(Schedule $s) => $s->can_edit = $s->canEditBy($user));
 
         return ApiResponse::success($schedules, '일정 목록 조회 성공');
     }
@@ -88,9 +89,14 @@ class ScheduleController extends Controller
         if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
             return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
         }
+        // ★ v18.44 — 팀 일정은 "그 팀에서" 팀장일 때만(활성 팀과 무관). 개인 일정은 누구나.
+        if ($requestedTeamId !== null && !$user->isLeaderOf($requestedTeamId)) {
+            return ApiResponse::error('팀 일정은 그 팀의 팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
+        }
 
+        // 팀을 안 고른 예전 앱: 활성 팀에서 팀장이면 활성 팀 일정, 아니면 개인 일정
         $wantsPersonal = $requestedTeamId === null
-            ? ($request->boolean('is_personal') || !$user->team_id)
+            ? ($request->boolean('is_personal') || !$user->isLeaderOf($user->team_id))
             : false;
         $data['team_id']    = $wantsPersonal ? null : ($requestedTeamId ?? $user->team_id);
         $data['owner_id']   = $wantsPersonal ? $user->id : null;
@@ -210,6 +216,7 @@ class ScheduleController extends Controller
         if (!$schedule) {
             return ApiResponse::error('일정을 찾을 수 없습니다.', 'ERR_NOT_FOUND', 404);
         }
+        $schedule->can_edit = $schedule->canEditBy($user);
 
         return ApiResponse::success($schedule, '일정 조회 성공');
     }
@@ -260,6 +267,10 @@ class ScheduleController extends Controller
             $requestedTeamId = $data['team_id'] ?? null;
             if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
                 return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
+            }
+            // ★ v18.44 — 다른 팀으로 옮길 때도 옮겨갈 팀의 팀장이어야 함
+            if ($requestedTeamId !== null && !$user->isLeaderOf($requestedTeamId)) {
+                return ApiResponse::error('팀 일정은 그 팀의 팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
             }
             $wantsPersonal = $requestedTeamId === null ? $request->boolean('is_personal') : false;
             $data['team_id']  = $wantsPersonal ? null : $requestedTeamId;

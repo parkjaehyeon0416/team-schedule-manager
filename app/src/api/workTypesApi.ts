@@ -21,11 +21,12 @@ export interface CreateWorkTypePayload {
   name: string;
   color?: string;
   is_personal?: boolean;
+  team_id?: number | null; // ★ v18.44 어느 팀 공정으로 넣을지 (생략 시 활성 팀)
 }
 
 /**
  * 커스텀 공정 추가
- * - 팀 소속이면 팀 전체가 쓰는 공정으로 등록(manager 이상만 가능 — 서버에서 검증)
+ * - 팀 공정은 그 팀의 팀장만 가능 — 서버에서 검증
  * - is_personal: true면 팀 소속이어도 나만 쓰는 개인 공정으로 등록
  */
 export async function createWorkType(

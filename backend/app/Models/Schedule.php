@@ -178,15 +178,23 @@ class Schedule extends Model
     // ────────────────────────────────────────────────
     // [스코프] 수정/삭제 가능 범위 — 과거 팀 일정은 조회만 가능하고 수정은 불가.
     //   - 내 개인 일정(owner_id)이거나
-    //   - 지금 소속된 팀의 일정(team_id = 현재 team_id)
+    //   - ★ v18.44 내가 팀장인 팀의 일정(활성 팀이 아니어도 됨)
     // ────────────────────────────────────────────────
     public function scopeEditableBy($query, $user)
     {
-        return $query->where(function ($q) use ($user) {
+        $led = $user->ledTeamIds();
+        return $query->where(function ($q) use ($user, $led) {
             $q->where('owner_id', $user->id);
-            if ($user->team_id) {
-                $q->orWhere('team_id', $user->team_id);
+            if (!empty($led)) {
+                $q->orWhereIn('team_id', $led);
             }
         });
+    }
+
+    /** ★ v18.44 — 앱이 수정/삭제 버튼을 보여줄지 판단하는 값 */
+    public function canEditBy($user): bool
+    {
+        return (int) $this->owner_id === (int) $user->id
+            || ($this->team_id && $user->isLeaderOf((int) $this->team_id));
     }
 }

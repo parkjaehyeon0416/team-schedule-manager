@@ -132,6 +132,7 @@ export interface Site {
   end_date?: string | null;
   customer?: string | null;
   status?: 'scheduled' | 'in_progress' | 'done';
+  can_edit?: boolean; // ★ v18.44 — 내 개인 현장이거나 내가 팀장인 팀 현장이면 true
   created_at?: string;
   updated_at?: string;
   deleted_at?: string | null;
@@ -170,6 +171,7 @@ export interface Schedule {
   users?: TeamMember[];
   site?: Site | null;
   work_type_relation?: WorkType; // workType() 관계 로드 시
+  can_edit?: boolean; // ★ v18.44 — 내 개인 일정이거나 내가 팀장인 팀 일정이면 true
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -241,6 +243,9 @@ export interface Team {
   invite_code: string;
   created_by: number | null;
   is_active?: boolean; // ★ v18.21 — GET /teams 응답에서만 내려옴(지금 활성 팀인지)
+  // ★ v18.44 — 이 팀에서 내 역할(활성 팀과 무관). GET /teams 응답에서만 내려옴
+  my_role_id?: number;
+  is_leader?: boolean;
   created_at?: string;
   // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
   photo_path?: string | null;

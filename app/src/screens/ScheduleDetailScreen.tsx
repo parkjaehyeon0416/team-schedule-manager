@@ -222,6 +222,8 @@ export default function ScheduleDetailScreen({ route }: any) {
   const alreadyPairedBeforeIds = photos.after.filter(p => p.paired_with_id != null).map(p => p.paired_with_id as number);
   const totalPhotos = photos.counts.before + photos.counts.during + photos.counts.after + photos.counts.other;
 
+  // ★ v18.44 — 내 개인 일정이거나 그 팀의 팀장일 때만(서버가 판단해서 내려줌, 예전 서버면 항상 보임)
+  const canEdit = schedule.can_edit !== false;
   const titleText = schedule.title || schedule.work_type_relation?.name || schedule.memo || '일정';
   const siteLabel = scheduleLocationLabel(schedule);
   const fullAddress = scheduleAddress(schedule);
@@ -245,9 +247,11 @@ export default function ScheduleDetailScreen({ route }: any) {
           <Pressable style={styles.menuItem} onPress={() => { setMenuOpen(false); navigation.navigate('ScheduleReports', { scheduleId: id }); }}>
             <Text style={styles.menuItemText}>자동 보고서 관리</Text>
           </Pressable>
-          <Pressable style={styles.menuItem} onPress={handleDelete}>
-            <Text style={[styles.menuItemText, { color: colors.danger }]}>삭제</Text>
-          </Pressable>
+          {canEdit && (
+            <Pressable style={styles.menuItem} onPress={handleDelete}>
+              <Text style={[styles.menuItemText, { color: colors.danger }]}>삭제</Text>
+            </Pressable>
+          )}
         </View>
       )}
       <ScrollView contentContainerStyle={styles.content}>
@@ -357,14 +361,18 @@ export default function ScheduleDetailScreen({ route }: any) {
           />
         </View>
 
-        <View style={styles.footerRow}>
-          <Pressable style={styles.editBtn} onPress={() => navigation.navigate('ScheduleCreate', { scheduleId: id })}>
-            <Text style={styles.editBtnText}>수정</Text>
-          </Pressable>
-          <Pressable style={styles.deleteBtn} onPress={handleDelete} disabled={deleting}>
-            {deleting ? <ActivityIndicator color={colors.danger} /> : <Text style={styles.deleteBtnText}>삭제</Text>}
-          </Pressable>
-        </View>
+        {canEdit ? (
+          <View style={styles.footerRow}>
+            <Pressable style={styles.editBtn} onPress={() => navigation.navigate('ScheduleCreate', { scheduleId: id })}>
+              <Text style={styles.editBtnText}>수정</Text>
+            </Pressable>
+            <Pressable style={styles.deleteBtn} onPress={handleDelete} disabled={deleting}>
+              {deleting ? <ActivityIndicator color={colors.danger} /> : <Text style={styles.deleteBtnText}>삭제</Text>}
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={styles.readonlyHint}>팀 일정은 그 팀의 팀장만 수정·삭제할 수 있어요.</Text>
+        )}
       </ScrollView>
 
       <PhotoPairPicker
@@ -418,6 +426,7 @@ const styles = StyleSheet.create({
   photoCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderCard, borderRadius: radius.lg, padding: 12, gap: 8 },
 
   footerRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  readonlyHint: { fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 4 },
   editBtn: { flex: 1, height: 48, borderRadius: radius.md, borderWidth: 1, borderColor: '#BFDBFB', alignItems: 'center', justifyContent: 'center' },
   editBtnText: { fontSize: 15, fontWeight: '700', color: colors.primaryDark },
   deleteBtn: { flex: 1, height: 48, borderRadius: radius.md, borderWidth: 1, borderColor: colors.dangerBorder, backgroundColor: colors.dangerBg, alignItems: 'center', justifyContent: 'center' },

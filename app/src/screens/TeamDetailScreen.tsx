@@ -104,7 +104,8 @@ export default function TeamDetailScreen() {
   const createdDate = team.created_at
     ? new Date(team.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
     : '-';
-  const lead = members.find(m => m.role_id <= 2);
+  // ★ v18.44 — 이 팀에서 내 역할(활성 팀 여부와 무관). 예전엔 "팀에 팀장이 있으면" 팀장으로 표시됐음
+  const isLeader = !!team.is_leader;
 
   return (
     <View style={styles.screen}>
@@ -123,11 +124,9 @@ export default function TeamDetailScreen() {
             <Text style={styles.headName}>{team.name}</Text>
             <Text style={styles.headSub}>팀원 {members.length}명 · 이번 달 일정 {schedules.length}건</Text>
           </View>
-          {team.is_active && (
-            <View style={styles.myRoleTag}>
-              <Text style={styles.myRoleText}>내 역할 · {lead ? '팀장' : '팀원'}</Text>
-            </View>
-          )}
+          <View style={styles.myRoleTag}>
+            <Text style={styles.myRoleText}>내 역할 · {isLeader ? '팀장' : '팀원'}</Text>
+          </View>
         </View>
 
         <View style={styles.tabRow}>
@@ -218,9 +217,11 @@ export default function TeamDetailScreen() {
         )}
 
         <View style={styles.footerRow}>
-          <Pressable style={styles.secondaryBtn} onPress={() => navigation.navigate('TeamCreate', { team })}>
-            <Text style={styles.secondaryBtnText}>팀 정보 수정</Text>
-          </Pressable>
+          {isLeader && (
+            <Pressable style={styles.secondaryBtn} onPress={() => navigation.navigate('TeamCreate', { team })}>
+              <Text style={styles.secondaryBtnText}>팀 정보 수정</Text>
+            </Pressable>
+          )}
           <Pressable style={{ flex: 1 }} onPress={() => navigation.navigate('TeamInvite', { teamId: team.id })}>
             <LinearGradient
               colors={[colors.primaryLight, colors.primaryDark]}

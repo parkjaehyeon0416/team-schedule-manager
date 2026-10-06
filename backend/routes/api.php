@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sms/templates',          [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'storeTemplate']);
         Route::get('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'showTemplate']);
         Route::post('/sms/test',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'test']);
+        Route::get('/sms/config',              [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'config']);
         Route::put('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'updateTemplate']);
         Route::delete('/sms/templates/{id}',   [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'destroyTemplate']);
         Route::post('/sms/preview',            [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'preview']);

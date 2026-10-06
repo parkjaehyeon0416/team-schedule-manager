@@ -14,26 +14,31 @@ export function navigateFromOutside(name: string, params?: object) {
   }
 }
 
-// ★ v18.43 — 초대 링크(workmate://join/코드)로 앱이 열렸을 때. 로그인 전이면 코드를 들고 있다가 로그인 후 참여 화면으로
-let pendingJoinCode: string | null = null;
+// ★ v18.43 — 웹 페이지의 "앱에서 열기" 링크로 앱이 열렸을 때
+//   workmate://join/코드 → 팀 참여(코드 자동 입력), workmate://notice/ID · workmate://event/ID → 공지·이벤트 상세
+//   로그인 전이면 들고 있다가 로그인 후 이동
+let pendingLink: { name: string; params: object } | null = null;
 
-export function parseJoinLink(url: string | null): string | null {
-  const m = url?.match(/^workmate:\/\/join\/([A-Za-z0-9]{4,12})/);
-  return m ? m[1].toUpperCase() : null;
+export function parseAppLink(url: string | null): { name: string; params: object } | null {
+  const join = url?.match(/^workmate:\/\/join\/([A-Za-z0-9]{4,12})/);
+  if (join) return { name: 'TeamJoin', params: { code: join[1].toUpperCase() } };
+  const notice = url?.match(/^workmate:\/\/(notice|event)\/(\d+)/);
+  if (notice) return { name: notice[1] === 'event' ? 'EventDetail' : 'NoticeDetail', params: { id: Number(notice[2]) } };
+  return null;
 }
 
-export function handleJoinLink(url: string | null, isLoggedIn: boolean) {
-  const code = parseJoinLink(url);
-  if (!code) return;
-  if (isLoggedIn) navigateFromOutside('TeamJoin', { code });
-  else pendingJoinCode = code;
+export function handleAppLink(url: string | null, isLoggedIn: boolean) {
+  const target = parseAppLink(url);
+  if (!target) return;
+  if (isLoggedIn) navigateFromOutside(target.name, target.params);
+  else pendingLink = target;
 }
 
-export function flushPendingJoin() {
-  if (!pendingJoinCode) return;
-  const code = pendingJoinCode;
-  pendingJoinCode = null;
-  navigateFromOutside('TeamJoin', { code });
+export function flushPendingLink() {
+  if (!pendingLink) return;
+  const { name, params } = pendingLink;
+  pendingLink = null;
+  navigateFromOutside(name, params);
 }
 
 export function flushPendingNavigation() {

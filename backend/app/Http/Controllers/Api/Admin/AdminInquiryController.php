@@ -32,7 +32,7 @@ class AdminInquiryController extends Controller
                 ->orWhere('content', 'like', "%{$q}%")
                 ->when(preg_match('/^Q-?(\d+)$/i', $q, $m), fn($y) => $y->orWhere('id', (int) $m[1] - 1000))
                 ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$q}%")->orWhere('email', 'like', "%{$q}%"))))
-            ->latest();
+            ->latest()->orderByDesc('id');
 
         $page = $query->paginate(20);
 

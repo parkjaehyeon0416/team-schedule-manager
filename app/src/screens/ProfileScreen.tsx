@@ -14,12 +14,14 @@ import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { getMyTeams } from '../api/teamApi';
 import { getSchedules } from '../api/schedulesApi';
 import { getSites } from '../api/siteApi';
+import { getMyInquiries } from '../api/inquiryApi';
+import { APP_VERSION } from '../constants/appVersion';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
 import type { IconKey } from '../assets/icons';
 
 // ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
-type MenuRow = { key: string; image: IconKey; label: string; sub?: string; onPress: () => void };
+type MenuRow = { key: string; image: IconKey; label: string; sub?: string; right?: string; onPress: () => void };
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -28,6 +30,7 @@ export default function ProfileScreen() {
   const [teamCount, setTeamCount] = useState<number | null>(null);
   const [scheduleCount, setScheduleCount] = useState<number | null>(null);
   const [siteCount, setSiteCount] = useState<number | null>(null);
+  const [unreadAnswers, setUnreadAnswers] = useState(0); // ★ v18.43 고객 문의 새 답변 수
 
   useFocusEffect(
     useCallback(() => {
@@ -37,6 +40,7 @@ export default function ProfileScreen() {
         .then(s => setScheduleCount(s.length))
         .catch(() => setScheduleCount(null));
       getSites().then(s => setSiteCount(s.length)).catch(() => setSiteCount(null));
+      getMyInquiries().then(r => setUnreadAnswers(r.unread_answers)).catch(() => setUnreadAnswers(0));
     }, []),
   );
 
@@ -89,10 +93,15 @@ export default function ProfileScreen() {
   // ★ v18.36 — 디자인(MY_HOME)대로 공지·약관·개인정보 항목 추가
   const infoMenu: MenuRow[] = [
     { key: 'notice', image: 'megaphone', label: '공지사항 · 이벤트', onPress: () => navigation.navigate('NoticeList') },
+    // ★ v18.43 — 고객 문의 (오른쪽에 새 답변 수)
+    {
+      key: 'inquiry', image: 'megaphone', label: '고객 문의', right: unreadAnswers > 0 ? `답변 ${unreadAnswers}건` : undefined,
+      onPress: () => navigation.navigate('InquiryList'),
+    },
     { key: 'terms', image: 'doc', label: '이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'terms' }) },
     { key: 'privacy', image: 'privacy', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
     {
-      key: 'appInfo', image: 'info', label: '앱 정보', sub: 'v1.0.0',
+      key: 'appInfo', image: 'info', label: '앱 정보', sub: `v${APP_VERSION}`,
       onPress: () => navigation.navigate('AppInfo'),
     },
   ];
@@ -106,6 +115,7 @@ export default function ProfileScreen() {
         <RNText style={styles.rowLabel}>{row.label}</RNText>
         {!!row.sub && <RNText style={styles.rowSub}>{row.sub}</RNText>}
       </View>
+      {!!row.right && <RNText style={styles.rowRight}>{row.right}</RNText>}
       <Icon name="chevron-right" size={16} color={colors.muted} />
     </TouchableOpacity>
   );
@@ -224,6 +234,7 @@ const styles = StyleSheet.create({
   rowTextBox: { flex: 1, minWidth: 0, gap: 2 },
   rowLabel: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   rowSub: { fontSize: 12, color: colors.textSecondary },
+  rowRight: { fontSize: 12, color: colors.textSecondary, marginRight: 4 },
   versionText: { fontSize: 13, color: colors.textSecondary },
 
   logoutBtn: {

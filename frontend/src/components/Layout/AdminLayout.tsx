@@ -5,19 +5,22 @@ import logo from "../../assets/icons/logo.png";
 import { useAuthStore } from "../../store/authStore";
 
 type Item = { to: string; label: string; icon: string; soon?: boolean };
+// ★ v18.43 — 디자인(ADMIN_*) 메뉴 묶음: 콘텐츠 / 운영 / 회원 / 준비 중
+//   (디자인엔 회원이 "준비 중"으로 돼 있지만 v18.41에 이미 만들어서 사용 가능한 메뉴로 둠)
 const GROUPS: { title?: string; items: Item[] }[] = [
   { items: [{ to: "/", label: "대시보드", icon: "dashboard" }] },
   { title: "콘텐츠", items: [{ to: "/notices", label: "공지 관리", icon: "notice" }, { to: "/events", label: "이벤트 관리", icon: "event" }] },
-  { title: "회원", items: [{ to: "/members", label: "회원 관리", icon: "members" }] },
   {
-    title: "준비 중",
+    title: "운영",
     items: [
-      { to: "/stats", label: "통계", icon: "stats", soon: true },
-      { to: "/inquiries", label: "고객 문의", icon: "inquiry", soon: true },
-      { to: "/sms", label: "문자 발송", icon: "sms", soon: true },
-      { to: "/payments", label: "결제", icon: "payment", soon: true },
+      { to: "/inquiries", label: "고객 문의", icon: "inquiry" },
+      { to: "/sms", label: "문자 발송", icon: "sms" },
+      { to: "/sms-templates", label: "문자 템플릿", icon: "template" },
+      { to: "/stats", label: "통계", icon: "stats" },
     ],
   },
+  { title: "회원", items: [{ to: "/members", label: "회원 관리", icon: "members" }] },
+  { title: "준비 중", items: [{ to: "/payments", label: "결제", icon: "payment", soon: true }] },
 ];
 const ALL = GROUPS.flatMap(g => g.items);
 

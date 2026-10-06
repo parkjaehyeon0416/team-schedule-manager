@@ -30,6 +30,7 @@ function openFromNotification(msg: RemoteMessage | null) {
   if (linkType === 'schedule') navigateFromOutside('ScheduleDetail', { id: linkId });
   else if (linkType === 'team') navigateFromOutside('TeamDetail', { teamId: linkId });
   else if (linkType === 'quote') navigateFromOutside('QuoteDetail', { quoteId: linkId });
+  else if (linkType === 'inquiry') navigateFromOutside('InquiryDetail', { id: linkId }); // ★ v18.43 문의 답변
 }
 
 async function ensurePermission(): Promise<boolean> {

@@ -30,13 +30,8 @@ export default function AppInfoScreen() {
   const [password, setPassword] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
 
-  const handleContact = () => {
-    Alert.alert('문의하기', '', [
-      { text: '취소', style: 'cancel' },
-      { text: '이메일로 문의', onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => {}) },
-      { text: '전화 문의', onPress: () => Linking.openURL(`tel:${SUPPORT_PHONE}`).catch(() => {}) },
-    ]);
-  };
+  // ★ v18.43 — 이메일·전화 대신 앱 안 고객 문의로
+  const handleContact = () => navigation.navigate('InquiryList');
 
   const handleWithdraw = async () => {
     if (!password.trim()) {

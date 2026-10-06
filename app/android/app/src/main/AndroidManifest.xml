@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- ★ v18.38 — 휴대폰 푸시 알림 표시(안드로이드 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- ★ v18.43 — 연락처에서 팀원 초대 (처음 "연락처에서 초대" 누를 때만 허용 요청) -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- ★ v18.18 — 카카오톡 앱으로 로그인 전환(app switch)을 위한 패키지 가시성(Android 11+) -->
@@ -40,12 +42,14 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-        <!-- ★ v18.43 — 팀 초대 링크 페이지의 "앱에서 열기" (workmate://join/코드) -->
+        <!-- ★ v18.43 — 웹 페이지의 "앱에서 열기" (workmate://join/코드, workmate://notice/ID, workmate://event/ID) -->
         <intent-filter>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.DEFAULT" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="workmate" android:host="join" />
+            <data android:scheme="workmate" android:host="notice" />
+            <data android:scheme="workmate" android:host="event" />
         </intent-filter>
       </activity>
 

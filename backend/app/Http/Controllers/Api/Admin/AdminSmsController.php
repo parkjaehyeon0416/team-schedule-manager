@@ -97,6 +97,18 @@ class AdminSmsController extends Controller
         return ApiResponse::success(null, '테스트 문자를 보냈습니다.');
     }
 
+    // GET /api/admin/sms/config — 템플릿 작성 화면 미리보기용 (수신거부 문구, 발신번호, 공지 링크 주소)
+    public function config()
+    {
+        $sender = preg_replace('/[^0-9]/', '', (string) config('sms.solapi.sender'));
+
+        return ApiResponse::success([
+            'ad_opt_out' => trim((string) config('sms.ad_opt_out')),
+            'sender'     => $sender ? preg_replace('/^(\d{3})(\d{3,4})(\d{4})$/', '$1-$2-$3', $sender) : null,
+            'link_base'  => url('/n') . '/',
+        ], '문자 설정');
+    }
+
     // ─── 발송 ───
 
     // POST /api/admin/sms/preview  { template_id, target } — 받는 사람 수(대상별), 실제 문구, SMS/LMS, 발송 가능 여부
@@ -284,6 +296,7 @@ class AdminSmsController extends Controller
             'notice_id'  => $t->notice_id,
             'notice'     => $t->notice ? ['id' => $t->notice->id, 'type' => $t->notice->type, 'title' => $t->notice->title] : null,
             'type'       => $bytes > 90 ? 'LMS' : 'SMS',
+            'final_body' => self::finalBody($t->kind, $t->body, $t->notice_id),
             'updated_at' => $t->updated_at?->toIso8601String(),
         ];
     }

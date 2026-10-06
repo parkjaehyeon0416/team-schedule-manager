@@ -1,127 +1,112 @@
 /**
- * 팀 초대 화면 — v18.34 (DESIGN-CANVAS 기준, TEAM_INVITE.dc.html)
- * ★ QR 코드 — 휴대폰 카메라로 찍으면 팀 이름과 초대 코드가 보이는 진짜 QR (components/QrCode)
- *   카카오톡/문자/더보기는 카카오 전용 공유 SDK 연동 전이라 OS 공유 시트로 동작함.
+ * 팀 초대 화면 — DESIGN-CANVAS 기준, TEAM_INVITE.dc.html (★ v18.43 개편)
+ * QR 대신 "링크 공유하기"(카톡·문자 등 공유 시트) + "연락처에서 초대"(문자앱으로 여러 명에게).
+ * 초대 코드·링크는 7일 유효 — 화면을 열 때 만료됐으면 서버가 새 코드를 만들어 줌.
  */
-
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Share, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share, Alert, ActivityIndicator, Image, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Clipboard from '@react-native-clipboard/clipboard';
+import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
-import QrCode from '../components/QrCode';
-import { getMyTeams } from '../api/teamApi';
-import { SERVER_BASE_URL } from '../api/axiosInstance';
-import type { Team } from '../types/api';
-import { colors, radius, spacing } from '../theme/designTokens';
+import { getTeamInvite } from '../api/teamApi';
+import type { TeamInviteInfo } from '../api/teamApi';
+import { colors, spacing } from '../theme/designTokens';
+import { ICONS } from '../assets/icons';
+
+// 초대 문구 — 연락처 초대(문자)에서도 같이 씀
+export function inviteMessage(invite: TeamInviteInfo): string {
+  return `[WorkMate] "${invite.team_name}" 팀에 초대합니다.\n아래 링크를 눌러 참여해 주세요.\n${invite.invite_url}\n(초대 코드: ${invite.invite_code})`;
+}
 
 export default function TeamInviteScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const teamId: number = route.params?.teamId;
-  const [team, setTeam] = useState<Team | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [invite, setInvite] = useState<TeamInviteInfo | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      getMyTeams()
-        .then(teams => setTeam(teams.find(t => t.id === teamId) ?? null))
-        .finally(() => setLoading(false));
+      setFailed(false);
+      getTeamInvite(teamId).then(setInvite).catch(() => setFailed(true));
     }, [teamId]),
   );
 
-  // ★ v18.43 — 링크를 누르면 초대 페이지가 열리고, 앱이 있으면 바로 참여 화면으로 이동
-  const inviteUrl = team ? `${SERVER_BASE_URL}/join/${team.invite_code}` : '';
-  const shareMessage = team
-    ? `[WorkMate] "${team.name}" 팀에 초대합니다.\n아래 링크를 눌러 참여해 주세요.\n${inviteUrl}\n(초대 코드: ${team.invite_code})`
-    : '';
-
-  const handleShare = () => {
-    Share.share({ message: shareMessage }).catch(() => {});
-  };
-
-  const handleCopyCode = () => {
-    if (!team) return;
-    Clipboard.setString(team.invite_code);
-    Alert.alert('복사 완료', '초대 코드가 복사되었습니다.');
-  };
-
-  if (loading || !team) {
+  if (!invite) {
     return (
       <View style={styles.screen}>
         <AppHeader leftType="back" title="팀 초대" />
-        <View style={styles.centerBox}><ActivityIndicator color={colors.primary} /></View>
+        <View style={styles.centerBox}>
+          {failed ? <Text style={styles.muted}>초대 정보를 불러오지 못했어요.</Text> : <ActivityIndicator color={colors.primary} />}
+        </View>
       </View>
     );
   }
 
+  const shareLink = () => Share.share({ message: inviteMessage(invite) }).catch(() => {});
+  const copyCode = () => {
+    Clipboard.setString(invite.invite_code);
+    Alert.alert('복사 완료', '초대 코드가 복사되었습니다.');
+  };
+
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="팀 초대" />
-      <View style={styles.content}>
-        <View style={styles.introBlock}>
-          <View style={styles.introIcon}>
-            <Icon name="account-plus-outline" size={32} color={colors.primaryDark} />
-          </View>
-          <Text style={styles.introText}>초대 코드로 팀원을{'\n'}간편하게 초대하세요</Text>
-          <Text style={styles.introTeam}>{team.name}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.intro}>
+          <Image source={ICONS.team} style={styles.introIcon} />
+          <Text style={styles.introText}>함께 일할 팀원을{'\n'}초대하세요</Text>
+          <Text style={styles.muted13}>{invite.team_name} · 팀원 {invite.member_count}명</Text>
         </View>
+
+        <Pressable onPress={shareLink}>
+          {({ pressed }) => (
+            <LinearGradient colors={[colors.primaryLight, colors.primaryDark]} style={[styles.actionPrimary, pressed && { opacity: 0.92 }]}>
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <Icon name="link-variant" size={22} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.actionTitle, { color: '#FFFFFF' }]}>링크 공유하기</Text>
+                <Text style={[styles.actionSub, { color: 'rgba(255,255,255,0.85)' }]}>카카오톡 · 문자 등으로 초대 링크를 보내요</Text>
+              </View>
+              <Icon name="chevron-right" size={18} color="#FFFFFF" />
+            </LinearGradient>
+          )}
+        </Pressable>
+
+        <Pressable style={styles.actionLine} onPress={() => navigation.navigate('TeamContactPick', { teamId })}>
+          <View style={[styles.actionIcon, { backgroundColor: '#EAF4FF' }]}>
+            <Icon name="account-multiple-outline" size={22} color={colors.primaryDark} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={styles.actionTitle}>연락처에서 초대</Text>
+            <Text style={styles.actionSub}>연락처에서 골라 초대 문자를 보내요</Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.textPrimary} />
+        </Pressable>
 
         <View style={styles.codeCard}>
           <View style={styles.codeRow}>
-            <Text style={styles.codeText}>{team.invite_code}</Text>
-            <Pressable style={styles.copyBtn} onPress={handleCopyCode}>
-              <Icon name="content-copy" size={18} color={colors.primaryDark} />
+            <View style={{ gap: 2 }}>
+              <Text style={styles.codeLabel}>초대 코드</Text>
+              <Text style={styles.code}>{invite.invite_code}</Text>
+            </View>
+            <Pressable style={styles.copyBtn} onPress={copyCode}>
+              <Icon name="content-copy" size={16} color={colors.primaryDark} />
+              <Text style={styles.copyText}>복사</Text>
             </Pressable>
           </View>
-          <Text style={styles.codeHint}>팀원에게 이 코드를 전달해 "코드로 참여"로 가입하게 하세요.</Text>
-
-          <View style={styles.qrBox}>
-            <QrCode value={`[WorkMate 팀 초대]\n${team.name}\n초대 코드: ${team.invite_code}`} size={118} />
-          </View>
+          <Text style={styles.muted}>링크 · 코드 모두 7일간 유효해요 · {dayjs(invite.expires_at).format('YYYY.MM.DD')} 만료</Text>
         </View>
 
-        <View style={styles.shareRow}>
-          <Pressable style={styles.shareItem} onPress={handleShare}>
-            <View style={[styles.shareIcon, { backgroundColor: colors.warningBg }]}>
-              <Icon name="chat-outline" size={22} color={colors.accentDark} />
-            </View>
-            <Text style={styles.shareLabel}>카카오톡</Text>
-          </Pressable>
-          <Pressable style={styles.shareItem} onPress={handleShare}>
-            <View style={[styles.shareIcon, { backgroundColor: colors.successBg }]}>
-              <Icon name="message-text-outline" size={22} color={colors.secondary} />
-            </View>
-            <Text style={styles.shareLabel}>문자</Text>
-          </Pressable>
-          <Pressable style={styles.shareItem} onPress={handleCopyCode}>
-            <View style={[styles.shareIcon, { backgroundColor: '#E8F3FF' }]}>
-              <Icon name="link-variant" size={22} color={colors.primaryDark} />
-            </View>
-            <Text style={styles.shareLabel}>코드 복사</Text>
-          </Pressable>
-          <Pressable style={styles.shareItem} onPress={handleShare}>
-            <View style={[styles.shareIcon, { backgroundColor: '#EEF2F7' }]}>
-              <Icon name="dots-horizontal" size={22} color={colors.textSecondary} />
-            </View>
-            <Text style={styles.shareLabel}>더보기</Text>
-          </Pressable>
+        <View style={styles.hintBox}>
+          <Icon name="information-outline" size={16} color={colors.primaryDark} style={{ marginTop: 2 }} />
+          <Text style={styles.hintText}>링크를 받은 사람이 앱이 없으면 설치 안내 페이지가 열리고, 설치 후 바로 팀 참여 화면으로 이어져요.</Text>
         </View>
-
-        <Pressable onPress={handleShare}>
-          <LinearGradient
-            colors={[colors.primaryLight, colors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.button}
-          >
-            <Icon name="share-variant" size={18} color="#FFFFFF" />
-            <Text style={styles.buttonText}>코드 공유하기</Text>
-          </LinearGradient>
-        </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -129,31 +114,33 @@ export default function TeamInviteScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { flex: 1, padding: spacing.lg, gap: spacing.md },
+  content: { padding: spacing.lg, paddingTop: 4, paddingBottom: spacing.xl, gap: 12 },
 
-  introBlock: { alignItems: 'center', gap: spacing.xs, paddingTop: spacing.sm },
-  introIcon: { width: 72, height: 72, borderRadius: 24, backgroundColor: '#E8F3FF', alignItems: 'center', justifyContent: 'center' },
-  introText: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, textAlign: 'center', lineHeight: 24 },
-  introTeam: { fontSize: 13, color: colors.textSecondary },
+  intro: { alignItems: 'center', gap: 10, paddingTop: 8 },
+  introIcon: { width: 80, height: 80, resizeMode: 'contain' },
+  introText: { fontSize: 18, fontWeight: '800', lineHeight: 27, textAlign: 'center', color: colors.textPrimary },
+  muted13: { fontSize: 13, color: colors.textSecondary },
+  muted: { fontSize: 12, color: colors.textSecondary },
+
+  actionPrimary: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16,
+    shadowColor: '#0A6CE0', shadowOpacity: 0.22, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 4,
+  },
+  actionLine: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CFE3FA' },
+  actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  actionSub: { fontSize: 12, color: colors.textSecondary },
 
   codeCard: {
-    backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderCard,
-    padding: spacing.lg, gap: spacing.sm, alignItems: 'center',
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E6F0FA', borderRadius: 16, padding: 16, gap: 8,
+    shadowColor: '#102A56', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 1,
   },
-  codeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  codeText: { fontSize: 30, fontWeight: '800', letterSpacing: 6, color: colors.textPrimary },
-  copyBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#EAF4FF', alignItems: 'center', justifyContent: 'center' },
-  codeHint: { fontSize: 12, color: colors.textSecondary, textAlign: 'center' },
-  qrBox: {
-    width: 140, height: 140, padding: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: colors.border,
-    borderRadius: radius.md,
-  },
+  codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  codeLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  code: { fontSize: 24, fontWeight: '800', letterSpacing: 5, color: colors.textPrimary },
+  copyBtn: { height: 40, paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#EAF4FF', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  copyText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
 
-  shareRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  shareItem: { alignItems: 'center', gap: 6 },
-  shareIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  shareLabel: { fontSize: 12, color: colors.textPrimary },
-
-  button: { height: 52, borderRadius: radius.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 'auto' },
-  buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  hintBox: { flexDirection: 'row', gap: 8, paddingVertical: 12, paddingHorizontal: 14, backgroundColor: '#E8F3FF', borderRadius: 12 },
+  hintText: { flex: 1, fontSize: 13, lineHeight: 20, color: colors.primaryDark },
 });

@@ -28,6 +28,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; fg: string; icon: string }> =
   team: { bg: '#FFF1DE', fg: '#E07E00', icon: 'account-group-outline' },
   quote: { bg: '#DFF8F4', fg: '#0B9C8A', icon: 'file-document-outline' },
   tax: { bg: '#EFEAFF', fg: '#6B4FD8', icon: 'chart-box-outline' },
+  inquiry: { bg: '#E2F8F4', fg: '#0B8574', icon: 'message-reply-text-outline' }, // ★ v18.43 문의 답변
 };
 
 function timeAgo(dateStr: string): string {
@@ -70,6 +71,7 @@ export default function NotificationsScreen() {
     if (n.link_type === 'schedule' && n.link_id) navigation.navigate('ScheduleDetail', { id: n.link_id });
     else if (n.link_type === 'team' && n.link_id) navigation.navigate('TeamDetail', { teamId: n.link_id });
     else if (n.link_type === 'quote' && n.link_id) navigation.navigate('QuoteDetail', { quoteId: n.link_id });
+    else if (n.link_type === 'inquiry' && n.link_id) navigation.navigate('InquiryDetail', { id: n.link_id }); // ★ v18.43
   };
 
   const handleMarkAll = async () => {

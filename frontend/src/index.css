@@ -180,3 +180,31 @@ button { font: inherit; }
   .adm-grid2 { grid-template-columns: minmax(0, 1fr); }
   .adm-hide-m { display: none !important; }
 }
+
+/* ── ★ v18.43 운영 메뉴(문의·문자·통계) ──── */
+.adm-minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px; }
+.adm-mini { background: #FFFFFF; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.adm-mini-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.adm-mini-value { font-size: 24px; font-weight: 800; }
+.adm-mini-sub { font-size: 12px; color: var(--muted); }
+.adm-cols { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.adm-col-main { flex: 1 1 560px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.adm-col-side { flex: 0 1 320px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.adm-sec-title { margin: 0; font-size: 16px; font-weight: 700; }
+.adm-pill { height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid var(--input); background: #FFFFFF; font-size: 12px; color: var(--text2); cursor: pointer; }
+.adm-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; border: 0; background: transparent; padding: 0; }
+.adm-check .box { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid #C5D5E8; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #FFFFFF; }
+.adm-check .box.on { background: #168BFF; border-color: #168BFF; }
+.adm-select { height: 40px; font-size: 14px; width: auto; padding: 0 12px; }
+.adm-step { width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: #FFFFFF; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.adm-option { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--input); background: #FFFFFF; cursor: pointer; text-align: left; width: 100%; font: inherit; color: var(--navy); }
+.adm-option.on { border-color: #7DBBFF; background: #F3F9FF; }
+.adm-radio { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #C5D5E8; flex-shrink: 0; box-sizing: border-box; }
+.adm-option.on .adm-radio { border: 6px solid #168BFF; }
+.adm-sms-phone { width: 300px; max-width: 100%; border-radius: 28px; border: 8px solid var(--navy); background: #EEF2F7; padding: 20px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 360px; }
+.adm-sms-bubble { align-self: flex-start; max-width: 92%; background: #FFFFFF; border-radius: 16px 16px 16px 4px; padding: 12px 14px; font-size: 13px; line-height: 1.6; white-space: pre-line; word-break: break-all; color: var(--navy); }
+.adm-bars { display: flex; align-items: flex-end; gap: 4px; height: 130px; padding-top: 10px; }
+.adm-bars .bar { flex: 1 1 0; border-radius: 4px 4px 0 0; min-height: 3px; position: relative; }
+.adm-bars .bar:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--navy); color: #FFFFFF; font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; z-index: 2; }
+.adm-bar-labels { display: flex; gap: 4px; }
+.adm-bar-labels span { flex: 1 1 0; font-size: 10px; color: var(--faint); text-align: center; white-space: nowrap; overflow: visible; }

@@ -11,6 +11,12 @@ import EventList from "./pages/EventList";
 import EventEdit from "./pages/EventEdit";
 import Members from "./pages/Members";
 import ComingSoon from "./pages/ComingSoon";
+import InquiryList from "./pages/InquiryList";
+import InquiryDetail from "./pages/InquiryDetail";
+import SmsSend from "./pages/SmsSend";
+import SmsTemplates from "./pages/SmsTemplates";
+import SmsTemplateEdit from "./pages/SmsTemplateEdit";
+import Stats from "./pages/Stats";
 import SetPassword from "./pages/SetPassword";
 import { useAuthStore } from "./store/authStore";
 
@@ -31,9 +37,14 @@ export default function App() {
             <Route path="events/new" element={<EventEdit />} />
             <Route path="events/:id" element={<EventEdit />} />
             <Route path="members" element={<Members />} />
-            <Route path="stats" element={<ComingSoon menu="stats" />} />
-            <Route path="inquiries" element={<ComingSoon menu="inquiries" />} />
-            <Route path="sms" element={<ComingSoon menu="sms" />} />
+            {/* ★ v18.43 운영 메뉴 */}
+            <Route path="inquiries" element={<InquiryList />} />
+            <Route path="inquiries/:id" element={<InquiryDetail />} />
+            <Route path="sms" element={<SmsSend />} />
+            <Route path="sms-templates" element={<SmsTemplates />} />
+            <Route path="sms-templates/new" element={<SmsTemplateEdit />} />
+            <Route path="sms-templates/:id" element={<SmsTemplateEdit />} />
+            <Route path="stats" element={<Stats />} />
             <Route path="payments" element={<ComingSoon menu="payments" />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Route>

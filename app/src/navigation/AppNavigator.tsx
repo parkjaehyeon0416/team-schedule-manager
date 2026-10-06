@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { Linking } from 'react-native';
-import { navigationRef, flushPendingNavigation, handleJoinLink, flushPendingJoin } from './navigationRef';
+import { navigationRef, flushPendingNavigation, handleAppLink, flushPendingLink } from './navigationRef';
 import { registerPush } from '../utils/push';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
@@ -29,6 +29,10 @@ import TeamDetailScreen from '../screens/TeamDetailScreen';
 import TeamCreateScreen from '../screens/TeamCreateScreen';
 import TeamInviteScreen from '../screens/TeamInviteScreen';
 import TeamJoinScreen from '../screens/TeamJoinScreen';
+import TeamContactPickScreen from '../screens/TeamContactPickScreen';
+import InquiryListScreen from '../screens/InquiryListScreen';
+import InquiryCreateScreen from '../screens/InquiryCreateScreen';
+import InquiryDetailScreen from '../screens/InquiryDetailScreen';
 import QuoteListScreen from '../screens/QuoteListScreen';
 import QuoteFormScreen from '../screens/QuoteFormScreen';
 import QuoteDetailScreen from '../screens/QuoteDetailScreen';
@@ -76,16 +80,16 @@ export default function AppNavigator() {
     if (isLoggedIn) registerPush();
   }, [isLoggedIn]);
 
-  // ★ v18.43 — 초대 링크(workmate://join/코드)로 앱이 열리거나, 켜져 있을 때 링크를 누른 경우
+  // ★ v18.43 — 웹의 "앱에서 열기"(초대·공지 링크)로 앱이 열리거나, 켜져 있을 때 링크를 누른 경우
   useEffect(() => {
-    Linking.getInitialURL().then(url => handleJoinLink(url, useAuthStore.getState().isLoggedIn)).catch(() => {});
-    const sub = Linking.addEventListener('url', ({ url }) => handleJoinLink(url, useAuthStore.getState().isLoggedIn));
+    Linking.getInitialURL().then(url => handleAppLink(url, useAuthStore.getState().isLoggedIn)).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handleAppLink(url, useAuthStore.getState().isLoggedIn));
     return () => sub.remove();
   }, []);
 
-  // 로그인 전에 링크로 들어왔으면 로그인 후 참여 화면으로
+  // 로그인 전에 링크로 들어왔으면 로그인 후 해당 화면으로
   useEffect(() => {
-    if (isLoggedIn) flushPendingJoin();
+    if (isLoggedIn) flushPendingLink();
   }, [isLoggedIn]);
 
   if (isLoading || !minSplashDone) {
@@ -108,6 +112,11 @@ export default function AppNavigator() {
             <Stack.Screen name="TeamCreate" component={TeamCreateScreen} />
             <Stack.Screen name="TeamInvite" component={TeamInviteScreen} />
             <Stack.Screen name="TeamJoin" component={TeamJoinScreen} />
+            {/* ★ v18.43 연락처 초대 · 고객 문의 */}
+            <Stack.Screen name="TeamContactPick" component={TeamContactPickScreen} />
+            <Stack.Screen name="InquiryList" component={InquiryListScreen} />
+            <Stack.Screen name="InquiryCreate" component={InquiryCreateScreen} />
+            <Stack.Screen name="InquiryDetail" component={InquiryDetailScreen} />
             <Stack.Screen name="QuoteList" component={QuoteListScreen} />
             <Stack.Screen name="QuoteDetail" component={QuoteDetailScreen} />
             <Stack.Screen name="QuoteEdit" component={QuoteFormScreen} />

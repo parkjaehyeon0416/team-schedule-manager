@@ -87,3 +87,18 @@ export async function updateTeam(id: number, payload: TeamFormPayload): Promise<
 export async function deleteTeam(id: number): Promise<void> {
   await axios.delete(`/teams/${id}`);
 }
+
+// ★ v18.43 — 초대 코드·링크 (7일 만료, 만료됐으면 서버가 새로 발급)
+export interface TeamInviteInfo {
+  team_id: number;
+  team_name: string;
+  member_count: number;
+  invite_code: string;
+  expires_at: string;
+  invite_url: string;
+}
+
+export async function getTeamInvite(teamId: number): Promise<TeamInviteInfo> {
+  const res = await axios.get<ApiResponse<TeamInviteInfo>>(`/teams/${teamId}/invite`);
+  return res.data.data;
+}

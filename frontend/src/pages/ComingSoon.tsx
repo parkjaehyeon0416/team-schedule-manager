@@ -21,7 +21,7 @@ export default function ComingSoon({ menu }: { menu: keyof typeof MENUS }) {
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>준비 중인 메뉴예요</h2>
         <p style={{ margin: 0, fontSize: 14, color: "#5F7290", lineHeight: 1.6 }}>
           이 기능은 아직 개발 중이에요. 메뉴 자리만 먼저 만들어 두었어요.<br />
-          지금은 대시보드, 공지 · 이벤트 관리, 회원 관리를 이용할 수 있어요.
+          지금은 대시보드, 공지 · 이벤트, 고객 문의, 문자 발송, 통계, 회원 관리를 이용할 수 있어요.
         </p>
         <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
           <Link to="/" className="adm-btn">대시보드로</Link>

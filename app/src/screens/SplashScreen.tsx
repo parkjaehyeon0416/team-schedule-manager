@@ -7,7 +7,8 @@ import { View, Text, StyleSheet, Animated, Easing, Image } from 'react-native';
 import { ICONS } from '../assets/icons';
 import { colors } from '../theme/designTokens';
 
-const APP_VERSION = 'v1.0.0';
+import { APP_VERSION as VERSION } from '../constants/appVersion';
+const APP_VERSION = `v${VERSION}`;
 
 function LoadingDot({ delay }: { delay: number }) {
   const v = useRef(new Animated.Value(0)).current;

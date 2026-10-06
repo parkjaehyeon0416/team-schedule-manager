@@ -14,7 +14,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // export const SERVER_BASE_URL = 'http://localhost:8000';
 // ★ v18.14 — 실기기 APK 배포용. localhost는 폰 자기 자신을 가리켜서 실제 폰에선
 //   백엔드에 연결이 안 됨. 실서버(NCP) 주소로 고정해야 wifi/데이터 상관없이 어디서든 접속됨.
-export const SERVER_BASE_URL = 'http://211.233.210.85';
+// ★ v18.46 — HTTPS로 전환(Let's Encrypt, sslip.io 도메인). 아이폰은 http 접속을 막아서 필수.
+//   정식 도메인을 사면 이 주소만 바꾸면 됨.
+export const SERVER_BASE_URL = 'https://211-233-210-85.sslip.io';
 export const API_BASE_URL = `${SERVER_BASE_URL}/api`;
 
 const axiosInstance = axios.create({

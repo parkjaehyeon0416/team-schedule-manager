@@ -37,7 +37,7 @@ jobs:
       - name: Install JS packages
         run: |
           mkdir -p "$GITHUB_WORKSPACE/ios-results"
-          npm ci > "$GITHUB_WORKSPACE/ios-results/npm.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-results/npm.log"; exit 1; }
+          npm ci --legacy-peer-deps > "$GITHUB_WORKSPACE/ios-results/npm.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-results/npm.log"; exit 1; }
 
       - name: Tool versions
         run: (xcodebuild -version && node -v && npm -v && xcrun simctl list runtimes) | tee "$GITHUB_WORKSPACE/ios-results/versions.txt"

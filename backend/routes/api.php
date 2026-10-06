@@ -76,7 +76,27 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/members/{id}/unsuspend',  [\App\Http\Controllers\Api\Admin\AdminMemberController::class, 'unsuspend']);
         Route::post('/notices/{id}',   [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'update']);
         Route::delete('/notices/{id}', [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'destroy']);
+        // ★ v18.43 고객 문의
+        Route::get('/inquiries',               [\App\Http\Controllers\Api\Admin\AdminInquiryController::class, 'index']);
+        Route::get('/inquiries/{id}',          [\App\Http\Controllers\Api\Admin\AdminInquiryController::class, 'show']);
+        Route::post('/inquiries/{id}/answer',  [\App\Http\Controllers\Api\Admin\AdminInquiryController::class, 'answer']);
+        // ★ v18.43 문자 템플릿·발송
+        Route::get('/sms/templates',           [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'templates']);
+        Route::post('/sms/templates',          [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'storeTemplate']);
+        Route::put('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'updateTemplate']);
+        Route::delete('/sms/templates/{id}',   [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'destroyTemplate']);
+        Route::post('/sms/preview',            [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'preview']);
+        Route::post('/sms/send',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'send']);
+        Route::get('/sms/campaigns',           [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'campaigns']);
+        // ★ v18.43 통계
+        Route::get('/stats',                   [\App\Http\Controllers\Api\Admin\AdminStatsController::class, 'index']);
     });
+
+    // ★ v18.43 — 고객 문의 (앱)
+    Route::get('/inquiries',         [\App\Http\Controllers\Api\InquiryController::class, 'index']);
+    Route::post('/inquiries',        [\App\Http\Controllers\Api\InquiryController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/inquiries/{id}',    [\App\Http\Controllers\Api\InquiryController::class, 'show']);
+    Route::delete('/inquiries/{id}', [\App\Http\Controllers\Api\InquiryController::class, 'destroy']);
 
     // ★ v18.38 — 홈 팀 활동
     Route::get('/team-activities', [\App\Http\Controllers\Api\TeamActivityController::class, 'index']);

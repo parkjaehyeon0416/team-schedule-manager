@@ -13,6 +13,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import AppHeader from '../components/AppHeader';
 import QrCode from '../components/QrCode';
 import { getMyTeams } from '../api/teamApi';
+import { SERVER_BASE_URL } from '../api/axiosInstance';
 import type { Team } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
 
@@ -31,8 +32,10 @@ export default function TeamInviteScreen() {
     }, [teamId]),
   );
 
+  // ★ v18.43 — 링크를 누르면 초대 페이지가 열리고, 앱이 있으면 바로 참여 화면으로 이동
+  const inviteUrl = team ? `${SERVER_BASE_URL}/join/${team.invite_code}` : '';
   const shareMessage = team
-    ? `[WorkMate] "${team.name}" 팀 초대\n초대 코드: ${team.invite_code}\n앱에서 "코드로 참여"를 눌러 코드를 입력하면 바로 합류할 수 있어요.`
+    ? `[WorkMate] "${team.name}" 팀에 초대합니다.\n아래 링크를 눌러 참여해 주세요.\n${inviteUrl}\n(초대 코드: ${team.invite_code})`
     : '';
 
   const handleShare = () => {

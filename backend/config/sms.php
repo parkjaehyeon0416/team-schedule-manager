@@ -9,6 +9,9 @@ return [
         'solapi' => \App\Services\Sms\SolapiSmsService::class,
     ],
 
+    // ★ v18.43 — 광고성 문자 끝에 붙는 무료 수신거부 안내 (예: '무료거부 0808001234'). 비어 있으면 광고성 문자 발송을 막음.
+    'ad_opt_out' => env('SMS_AD_OPT_OUT'),
+
     'solapi' => [
         'api_key'    => env('SOLAPI_API_KEY'),
         'api_secret' => env('SOLAPI_API_SECRET'),

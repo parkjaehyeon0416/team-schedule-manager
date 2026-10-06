@@ -20,6 +20,10 @@ Route::get('/', function () {
 //   (php artisan session:table && php artisan migrate).
 Route::get('/c/{code}', [BusinessCardPageController::class, 'show']);
 
+// ★ v18.43 — 팀 초대 링크(카톡·문자로 공유) + 최신 APK 고정 주소
+Route::get('/join/{code}', [\App\Http\Controllers\TeamInvitePageController::class, 'show'])->where('code', '[A-Za-z0-9]{4,12}');
+Route::get('/download/latest', [\App\Http\Controllers\TeamInvitePageController::class, 'latestApk']);
+
 // ★ v18.40 — 웹 관리자(운영자용, frontend 폴더 React 앱). 빌드 결과는 public/admin-app 에 있고,
 //   /admin 아래 모든 주소에서 같은 index.html을 돌려줘서 화면 이동(새로고침 포함)이 되게 함.
 Route::get('/admin/{any?}', function () {

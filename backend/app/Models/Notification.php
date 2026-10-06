@@ -29,7 +29,8 @@ class Notification extends Model
     protected static function booted(): void
     {
         static::created(function (Notification $n) {
-            if (!in_array($n->category, ['team', 'schedule'], true)) {
+            // ★ v18.43 — 고객 문의 답변(inquiry)도 푸시
+            if (!in_array($n->category, ['team', 'schedule', 'inquiry'], true)) {
                 return;
             }
             $data = array_filter(['link_type' => $n->link_type, 'link_id' => $n->link_id], fn($v) => $v !== null);

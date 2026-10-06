@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { navigationRef, flushPendingNavigation } from './navigationRef';
+import { Linking } from 'react-native';
+import { navigationRef, flushPendingNavigation, handleJoinLink, flushPendingJoin } from './navigationRef';
 import { registerPush } from '../utils/push';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
@@ -73,6 +74,18 @@ export default function AppNavigator() {
   // ★ v18.38 — 로그인 상태가 되면 이 기기를 푸시 수신 기기로 등록
   useEffect(() => {
     if (isLoggedIn) registerPush();
+  }, [isLoggedIn]);
+
+  // ★ v18.43 — 초대 링크(workmate://join/코드)로 앱이 열리거나, 켜져 있을 때 링크를 누른 경우
+  useEffect(() => {
+    Linking.getInitialURL().then(url => handleJoinLink(url, useAuthStore.getState().isLoggedIn)).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handleJoinLink(url, useAuthStore.getState().isLoggedIn));
+    return () => sub.remove();
+  }, []);
+
+  // 로그인 전에 링크로 들어왔으면 로그인 후 참여 화면으로
+  useEffect(() => {
+    if (isLoggedIn) flushPendingJoin();
   }, [isLoggedIn]);
 
   if (isLoading || !minSplashDone) {

@@ -40,6 +40,13 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- ★ v18.43 — 팀 초대 링크 페이지의 "앱에서 열기" (workmate://join/코드) -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="workmate" android:host="join" />
+        </intent-filter>
       </activity>
 
       <!-- ★ v18.18 — 카카오 로그인 리다이렉트 처리 -->

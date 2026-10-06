@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
@@ -21,7 +21,9 @@ const AVATAR_FG = ['#B95E00', '#0A6CE0', '#0B8574', '#6B4FD8'];
 
 export default function TeamJoinScreen() {
   const navigation = useNavigation<any>();
-  const [code, setCode] = useState('');
+  const route = useRoute<any>();
+  // ★ v18.43 — 초대 링크로 들어오면 코드가 미리 채워짐 (바로 팀 미리보기가 뜸)
+  const [code, setCode] = useState<string>(route.params?.code ?? '');
   const [preview, setPreview] = useState<TeamPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);

@@ -14,6 +14,28 @@ export function navigateFromOutside(name: string, params?: object) {
   }
 }
 
+// ★ v18.43 — 초대 링크(workmate://join/코드)로 앱이 열렸을 때. 로그인 전이면 코드를 들고 있다가 로그인 후 참여 화면으로
+let pendingJoinCode: string | null = null;
+
+export function parseJoinLink(url: string | null): string | null {
+  const m = url?.match(/^workmate:\/\/join\/([A-Za-z0-9]{4,12})/);
+  return m ? m[1].toUpperCase() : null;
+}
+
+export function handleJoinLink(url: string | null, isLoggedIn: boolean) {
+  const code = parseJoinLink(url);
+  if (!code) return;
+  if (isLoggedIn) navigateFromOutside('TeamJoin', { code });
+  else pendingJoinCode = code;
+}
+
+export function flushPendingJoin() {
+  if (!pendingJoinCode) return;
+  const code = pendingJoinCode;
+  pendingJoinCode = null;
+  navigateFromOutside('TeamJoin', { code });
+}
+
 export function flushPendingNavigation() {
   if (pending && navigationRef.isReady()) {
     const { name, params } = pending;

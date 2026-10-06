@@ -41,6 +41,9 @@ return Application::configure(basePath: dirname(__DIR__))
         //   guest 리다이렉트 자체를 끄면 무조건 AuthenticationException이 던져지고,
         //   그건 아래 withExceptions의 렌더러가 항상 401 JSON으로 처리해줌.
         $middleware->redirectGuestsTo(fn () => null);
+
+        // ★ v18.43 — 일일 접속자 기록(운영자 통계)
+        $middleware->api(append: [\App\Http\Middleware\TrackDailyActive::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // ═══════════════════════════════════════════════════════════

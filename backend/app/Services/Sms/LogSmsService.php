@@ -19,4 +19,12 @@ class LogSmsService implements SmsServiceInterface
     {
         Log::info("[SMS 발송 시뮬레이션] to={$phone} message=\"{$message}\"");
     }
+
+    public function sendMany(array $messages): array
+    {
+        foreach ($messages as $m) {
+            Log::info("[SMS 대량발송 시뮬레이션] to={$m['to']} message=\"{$m['text']}\"");
+        }
+        return ['success' => count($messages), 'fail' => 0];
+    }
 }

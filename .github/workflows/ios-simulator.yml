@@ -78,6 +78,17 @@ jobs:
           (cd "$(dirname "$APP")" && zip -qry "$GITHUB_WORKSPACE/ios-results/WorkMate-simulator.zip" "$(basename "$APP")")
           ls -la ../ios-results
 
+      # 화면을 실제로 눌러보는 자동 점검(Maestro) — 스크린샷이 ios-results에 저장됨
+      - name: Maestro smoke test
+        continue-on-error: true
+        working-directory: ios-results
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash > /dev/null
+          export PATH="$PATH:$HOME/.maestro/bin"
+          maestro --version
+          maestro test "$GITHUB_WORKSPACE/.maestro/ios-smoke.yaml" > maestro.log 2>&1 || { tail -40 maestro.log; exit 1; }
+          tail -20 maestro.log
+
       - name: Publish results
         if: always()
         working-directory: .

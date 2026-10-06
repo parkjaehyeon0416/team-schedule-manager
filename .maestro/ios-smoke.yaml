@@ -1,0 +1,36 @@
+# ★ v18.46 — 가상 아이폰 자동 점검(로그인 전 화면). GitHub 맥 서버에서 ios-simulator.yml이 실행.
+#   비밀번호는 입력하지 않음 — 화면 표시·이동·키보드 가림만 확인.
+appId: com.workmate.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 40000
+- takeScreenshot: 10_login
+- tapOn: "아이디 또는 이메일"
+- inputText: "ios-check"
+- takeScreenshot: 11_login_keyboard
+- hideKeyboard
+- tapOn: "회원가입"
+- waitForAnimationToEnd
+- takeScreenshot: 12_register
+# 맨 아래 입력칸을 눌렀을 때 키보드가 가리는지
+- tapOn: "비밀번호 확인"
+- takeScreenshot: 13_register_keyboard_bottom
+- hideKeyboard
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "비밀번호 찾기"
+    timeout: 30000
+- tapOn: "비밀번호 찾기"
+- waitForAnimationToEnd
+- takeScreenshot: 14_forgot_password
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 30000
+- tapOn: "아이디 찾기"
+- waitForAnimationToEnd
+- takeScreenshot: 15_find_id

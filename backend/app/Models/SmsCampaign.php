@@ -9,10 +9,15 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SmsCampaign extends Model
 {
-    protected $fillable = ['template_id', 'kind', 'body', 'recipient_count', 'success_count', 'fail_count', 'status', 'sent_by'];
+    protected $fillable = ['template_id', 'kind', 'target', 'body', 'recipient_count', 'success_count', 'fail_count', 'status', 'sent_by'];
 
     public function template()
     {
         return $this->belongsTo(SmsTemplate::class);
+    }
+
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sent_by');
     }
 }

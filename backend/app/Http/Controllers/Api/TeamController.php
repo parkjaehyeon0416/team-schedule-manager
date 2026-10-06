@@ -59,6 +59,7 @@ class TeamController extends Controller
             'activity_area' => $data['activity_area'] ?? null,
             'photo_path'    => $request->hasFile('photo') ? $request->file('photo')->store('teams', 'public') : null,
             'invite_code'   => $this->generateInviteCode(),
+            'invite_expires_at' => now()->addDays(Team::INVITE_DAYS),
             'created_by'    => $user->id,
         ]);
 
@@ -182,8 +183,7 @@ class TeamController extends Controller
     /**
      * ─── 초대코드 미리보기 ───  ★ DESIGN-CANVAS(TEAM_JOIN) 추가
      *   가입하지 않고도 초대코드만으로 팀 이름/사진/인원수/공정/지역/팀장 이름을 미리 볼 수 있게 함.
-     *   (디자인의 "초대 만료일" 필드는 invite_code에 만료 개념 자체가 없어 생략 — QR/대기중 초대와
-     *    마찬가지로 이번 작업 범위에서 제외)
+     *   ★ v18.43 — 초대 코드 7일 만료(만료된 코드는 유효하지 않은 코드로 처리)
      */
     public function preview(Request $request)
     {
@@ -191,10 +191,10 @@ class TeamController extends Controller
             'invite_code' => 'required|string',
         ]);
 
-        $team = Team::where('invite_code', strtoupper($data['invite_code']))->first();
+        $team = Team::findByValidInvite($data['invite_code']);
 
         if (!$team) {
-            return ApiResponse::error('초대 코드가 유효하지 않습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+            return ApiResponse::error('초대 코드가 유효하지 않거나 만료되었습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
         $leader = DB::table('team_members')
@@ -218,6 +218,7 @@ class TeamController extends Controller
             'activity_area' => $team->activity_area,
             'member_count'  => $memberCount,
             'leader_name'   => $leader,
+            'invite_expires_at' => $team->invite_expires_at?->toIso8601String(),
         ], '팀 미리보기 조회 성공');
     }
 
@@ -324,10 +325,10 @@ class TeamController extends Controller
             'invite_code' => 'required|string',
         ]);
 
-        $team = Team::where('invite_code', $data['invite_code'])->first();
+        $team = Team::findByValidInvite($data['invite_code']);
 
         if (!$team) {
-            return ApiResponse::error('초대 코드가 유효하지 않습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+            return ApiResponse::error('초대 코드가 유효하지 않거나 만료되었습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
         $alreadyMember = DB::table('team_members')
@@ -493,6 +494,36 @@ class TeamController extends Controller
             ->first();
 
         return $fallback->team_id ?? null;
+    }
+
+    /**
+     * ─── 초대 코드 조회 ───  ★ v18.43 (TEAM_INVITE)
+     *   팀원이면 누구나 초대 링크를 받을 수 있음. 만료됐으면 새 코드를 만들어 7일 연장
+     *   (예전에 보낸 링크는 더 이상 동작하지 않음).
+     */
+    public function invite(Request $request, string $id)
+    {
+        $user = $request->user();
+        $team = Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->teamIds()))->find($id);
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+
+        if ($team->inviteExpired()) {
+            $team->update([
+                'invite_code'       => $this->generateInviteCode(),
+                'invite_expires_at' => now()->addDays(Team::INVITE_DAYS),
+            ]);
+        }
+
+        return ApiResponse::success([
+            'team_id'      => $team->id,
+            'team_name'    => $team->name,
+            'member_count' => $team->members()->count(),
+            'invite_code'  => $team->invite_code,
+            'expires_at'   => $team->invite_expires_at->toIso8601String(),
+            'invite_url'   => url('/join/' . $team->invite_code),
+        ], '초대 코드 조회 성공');
     }
 
     private function generateInviteCode(): string

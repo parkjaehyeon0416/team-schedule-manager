@@ -71,8 +71,11 @@ class AdminStatsController extends Controller
             ],
             'now' => [
                 'members'            => DB::table('users')->where('user_type', '!=', 'operator')->whereNull('deleted_at')->count(),
+                'signups_today'      => DB::table('users')->where('user_type', '!=', 'operator')->whereNull('deleted_at')->whereDate('created_at', $today)->count(),
                 'active_today'       => DB::table('daily_active_users')->where('date', $today)->count(),
                 'pending_inquiries'  => DB::table('inquiries')->whereNull('deleted_at')->where('status', 'pending')->count(),
+                'oldest_pending_hours' => ($oldest = DB::table('inquiries')->whereNull('deleted_at')->where('status', 'pending')->min('created_at'))
+                    ? (int) floor(now()->diffInMinutes($oldest, true) / 60) : null,
             ],
         ], '통계 조회 성공');
     }

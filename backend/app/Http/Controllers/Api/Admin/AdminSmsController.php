@@ -9,29 +9,42 @@ use App\Models\SmsTemplate;
 use App\Models\User;
 use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 /**
- * ★ v18.43 — 운영자 웹 "문자 발송": 템플릿 관리 + 공지·이벤트 문자 발송 + 발송 기록.
+ * ★ v18.43 — 운영자 웹 "문자 발송"·"문자 템플릿" (디자인 ADMIN_SMS_SEND / ADMIN_SMS_TEMPLATES / ADMIN_SMS_TEMPLATE_EDIT)
  *
  * 법적 규칙(정보통신망법)을 서버에서 강제함:
- *   - 광고성(ad): 마케팅 수신 동의한 회원에게만, 맨 앞 "(광고)WorkMate", 끝에 무료 수신거부 안내,
- *     밤 9시~아침 8시 발송 금지. 수신거부 안내(SMS_AD_OPT_OUT)가 설정 안 돼 있으면 발송 막음.
+ *   - 광고성(ad): 마케팅 수신 동의한 회원에게만, 맨 앞 "(광고)", 보내는 곳(WorkMate) 표기, 끝에 무료 수신거부 번호,
+ *     밤 9시~아침 8시 발송 금지. 수신거부 번호(SMS_AD_OPT_OUT)가 설정 안 돼 있으면 발송 막음.
  *   - 안내성(info): 서버 점검 같은 서비스 안내. 전체 회원에게 보낼 수 있음.
- * 문구 안의 {이름}은 받는 사람 이름으로 바뀜.
+ * 문구 안의 {이름}은 받는 사람 이름으로 바뀜. 공지·이벤트를 연결하면 바로가기 링크(/n/{id})가 붙음.
  */
 class AdminSmsController extends Controller
 {
+    private const TARGETS = [
+        'all'        => '전체 회원',
+        'recent30'   => '최근 30일 가입',
+        'inactive30' => '30일 이상 미접속',
+    ];
+
     // ─── 템플릿 ───
 
     // GET /api/admin/sms/templates
     public function templates()
     {
-        $items = SmsTemplate::with('notice:id,type,title')->latest()->get()
+        $items = SmsTemplate::with('notice:id,type,title')->latest('updated_at')->get()
             ->map(fn(SmsTemplate $t) => self::templateRow($t));
 
         return ApiResponse::success($items, '템플릿 목록 조회 성공');
+    }
+
+    // GET /api/admin/sms/templates/{id}
+    public function showTemplate(int $id)
+    {
+        return ApiResponse::success(self::templateRow(SmsTemplate::with('notice:id,type,title')->findOrFail($id)), '템플릿 조회 성공');
     }
 
     // POST /api/admin/sms/templates
@@ -60,50 +73,83 @@ class AdminSmsController extends Controller
         return ApiResponse::success(null, '템플릿이 삭제되었습니다.');
     }
 
+    // POST /api/admin/sms/test  { kind, body, notice_id?, phone } — 테스트 번호 1곳으로 발송
+    public function test(Request $request, SmsServiceInterface $sms)
+    {
+        $data = $request->validate([
+            'kind'      => ['required', Rule::in(['ad', 'info'])],
+            'body'      => 'required|string|max:1800',
+            'notice_id' => 'nullable|integer|exists:notices,id',
+            'phone'     => ['required', 'string', 'regex:/^01[0-9]-?\d{3,4}-?\d{4}$/'],
+        ]);
+        if ($data['kind'] === 'ad' && !trim((string) config('sms.ad_opt_out'))) {
+            return ApiResponse::error(self::OPT_OUT_MISSING, 'ERR_VALID_001', 422);
+        }
+
+        $text = str_replace('{이름}', $request->user()->name ?? '테스트', self::finalBody($data['kind'], $data['body'], $data['notice_id'] ?? null));
+        try {
+            $sms->send($data['phone'], $text);
+        } catch (\Throwable $e) {
+            Log::error('[문자 테스트 발송 실패] ' . $e->getMessage());
+            return ApiResponse::error('테스트 문자를 보내지 못했습니다.', 'ERR_SERVER_001', 500);
+        }
+
+        return ApiResponse::success(null, '테스트 문자를 보냈습니다.');
+    }
+
     // ─── 발송 ───
 
-    // POST /api/admin/sms/preview  { kind, body } — 받는 사람 수, 실제 나갈 문구, 발송 가능 여부
+    // POST /api/admin/sms/preview  { template_id, target } — 받는 사람 수(대상별), 실제 문구, SMS/LMS, 발송 가능 여부
     public function preview(Request $request)
     {
         $data = $request->validate([
-            'kind' => ['required', Rule::in(['ad', 'info'])],
-            'body' => 'required|string|max:1800',
+            'template_id' => 'required|integer|exists:sms_templates,id',
+            'target'      => ['required', Rule::in(array_keys(self::TARGETS))],
         ]);
+        $template = SmsTemplate::findOrFail($data['template_id']);
+        $finalBody = self::finalBody($template->kind, $template->body, $template->notice_id);
+        $bytes = self::byteLength(str_replace('{이름}', '김철수', $finalBody));
 
-        $finalBody = self::finalBody($data['kind'], $data['body']);
-        $bytes = self::byteLength(str_replace('{이름}', '홍길동', $finalBody));
+        $targetCounts = [];
+        foreach (array_keys(self::TARGETS) as $key) {
+            $targetCounts[$key] = self::recipients('info', $key)->count();
+        }
+        $count = self::recipients($template->kind, $data['target'])->count();
 
         return ApiResponse::success([
-            'recipient_count' => self::recipients($data['kind'])->count(),
+            'recipient_count' => $count,
+            'excluded_count'  => $template->kind === 'ad' ? $targetCounts[$data['target']] - $count : 0,
+            'target_counts'   => $targetCounts, // 대상 버튼에 표시하는 인원 (번호 있는 회원 기준)
             'final_body'      => $finalBody,
             'bytes'           => $bytes,
-            'type'            => $bytes > 90 ? 'LMS' : 'SMS', // 90바이트 넘으면 장문(LMS) 요금
-            'blocked_reason'  => self::blockedReason($data['kind']),
+            'type'            => $bytes > 90 ? 'LMS' : 'SMS',
+            'blocked_reason'  => self::blockedReason($template->kind),
         ], '미리보기');
     }
 
-    // POST /api/admin/sms/send  { kind, body, template_id? }
+    // POST /api/admin/sms/send  { template_id, target }
     public function send(Request $request, SmsServiceInterface $sms)
     {
         $data = $request->validate([
-            'kind'        => ['required', Rule::in(['ad', 'info'])],
-            'body'        => 'required|string|max:1800',
-            'template_id' => 'nullable|integer|exists:sms_templates,id',
+            'template_id' => 'required|integer|exists:sms_templates,id',
+            'target'      => ['required', Rule::in(array_keys(self::TARGETS))],
         ]);
+        $template = SmsTemplate::findOrFail($data['template_id']);
 
-        if ($reason = self::blockedReason($data['kind'])) {
+        if ($reason = self::blockedReason($template->kind)) {
             return ApiResponse::error($reason, 'ERR_VALID_001', 422);
         }
 
-        $recipients = self::recipients($data['kind'])->get(['id', 'name', 'phone']);
+        $recipients = self::recipients($template->kind, $data['target'])->get(['users.id', 'users.name', 'users.phone']);
         if ($recipients->isEmpty()) {
             return ApiResponse::error('받을 회원이 없습니다.', 'ERR_VALID_001', 422);
         }
 
-        $finalBody = self::finalBody($data['kind'], $data['body']);
+        $finalBody = self::finalBody($template->kind, $template->body, $template->notice_id);
         $campaign = SmsCampaign::create([
-            'template_id'     => $data['template_id'] ?? null,
-            'kind'            => $data['kind'],
+            'template_id'     => $template->id,
+            'kind'            => $template->kind,
+            'target'          => $data['target'],
             'body'            => $finalBody,
             'recipient_count' => $recipients->count(),
             'status'          => 'sending',
@@ -115,7 +161,7 @@ class AdminSmsController extends Controller
             'text' => str_replace('{이름}', $u->name ?? '회원', $finalBody),
         ])->all();
 
-        // 큐 워커 없이도 동작하도록 응답을 먼저 돌려준 뒤 발송 (운영자 화면은 기록 목록에서 결과 확인)
+        // 큐 워커 없이도 동작하도록 응답을 먼저 돌려준 뒤 발송 (운영자 화면은 발송 기록에서 결과 확인)
         dispatch(function () use ($sms, $messages, $campaign) {
             try {
                 $result = $sms->sendMany($messages);
@@ -130,23 +176,22 @@ class AdminSmsController extends Controller
             }
         })->afterResponse();
 
-        return ApiResponse::success(self::campaignRow($campaign), '발송을 시작했습니다.', 201);
+        return ApiResponse::success(self::campaignRow($campaign->load('template:id,name', 'sender:id,name')), '발송을 시작했습니다.', 201);
     }
 
-    // GET /api/admin/sms/campaigns?page=1 — 발송 기록
+    // GET /api/admin/sms/campaigns — 최근 30일 발송 기록
     public function campaigns()
     {
-        $page = SmsCampaign::with('template:id,name')->latest()->paginate(20);
+        $items = SmsCampaign::with('template:id,name', 'sender:id,name')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->latest()->limit(100)->get();
 
-        return ApiResponse::success([
-            'items' => collect($page->items())->map(fn(SmsCampaign $c) => self::campaignRow($c)),
-            'total' => $page->total(),
-            'page'  => $page->currentPage(),
-            'pages' => $page->lastPage(),
-        ], '발송 기록 조회 성공');
+        return ApiResponse::success($items->map(fn(SmsCampaign $c) => self::campaignRow($c)), '발송 기록 조회 성공');
     }
 
     // ─── 내부 ───
+
+    private const OPT_OUT_MISSING = '광고성 문자에 넣을 무료 수신거부 번호가 설정되지 않았습니다. (서버 SMS_AD_OPT_OUT)';
 
     private static function validateTemplate(Request $request): array
     {
@@ -159,27 +204,45 @@ class AdminSmsController extends Controller
     }
 
     // 문자를 받을 회원: 정지·탈퇴·운영자 제외, 휴대폰 번호 있는 사람. 광고성은 마케팅 수신 동의자만.
-    private static function recipients(string $kind)
+    private static function recipients(string $kind, string $target)
     {
+        // 마지막 접속 = 일일 접속 기록과 로그인 토큰 마지막 사용 시각 중 늦은 쪽
+        $since = now()->subDays(30);
+
         return User::query()
-            ->where('user_type', '!=', 'operator')
-            ->whereNull('suspended_at')
-            ->whereNotNull('phone')->where('phone', '!=', '')
+            ->where('users.user_type', '!=', 'operator')
+            ->whereNull('users.suspended_at')
+            ->whereNotNull('users.phone')->where('users.phone', '!=', '')
             ->when($kind === 'ad', fn($q) => $q->whereExists(fn($s) => $s->selectRaw(1)
                 ->from('notification_settings')
                 ->whereColumn('notification_settings.user_id', 'users.id')
-                ->where('notification_settings.marketing_opt_in', true)));
+                ->where('notification_settings.marketing_opt_in', true)))
+            ->when($target === 'recent30', fn($q) => $q->where('users.created_at', '>=', $since))
+            ->when($target === 'inactive30', fn($q) => $q
+                ->where('users.created_at', '<', $since)
+                ->whereNotExists(fn($s) => $s->selectRaw(1)->from('daily_active_users')
+                    ->whereColumn('daily_active_users.user_id', 'users.id')->where('daily_active_users.date', '>=', $since->toDateString()))
+                ->whereNotExists(fn($s) => $s->selectRaw(1)->from('personal_access_tokens')
+                    ->whereColumn('personal_access_tokens.tokenable_id', 'users.id')
+                    ->where('personal_access_tokens.tokenable_type', User::class)
+                    ->where('personal_access_tokens.last_used_at', '>=', $since)));
     }
 
-    private static function finalBody(string $kind, string $body): string
+    public static function finalBody(string $kind, string $body, ?int $noticeId): string
     {
         $body = trim($body);
+        $link = $noticeId ? "\n" . url('/n/' . $noticeId) : '';
         if ($kind !== 'ad') {
-            return "[WorkMate] {$body}";
+            return $body . $link;
+        }
+        // 광고성: (광고) + 보내는 곳 이름(문구에 없으면 붙임) + 본문 + 링크 + 무료 수신거부
+        $body = preg_replace('/^\(광고\)\s*/u', '', $body);
+        if (!str_contains($body, 'WorkMate')) {
+            $body = '[WorkMate] ' . $body;
         }
         $optOut = trim((string) config('sms.ad_opt_out'));
 
-        return "(광고)WorkMate\n{$body}\n{$optOut}";
+        return "(광고){$body}{$link}\n{$optOut}";
     }
 
     private static function blockedReason(string $kind): ?string
@@ -188,7 +251,7 @@ class AdminSmsController extends Controller
             return null;
         }
         if (!trim((string) config('sms.ad_opt_out'))) {
-            return '광고성 문자에 넣을 무료 수신거부 번호가 설정되지 않았습니다. (서버 SMS_AD_OPT_OUT)';
+            return self::OPT_OUT_MISSING;
         }
         $hour = (int) now()->format('G');
         if ($hour >= 21 || $hour < 8) {
@@ -211,12 +274,16 @@ class AdminSmsController extends Controller
 
     private static function templateRow(SmsTemplate $t): array
     {
+        $bytes = self::byteLength(str_replace('{이름}', '김철수', self::finalBody($t->kind, $t->body, $t->notice_id)));
+
         return [
             'id'         => $t->id,
             'name'       => $t->name,
             'kind'       => $t->kind,
             'body'       => $t->body,
+            'notice_id'  => $t->notice_id,
             'notice'     => $t->notice ? ['id' => $t->notice->id, 'type' => $t->notice->type, 'title' => $t->notice->title] : null,
+            'type'       => $bytes > 90 ? 'LMS' : 'SMS',
             'updated_at' => $t->updated_at?->toIso8601String(),
         ];
     }
@@ -227,11 +294,13 @@ class AdminSmsController extends Controller
             'id'              => $c->id,
             'template'        => $c->template?->name,
             'kind'            => $c->kind,
-            'body'            => $c->body,
+            'type'            => self::byteLength(str_replace('{이름}', '김철수', $c->body)) > 90 ? 'LMS' : 'SMS',
+            'target'          => self::TARGETS[$c->target] ?? null,
             'recipient_count' => $c->recipient_count,
             'success_count'   => $c->success_count,
             'fail_count'      => $c->fail_count,
             'status'          => $c->status,
+            'sent_by'         => $c->sender?->name,
             'created_at'      => $c->created_at?->toIso8601String(),
         ];
     }

@@ -83,6 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // ★ v18.43 문자 템플릿·발송
         Route::get('/sms/templates',           [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'templates']);
         Route::post('/sms/templates',          [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'storeTemplate']);
+        Route::get('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'showTemplate']);
+        Route::post('/sms/test',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'test']);
         Route::put('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'updateTemplate']);
         Route::delete('/sms/templates/{id}',   [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'destroyTemplate']);
         Route::post('/sms/preview',            [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'preview']);
@@ -96,6 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inquiries',         [\App\Http\Controllers\Api\InquiryController::class, 'index']);
     Route::post('/inquiries',        [\App\Http\Controllers\Api\InquiryController::class, 'store'])->middleware('throttle:10,1');
     Route::get('/inquiries/{id}',    [\App\Http\Controllers\Api\InquiryController::class, 'show']);
+    Route::post('/inquiries/{id}/feedback', [\App\Http\Controllers\Api\InquiryController::class, 'feedback']);
     Route::delete('/inquiries/{id}', [\App\Http\Controllers\Api\InquiryController::class, 'destroy']);
 
     // ★ v18.38 — 홈 팀 활동
@@ -137,6 +140,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/teams/{id}',      [TeamController::class, 'show']);
     Route::post('/teams/join',     [TeamController::class, 'join']);
     Route::post('/teams/preview',  [TeamController::class, 'preview']); // ★ DESIGN-CANVAS(TEAM_JOIN) 추가
+    Route::get('/teams/{id}/invite', [TeamController::class, 'invite']); // ★ v18.43 초대 코드·링크(7일 만료, 만료 시 재발급)
     Route::post('/teams',          [TeamController::class, 'store']);
     Route::post('/teams/leave',    [TeamController::class, 'leave']);
     // ★ v18.21 — 여러 팀 동시 소속 중 "지금 활동할 팀" 전환

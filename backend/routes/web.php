@@ -22,6 +22,8 @@ Route::get('/c/{code}', [BusinessCardPageController::class, 'show']);
 
 // ★ v18.43 — 팀 초대 링크(카톡·문자로 공유) + 최신 APK 고정 주소
 Route::get('/join/{code}', [\App\Http\Controllers\TeamInvitePageController::class, 'show'])->where('code', '[A-Za-z0-9]{4,12}');
+// ★ v18.43 — 문자 속 공지·이벤트 바로가기
+Route::get('/n/{id}', [\App\Http\Controllers\NoticePageController::class, 'show'])->whereNumber('id');
 Route::get('/download/latest', [\App\Http\Controllers\TeamInvitePageController::class, 'latestApk']);
 
 // ★ v18.40 — 웹 관리자(운영자용, frontend 폴더 React 앱). 빌드 결과는 public/admin-app 에 있고,

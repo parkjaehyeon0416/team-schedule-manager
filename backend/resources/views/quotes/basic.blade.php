@@ -87,8 +87,17 @@
             <td>- {{ number_format($quote->discount_amount) }}원</td>
         </tr>
         @endif
+        {{-- ★ v18.45 — 부가세 구분(별도/포함/면세)에 맞춰 공급가액·부가세 표시 --}}
         <tr class="total-row">
-            <td colspan="5" style="font-size:14px;">총 견적가</td>
+            <td colspan="5">공급가액</td>
+            <td>{{ number_format($quote->supply_amount) }}원</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="5">부가세 ({{ $quote->tax_label }})</td>
+            <td>{{ $quote->tax_type === 'exempt' ? '면세' : number_format($quote->vat_amount ?? 0) . '원' }}</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="5" style="font-size:14px;">총 견적가{{ $quote->tax_type === 'exempt' ? '' : ' (부가세 포함)' }}</td>
             <td style="font-size:14px;">{{ number_format($quote->total_amount) }}원</td>
         </tr>
     </tbody>

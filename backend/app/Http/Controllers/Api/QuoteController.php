@@ -388,11 +388,12 @@ class QuoteController extends Controller
             $rows[] = [$l->name, $l->spec ?? '', $l->quantity, $l->unit, $l->unit_price, $amount];
         }
         $rows[] = [];
-        $rows[] = ['', '', '', '', '공급가', $quote->subtotal_amount];
+        $rows[] = ['', '', '', '', '소계', $quote->subtotal_amount];
         if ((float) $quote->discount_amount > 0) {
             $rows[] = ['', '', '', '', '할인', -1 * (float) $quote->discount_amount];
         }
-        $rows[] = ['', '', '', '', '부가세', $quote->vat_amount ?? 0];
+        $rows[] = ['', '', '', '', '공급가액', $quote->supply_amount];
+        $rows[] = ['', '', '', '', "부가세({$quote->tax_label})", $quote->tax_type === 'exempt' ? '면세' : ($quote->vat_amount ?? 0)];
         $rows[] = ['', '', '', '', '합계', $quote->total_amount];
         $rows[] = [];
         $rows[] = ['고객명', $quote->client_name ?? '-'];
@@ -466,22 +467,10 @@ class QuoteController extends Controller
         return Quote::where('user_id', $request->user()->id)->find($id);
     }
 
-    /**
-     * 세금 계산 — ★ DESIGN-CANVAS(ESTIMATE_CREATE/EDIT) "세금" 탭 실계산.
-     *   separate(부가세 별도): 공급가에 10% 더해서 합계
-     *   included(부가세 포함): 합계는 공급가 그대로, 부가세는 그 안에 포함된 금액으로 역산해 표시만
-     *   exempt(면세): 부가세 없음
-     * 반환: [부가세금액, 합계금액]
-     */
+    /** 세금 계산 — Quote::calcTax 참고. 반환: [부가세금액, 합계금액] */
     private function calculateTax(float $subtotal, float $discount, string $taxType): array
     {
-        $base = max(0, $subtotal - $discount);
-
-        return match ($taxType) {
-            'separate' => [round($base * 0.1), $base + round($base * 0.1)],
-            'included' => [round($base - $base / 1.1), $base],
-            default    => [0, $base], // exempt
-        };
+        return Quote::calcTax($subtotal, $discount, $taxType);
     }
 
     private function learnMaterial(int $userId, ?int $workTypeId, array $line): void

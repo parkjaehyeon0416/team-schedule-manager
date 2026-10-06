@@ -141,7 +141,9 @@ export default function QuoteDetailScreen() {
           </View>
           <Text style={styles.titleText}>{quote.client_name ? `${quote.client_name} 고객` : '견적서'}</Text>
           <Text style={styles.amountText}>{formatMoney(quote.total_amount)}원</Text>
-          <Text style={styles.metaText}>부가세 별도 · 희망일 {quote.desired_date ?? '미정'}</Text>
+          <Text style={styles.metaText}>
+            {quote.tax_type === 'exempt' ? '면세' : `부가세 ${formatMoney(quote.vat_amount ?? 0)}원 포함(${quote.tax_label ?? '부가세 별도'})`} · 희망일 {quote.desired_date ?? '미정'}
+          </Text>
         </View>
 
         <Text style={styles.sectionTitle}>견적 항목</Text>
@@ -157,7 +159,7 @@ export default function QuoteDetailScreen() {
             </View>
           ))}
           <View style={styles.itemsTotalRow}>
-            <Text style={styles.itemsTotalLabel}>공급가 합계</Text>
+            <Text style={styles.itemsTotalLabel}>항목 합계</Text>
             <Text style={styles.itemsTotalValue}>{formatMoney(quote.subtotal_amount)}원</Text>
           </View>
         </View>

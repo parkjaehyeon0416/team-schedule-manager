@@ -294,6 +294,9 @@ export interface Quote {
   tax_type?: 'separate' | 'included' | 'exempt';
   vat_amount?: string;
   total_amount: string;
+  // ★ v18.45 — 서버가 계산해서 내려줌: 공급가액(합계-부가세), "부가세 별도/부가세 포함/면세"
+  supply_amount?: number;
+  tax_label?: string;
   status: 'draft' | 'sent' | 'approved' | 'rejected';
   approved_schedule_id: number | null;
   created_at: string;

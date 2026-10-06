@@ -59,7 +59,7 @@ export default function QuotePreviewScreen() {
       const url = await getQuoteShareUrl(quoteId);
       const message = [
         `[견적서] ${quote.client_name ? `${quote.client_name}님, ` : ''}요청하신 견적서를 보내드립니다.`,
-        `총 견적가: ${formatMoney(quote.total_amount)}원`,
+        `총 견적가: ${formatMoney(quote.total_amount)}원${quote.tax_type === 'exempt' ? ' (면세)' : ' (부가세 포함)'}`,
         `견적서 보기(PDF): ${url}`,
         user?.name ? `- ${user.name}${user.phone ? ` (${user.phone})` : ''} 드림` : '',
       ].filter(Boolean).join('\n');
@@ -99,6 +99,8 @@ export default function QuotePreviewScreen() {
     );
   }
 
+  const taxLabel = quote.tax_label ?? '부가세 별도';
+  const supplyAmount = quote.supply_amount ?? Number(quote.total_amount) - Number(quote.vat_amount ?? 0);
   const siteLabel = quote.site ? [quote.site.apt_name, quote.site.dong, quote.site.ho].filter(Boolean).join(' ') || quote.site.address : quote.address;
 
   return (
@@ -140,9 +142,15 @@ export default function QuotePreviewScreen() {
               </View>
             ))}
           </View>
+          {/* ★ v18.45 — 부가세 구분대로 공급가액·부가세 표시(예전엔 항상 "부가세 별도" 고정 문구) */}
           <View style={styles.sumBox}>
-            <Text style={styles.sumText}>공급가 {formatMoney(quote.subtotal_amount)}원</Text>
-            <Text style={styles.sumSub}>부가세 별도</Text>
+            {Number(quote.discount_amount) > 0 && (
+              <Text style={styles.sumSub}>소계 {formatMoney(quote.subtotal_amount)}원 · 할인 -{formatMoney(quote.discount_amount)}원</Text>
+            )}
+            <Text style={styles.sumText}>공급가액 {formatMoney(supplyAmount)}원</Text>
+            <Text style={styles.sumSub}>
+              부가세({taxLabel}) {quote.tax_type === 'exempt' ? '없음' : `${formatMoney(quote.vat_amount ?? 0)}원`}
+            </Text>
           </View>
           {!!quote.memo && <Text style={styles.remark}>비고: {quote.memo}</Text>}
         </View>

@@ -25,9 +25,11 @@ class LandingPageController extends Controller
                 : ['url' => url('/download/latest'), 'sub' => 'Android에서 받기', 'label' => '설치 파일 받기'],
         ];
 
-        $freeUntil = Carbon::parse(config('plans.launch_free_until'))->subDay();
-        $promo = now()->lte($freeUntil->copy()->endOfDay());
-        $launchNote = trim(($promo ? "출시 기념으로 {$freeUntil->format('Y년 n월 j일')}까지 모든 기능을 무료로 쓸 수 있어요." : '')
+        // ★ v18.53 — 종료일이 없으면(결제 준비 전까지 무료) 날짜 없이 안내
+        $promo = \App\Services\PlanService::promoActive();
+        $until = config('plans.launch_free_until');
+        $freeText = $until ? Carbon::parse($until)->subDay()->format('Y년 n월 j일') . '까지' : '지금은';
+        $launchNote = trim(($promo ? "출시 기념으로 {$freeText} 모든 기능을 무료로 쓸 수 있어요." : '')
             . ($ios ? '' : ' iPhone 앱은 준비 중이에요.'));
 
         $pro = number_format(config('plans.plans.pro.monthly'));
@@ -36,7 +38,7 @@ class LandingPageController extends Controller
             ['어떤 분들이 쓰면 좋나요?', '도배 · 타일 · 필름 · 도장처럼 현장을 옮겨 다니며 일하는 분, 그리고 팀을 꾸려 일정을 나누는 팀장님께 맞춰 만들었어요.'],
             ['이용 요금이 있나요?', '일정 · 수입 · 현장 · 사진 같은 기본 기능은 계속 무료예요. 견적서와 세무 자료 내보내기를 많이 쓰면 개인 프로(월 ' . $pro . '원), '
                 . '팀원 정산표 · 근태 · 팀 공지 같은 팀 운영 기능은 팀 요금제(월 ' . $team . '원, 팀장만 결제 · 팀원은 무료)예요.'
-                . ($promo ? " {$freeUntil->format('Y년 n월 j일')}까지는 모든 기능이 무료예요." : '')],
+                . ($promo ? ($until ? " {$freeText}는 모든 기능이 무료예요." : ' 지금은 출시 기념으로 모든 기능이 무료예요.') : '')],
             ['팀원이 앱을 안 쓰면 어떻게 하나요?', '연락처에서 골라 초대 문자를 보낼 수 있어요. 받은 사람이 링크를 누르면 설치와 팀 참여까지 안내돼요.'],
             ['세금 신고도 대신 해주나요?', '아니요. WorkMate는 수입 자료를 정리하고 예상 원천세를 계산해 보여주는 참고용 기능이에요. 신고는 홈택스나 세무사를 통해 직접 진행해주세요.'],
             ['휴대폰을 바꾸면 기록이 사라지나요?', '아니요. 같은 계정으로 로그인하면 일정 · 수입 · 견적서가 그대로 이어져요.'],

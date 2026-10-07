@@ -47,7 +47,7 @@ export default function ProfileScreen() {
       getPlans()
         .then(p => setPlanSub(p.me.launch_free_until
           ? `${dayjs(p.me.launch_free_until).subtract(1, 'day').format('M월 D일')}까지 전부 무료`
-          : p.me.plan_name))
+          : p.me.launch_free ? '출시 기념 전부 무료' : p.me.plan_name)) // ★ v18.53 종료일 없는 무료 기간
         .catch(() => setPlanSub(undefined));
       getMyTeams().then(t => setTeamCount(t.length)).catch(() => setTeamCount(null));
       getSchedules(now.getFullYear(), now.getMonth() + 1)

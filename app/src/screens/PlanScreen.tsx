@@ -1,7 +1,7 @@
 /**
  * 요금제 — DESIGN-CANVAS 기준, PLAN.dc.html (★ v18.48)
  * 출시 기념 무료 배너, 월/연 결제 탭, 무료 · 개인 프로 · 팀 · 팀+프로 카드(현재 내 요금제 표시).
- * 결제(앱스토어 구독)는 2027년 1월에 열려서 지금은 "1월 오픈 예정". 내정보 "요금제", 잠금 안내 시트에서 진입.
+ * 결제(앱스토어 구독)는 사업자 등록 후 열려서 지금은 "오픈 예정"(v18.53 무료 기간 종료일 없음). 내정보 "요금제", 잠금 안내 시트에서 진입.
  */
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
@@ -32,6 +32,8 @@ export default function PlanScreen() {
 
   const L = info.free_limits;
   const freeUntil = info.me.launch_free_until ? dayjs(info.me.launch_free_until).subtract(1, 'day') : null;
+  // ★ v18.53 — 결제 준비 전까지 종료일 없이 무료
+  const freeNow = !!freeUntil || !!info.me.launch_free;
   const card: Record<PlanItem['key'], { desc: string; features: string[] }> = {
     free: { desc: '혼자 일정 · 수입을 정리할 때', features: ['개인 일정 · 수입 기록', `견적서 월 ${L.quotes_per_month}건`, `현장 사진 현장당 ${L.photos_per_site}장`, '팀 참여 (팀원으로)'] },
     pro: { desc: '견적서 · 세무 자료를 많이 쓸 때', features: ['무료 기능 전부', '견적서 무제한', '현장 사진 무제한', '세무 자료 엑셀 내보내기'] },
@@ -43,12 +45,12 @@ export default function PlanScreen() {
     <View style={styles.screen}>
       <AppHeader leftType="back" title="요금제" />
       <ScrollView contentContainerStyle={styles.content}>
-        {freeUntil && (
+        {freeNow && (
           <LinearGradient colors={[colors.primaryLight, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.banner}>
             <Image source={ICONS.gift} style={{ width: 56, height: 56 }} resizeMode="contain" />
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={styles.bannerTag}>출시 기념</Text>
-              <Text style={styles.bannerTitle}>{freeUntil.format('YYYY년 M월 D일')}까지{'\n'}모든 기능 전부 무료</Text>
+              <Text style={styles.bannerTitle}>{freeUntil ? `${freeUntil.format('YYYY년 M월 D일')}까지` : '유료 전환 전까지'}{'\n'}모든 기능 전부 무료</Text>
               <Text style={styles.bannerSub}>지금은 결제 없이 팀 · 프로 기능을 모두 쓸 수 있어요</Text>
             </View>
           </LinearGradient>
@@ -97,14 +99,14 @@ export default function PlanScreen() {
               ) : p.monthly > 0 ? (
                 <View style={styles.soonBtn} accessibilityState={{ disabled: true }}>
                   <Icon name="clock-outline" size={16} color="#6B7E9C" />
-                  <Text style={styles.soonText}>1월 오픈 예정</Text>
+                  <Text style={styles.soonText}>오픈 예정</Text>
                 </View>
               ) : null}
             </View>
           );
         })}
 
-        <InfoNote>결제는 2027년 1월에 열려요. 무료 기간이 끝나기 전에 앱 알림으로 먼저 안내드릴게요.</InfoNote>
+        <InfoNote>결제 기능은 준비 중이에요. 무료 기간이 끝나기 전에 앱 알림으로 먼저 안내드릴게요.</InfoNote>
         <Text style={styles.footnote}>가격 · 기능 구성은 출시 전 바뀔 수 있어요.</Text>
       </ScrollView>
     </View>

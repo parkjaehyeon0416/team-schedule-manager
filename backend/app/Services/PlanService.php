@@ -17,7 +17,12 @@ class PlanService
 
     public static function promoActive(): bool
     {
-        return now()->lt(\Illuminate\Support\Carbon::parse(config('plans.launch_free_until')));
+        // ★ v18.53 — 종료일(launch_free_until)이 없으면 결제 준비 전까지 계속 무료
+        if (!config('plans.launch_free')) {
+            return false;
+        }
+        $until = config('plans.launch_free_until');
+        return !$until || now()->lt(\Illuminate\Support\Carbon::parse($until));
     }
 
     /** 만료를 반영한 현재 요금제 */
@@ -80,6 +85,7 @@ class PlanService
             'plan'              => $plan,
             'plan_name'         => config("plans.plans.$plan.name"),
             'plan_expires_at'   => $plan === 'free' ? null : $user->plan_expires_at?->toIso8601String(),
+            'launch_free'       => self::promoActive(), // ★ v18.53 — 종료일 없는 무료 기간도 표시
             'launch_free_until' => self::promoActive() ? config('plans.launch_free_until') : null,
             'features'          => collect(array_keys(config('plans.features')))
                 ->mapWithKeys(fn($f) => [$f => str_starts_with($f, 'team_') || $f === 'multi_team_lead'

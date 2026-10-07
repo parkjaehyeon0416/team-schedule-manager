@@ -16,19 +16,23 @@ appId: com.workmate.app
 - takeScreenshot: 10_login
 - tapOn: "이메일"
 - inputText: "ios-check"
+- waitForAnimationToEnd
 - takeScreenshot: 11_login_keyboard
 # 키보드 위로 비밀번호 칸도 보이는지(아이폰은 입력칸이 키보드 위로 올라와야 함)
 - tapOn: "비밀번호"
+- waitForAnimationToEnd
 - takeScreenshot: 11b_login_keyboard_password
-# 빈 곳(안내 문구)을 눌러 키보드 닫기 — 시뮬레이터에선 hideKeyboard가 안 먹음
-- tapOn: "또는 이메일로 로그인"
+# return 키로 키보드 닫기 — 시뮬레이터에선 hideKeyboard가 안 먹고, 스크롤돼서 빈 곳 글자도 못 찾음
+- pressKey: Enter
+- waitForAnimationToEnd
 - tapOn: "이메일로 회원가입"
 - waitForAnimationToEnd
 - takeScreenshot: 12_register
 # 맨 아래 입력칸을 눌렀을 때 키보드가 가리는지
 - tapOn: "비밀번호 확인"
+- waitForAnimationToEnd
 - takeScreenshot: 13_register_keyboard_bottom
-- tapOn: "회원가입"
+- pressKey: Enter
 - stopApp
 - launchApp
 - extendedWaitUntil:

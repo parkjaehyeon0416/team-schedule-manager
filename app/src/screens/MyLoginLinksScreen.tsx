@@ -119,7 +119,7 @@ export default function MyLoginLinksScreen() {
               <Text style={styles.count}>로그인 방법 {links.count}개 사용 중</Text>
               {renderRow('kakao')}
               {renderRow('google')}
-              <View style={styles.row}>
+              <View style={[styles.row, { paddingVertical: 14 }]}>
                 <ProviderBadge provider="email" />
                 <View style={styles.rowText}>
                   <Text style={styles.rowName}>이메일 · 비밀번호</Text>
@@ -159,7 +159,7 @@ export default function MyLoginLinksScreen() {
       )}
 
       {/* 해제 확인 */}
-      <Modal transparent visible={!!confirm} animationType="fade" onRequestClose={() => setConfirm(null)}>
+      <Modal transparent statusBarTranslucent visible={!!confirm} animationType="fade" onRequestClose={() => setConfirm(null)}>
         <View style={styles.dim}>
           <View style={styles.dialog} accessibilityRole="alert">
             <Text style={styles.dTitle}>{confirm ? PROVIDER_NAME[confirm] : ''} 연결을 해제할까요?</Text>
@@ -177,7 +177,7 @@ export default function MyLoginLinksScreen() {
       </Modal>
 
       {/* 연결 실패 — 이미 다른 계정에 연결된 소셜 계정 */}
-      <Modal transparent visible={!!fail} animationType="fade" onRequestClose={() => setFail(null)}>
+      <Modal transparent statusBarTranslucent visible={!!fail} animationType="fade" onRequestClose={() => setFail(null)}>
         <View style={styles.dim}>
           <View style={[styles.dialog, { alignItems: 'center' }]} accessibilityRole="alert">
             <View style={styles.failIcon}><Icon name="information-outline" size={26} color="#B95E00" /></View>

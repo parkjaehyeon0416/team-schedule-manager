@@ -90,13 +90,13 @@ class ScheduleController extends Controller
             return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
         }
         // ★ v18.44 — 팀 일정은 "그 팀에서" 팀장일 때만(활성 팀과 무관). 개인 일정은 누구나.
-        if ($requestedTeamId !== null && !$user->isLeaderOf($requestedTeamId)) {
-            return ApiResponse::error('팀 일정은 그 팀의 팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
+        if ($requestedTeamId !== null && !$user->canAssignIn($requestedTeamId)) {
+            return ApiResponse::error('팀 일정은 그 팀의 팀장·부팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
         }
 
         // 팀을 안 고른 예전 앱: 활성 팀에서 팀장이면 활성 팀 일정, 아니면 개인 일정
         $wantsPersonal = $requestedTeamId === null
-            ? ($request->boolean('is_personal') || !$user->isLeaderOf($user->team_id))
+            ? ($request->boolean('is_personal') || !$user->canAssignIn($user->team_id))
             : false;
         $data['team_id']    = $wantsPersonal ? null : ($requestedTeamId ?? $user->team_id);
         $data['owner_id']   = $wantsPersonal ? $user->id : null;
@@ -269,8 +269,8 @@ class ScheduleController extends Controller
                 return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
             }
             // ★ v18.44 — 다른 팀으로 옮길 때도 옮겨갈 팀의 팀장이어야 함
-            if ($requestedTeamId !== null && !$user->isLeaderOf($requestedTeamId)) {
-                return ApiResponse::error('팀 일정은 그 팀의 팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
+            if ($requestedTeamId !== null && !$user->canAssignIn($requestedTeamId)) {
+                return ApiResponse::error('팀 일정은 그 팀의 팀장·부팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
             }
             $wantsPersonal = $requestedTeamId === null ? $request->boolean('is_personal') : false;
             $data['team_id']  = $wantsPersonal ? null : $requestedTeamId;

@@ -50,6 +50,8 @@ Route::middleware('signed:relative')->group(function () {
     // ★ v18.40 — 진짜 엑셀(.xlsx)
     Route::get('/files/quotes/{id}/xlsx', [QuoteController::class, 'signedXlsx'])->name('quotes.xlsx.signed');
     Route::get('/files/tax/{user}/xlsx', [TaxSummaryController::class, 'signedXlsx'])->name('tax.xlsx.signed');
+    // ★ v18.47 — 팀원 정산표 엑셀
+    Route::get('/files/teams/{id}/settlements/{month}/xlsx', [\App\Http\Controllers\Api\TeamSettlementController::class, 'signedXlsx'])->name('teams.settlements.xlsx.signed');
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -146,6 +148,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/teams/leave',    [TeamController::class, 'leave']);
     // ★ v18.21 — 여러 팀 동시 소속 중 "지금 활동할 팀" 전환
     Route::post('/teams/switch-active', [TeamController::class, 'switchActive']);
+
+    // ★ v18.47 — 팀 요금제 기능(부팀장·팀 공지·팀원 정산표·팀 현장 앨범) + 요금제 안내
+    Route::get('/plans', [\App\Http\Controllers\Api\PlanController::class, 'index']);
+    Route::put('/teams/{id}/members/{userId}/sub-leader', [TeamController::class, 'setSubLeader']);
+    Route::get('/teams/{id}/notices',                    [\App\Http\Controllers\Api\TeamNoticeController::class, 'index']);
+    Route::post('/teams/{id}/notices',                   [\App\Http\Controllers\Api\TeamNoticeController::class, 'store'])->middleware('throttle:20,1');
+    Route::patch('/teams/{id}/notices/{noticeId}/pin',   [\App\Http\Controllers\Api\TeamNoticeController::class, 'togglePin']);
+    Route::delete('/teams/{id}/notices/{noticeId}',      [\App\Http\Controllers\Api\TeamNoticeController::class, 'destroy']);
+    Route::get('/teams/{id}/settlements',                [\App\Http\Controllers\Api\TeamSettlementController::class, 'index']);
+    Route::get('/teams/{id}/settlements/xlsx-link',      [\App\Http\Controllers\Api\TeamSettlementController::class, 'xlsxLink']);
+    Route::post('/teams/{id}/settlements/{userId}',      [\App\Http\Controllers\Api\TeamSettlementController::class, 'mark']);
+    Route::get('/teams/{id}/album',                      [\App\Http\Controllers\Api\TeamAlbumController::class, 'index']);
+    Route::get('/teams/{id}/album/photos',               [\App\Http\Controllers\Api\TeamAlbumController::class, 'photos']);
 
     // 평수 계산
     Route::post('calculate/area',  [CalculateController::class, 'area']);

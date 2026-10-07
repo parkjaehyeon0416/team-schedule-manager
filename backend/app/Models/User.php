@@ -34,12 +34,16 @@ class User extends Authenticatable
         'user_type',
         'individual_plan',
         'individual_plan_expires_at',
+        // ★ v18.47 요금제(free·pro·team·team_pro) — config/plans.php, PlanService
+        'plan',
+        'plan_expires_at',
     ];
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'suspended_at' => 'datetime', // ★ v18.41 회원 관리 — 계정 정지
+        'plan_expires_at' => 'datetime',
         'password' => 'hashed',
     ];
 
@@ -119,5 +123,45 @@ class User extends Authenticatable
     public function ledTeamIds(): array
     {
         return array_keys(array_filter($this->teamRoles(), fn($r) => $r <= 2));
+    }
+
+    /**
+     * ★ v18.47 — 부팀장: 팀장이 일정 배정 권한을 나눠 준 팀원. 팀 요금제(team_sub_leader)일 때만 효력.
+     *   [team_id => true] (한 요청 안에서 한 번만 조회)
+     */
+    private ?array $subLeaderMap = null;
+
+    public function subLeaderTeamIds(): array
+    {
+        $this->subLeaderMap ??= \Illuminate\Support\Facades\DB::table('team_members')
+            ->where('user_id', $this->id)
+            ->whereNull('deleted_at')
+            ->where('is_sub_leader', true)
+            ->pluck('team_id')
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => \App\Services\PlanService::teamCan($id, 'team_sub_leader'))
+            ->values()
+            ->all();
+        return $this->subLeaderMap;
+    }
+
+    public function isSubLeaderOf(?int $teamId): bool
+    {
+        return $teamId && in_array($teamId, $this->subLeaderTeamIds(), true);
+    }
+
+    /**
+     * 그 팀의 일정·현장을 등록/수정/삭제하고 팀원을 배정할 수 있나 — 팀장 또는 부팀장.
+     *   팀 정보 수정·해체·부팀장 지정·정산표 같은 "팀 운영"은 isLeaderOf(팀장만)로 따로 검사.
+     */
+    public function canAssignIn(?int $teamId): bool
+    {
+        return $this->isLeaderOf($teamId) || $this->isSubLeaderOf($teamId);
+    }
+
+    /** 일정·현장을 관리할 수 있는 팀 id 목록(팀장 + 부팀장) */
+    public function assignableTeamIds(): array
+    {
+        return array_values(array_unique(array_merge($this->ledTeamIds(), $this->subLeaderTeamIds())));
     }
 }

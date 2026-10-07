@@ -64,8 +64,8 @@ class WorkTypeController extends Controller
         $wantsPersonal = $request->boolean('is_personal') || !$teamId;
 
         // 팀 전체가 공유하는 공정을 추가하는 거라면 그 팀의 팀장만 — 개인용은 누구나 가능
-        if (!$wantsPersonal && !$user->isLeaderOf((int) $teamId)) {
-            return ApiResponse::error('팀 공정 추가는 그 팀의 팀장만 가능합니다.', 'ERR_AUTH_002', 403);
+        if (!$wantsPersonal && !$user->canAssignIn((int) $teamId)) {
+            return ApiResponse::error('팀 공정 추가는 그 팀의 팀장·부팀장만 가능합니다.', 'ERR_AUTH_002', 403);
         }
 
         $workType = WorkType::create([

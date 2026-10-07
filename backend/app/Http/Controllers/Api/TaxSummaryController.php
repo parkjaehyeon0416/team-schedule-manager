@@ -53,6 +53,9 @@ class TaxSummaryController extends Controller
      */
     public function downloadPdf(Request $request)
     {
+        if ($gate = $this->exportGate($request)) {
+            return $gate;
+        }
         $request->validate([
             'year' => 'required|integer|min:2020|max:2099',
         ]);
@@ -68,6 +71,9 @@ class TaxSummaryController extends Controller
      */
     public function pdfLink(Request $request)
     {
+        if ($gate = $this->exportGate($request)) {
+            return $gate;
+        }
         $request->validate([
             'year' => 'required|integer|min:2020|max:2099',
         ]);
@@ -116,6 +122,9 @@ class TaxSummaryController extends Controller
      */
     public function exportCsv(Request $request)
     {
+        if ($gate = $this->exportGate($request)) {
+            return $gate;
+        }
         $data = $this->validateExport($request);
         [$summary, $schedules] = $this->buildExportRows($request->user()->id, $data);
 
@@ -142,6 +151,9 @@ class TaxSummaryController extends Controller
      */
     public function exportLink(Request $request)
     {
+        if ($gate = $this->exportGate($request)) {
+            return $gate;
+        }
         $data = $this->validateExport($request);
 
         $path = URL::temporarySignedRoute('tax.xlsx.signed', now()->addMinutes(10), [
@@ -297,5 +309,14 @@ class TaxSummaryController extends Controller
             'net_income'       => round(array_sum(array_column($months, 'net_income')), 2),
             'work_days'        => array_sum(array_column($months, 'work_days')),
         ];
+    }
+
+    /** ★ v18.47 — 세무 자료 내보내기(PDF·엑셀)는 개인 프로. 화면 보기(show)는 무료 */
+    private function exportGate(Request $request)
+    {
+        if (\App\Services\PlanService::can($request->user(), 'tax_export')) {
+            return null;
+        }
+        return ApiResponse::error(\App\Services\PlanService::upgradeMessage('tax_export'), 'ERR_PLAN_001', 403);
     }
 }

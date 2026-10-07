@@ -64,6 +64,13 @@ class SiteReportController extends Controller
                 ErrorCode::REPORT_NO_SITE_LINKED, 422);
         }
 
+        // ★ v18.47 — 무료는 월 2건(지운 보고서도 셈). 개인 프로는 무제한
+        $reportLimit = \App\Services\PlanService::limit($user, 'reports_per_month', 'report_unlimited');
+        if ($reportLimit !== null
+            && SiteReport::withTrashed()->where('user_id', $user->id)->where('created_at', '>=', now()->startOfMonth())->count() >= $reportLimit) {
+            return ApiResponse::error("무료로는 보고서를 한 달에 {$reportLimit}건까지 만들 수 있어요. 개인 프로에서 무제한으로 쓸 수 있어요.", 'ERR_PLAN_001', 403);
+        }
+
         $data = $request->validate([
             'title'            => 'required|string|max:200',
             'client_name'      => 'nullable|string|max:100',

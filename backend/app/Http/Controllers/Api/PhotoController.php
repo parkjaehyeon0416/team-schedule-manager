@@ -123,6 +123,9 @@ class PhotoController extends Controller
             return ApiResponse::error('일정에 현장이나 주소를 먼저 지정해야 사진을 올릴 수 있습니다.',
                 ErrorCode::PHOTO_NO_SITE_LINKED, 422);
         }
+        if ($limitError = $this->photoLimitError($user, (int) $schedule->site_id, $schedule->team_id)) {
+            return $limitError;
+        }
 
         // ③ ★ v11.1 — paired_with_id 추가 검증
         $pairedWithId = $validated['paired_with_id'] ?? null;
@@ -360,6 +363,9 @@ class PhotoController extends Controller
         if (!$site) {
             return ApiResponse::error('현장을 찾을 수 없습니다.', ErrorCode::SITE_NOT_FOUND, 404);
         }
+        if ($limitError = $this->photoLimitError($user, $site->id, $site->team_id)) {
+            return $limitError;
+        }
 
         $validated = $request->validate([
             'photo'          => 'required|image|mimes:jpeg,png,jpg|max:10240',
@@ -428,6 +434,22 @@ class PhotoController extends Controller
      *
      * @return null|JsonResponse  null이면 검증 통과
      */
+    /**
+     * ★ v18.47 — 무료는 현장당 사진 20장. 올리는 사람이 프로/팀 요금제이거나, 팀 현장이면 그 팀장이 팀 요금제일 때 무제한
+     */
+    private function photoLimitError($user, int $siteId, ?int $teamId)
+    {
+        if (\App\Services\PlanService::can($user, 'photo_unlimited')
+            || ($teamId && \App\Services\PlanService::teamCan($teamId, 'photo_unlimited'))) {
+            return null;
+        }
+        $limit = (int) config('plans.free_limits.photos_per_site');
+        if (SiteFile::where('site_id', $siteId)->where('file_type', 'photo')->count() >= $limit) {
+            return ApiResponse::error("무료로는 현장마다 사진을 {$limit}장까지 올릴 수 있어요. 개인 프로나 팀 요금제에서 무제한으로 쓸 수 있어요.", 'ERR_PLAN_001', 403);
+        }
+        return null;
+    }
+
     private function validatePairedWith(int $pairedWithId, int $siteId, string $category)
     {
         // 1. 시공 후 사진일 때만 허용

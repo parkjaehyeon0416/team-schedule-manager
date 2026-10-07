@@ -444,6 +444,8 @@ class AuthController extends Controller
         // auth:sanctum 미들웨어가 토큰을 검증하고 사용자 정보를 주입해줌
         // ★ v18.21 — teams도 같이 내려줘서 앱이 "여러 팀 소속" 여부를 바로 알 수 있게 함
         $user = $request->user()->load('role', 'team', 'teams');
+        // ★ v18.47 — 요금제 요약(출시 기념 무료 기간이면 launch_free_until 포함)
+        $user->setAttribute('plan_info', \App\Services\PlanService::summary($user));
         return ApiResponse::success($user);
     }
 

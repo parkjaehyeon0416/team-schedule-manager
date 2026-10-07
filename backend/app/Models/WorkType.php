@@ -70,7 +70,7 @@ class WorkType extends Model
     // ────────────────────────────────────────────────
     public function scopeEditableBy($query, $user)
     {
-        $led = $user->ledTeamIds();
+        $led = $user->assignableTeamIds();
         return $query->where(function ($q) use ($user, $led) {
             $q->where('owner_id', $user->id);
             if (!empty($led)) {

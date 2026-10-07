@@ -73,6 +73,13 @@ class QuoteController extends Controller
             'lines.*.unit_price' => 'required|numeric|min:0',
         ]);
 
+        // ★ v18.47 — 무료는 월 3건(지운 견적도 셈 — 지우고 다시 만드는 걸 막기 위해). 개인 프로는 무제한
+        $quoteLimit = \App\Services\PlanService::limit($user, 'quotes_per_month', 'quote_unlimited');
+        if ($quoteLimit !== null
+            && Quote::withTrashed()->where('user_id', $user->id)->where('created_at', '>=', now()->startOfMonth())->count() >= $quoteLimit) {
+            return ApiResponse::error("무료로는 견적서를 한 달에 {$quoteLimit}건까지 만들 수 있어요. 개인 프로에서 무제한으로 쓸 수 있어요.", 'ERR_PLAN_001', 403);
+        }
+
         $quote = DB::transaction(function () use ($data, $user) {
             $subtotal = 0;
             foreach ($data['lines'] as $line) {
@@ -450,6 +457,8 @@ class QuoteController extends Controller
                 'quote'         => $quote,
                 'user'          => $user,
                 'cardQrDataUri' => $cardQrDataUri,
+                // ★ v18.47 — 무료는 하단에 "WorkMate로 작성" 문구, 개인 프로는 제거
+                'showBranding'  => !\App\Services\PlanService::can($user, 'quote_branding'),
             ]);
         } catch (\Throwable $e) {
             return ApiResponse::error('PDF 생성 중 오류가 발생했습니다.', ErrorCode::QUOTE_PDF_FAILED, 500);

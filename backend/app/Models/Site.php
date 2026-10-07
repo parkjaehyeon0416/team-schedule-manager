@@ -58,7 +58,7 @@ class Site extends Model
     //   ★ v18.44 — 내 개인 현장 + 내가 팀장인 팀의 현장(활성 팀이 아니어도 됨)
     public function scopeEditableBy($query, $user)
     {
-        $led = $user->ledTeamIds();
+        $led = $user->assignableTeamIds();
         return $query->where(function ($q) use ($user, $led) {
             $q->where('owner_id', $user->id);
             if (!empty($led)) {
@@ -71,6 +71,6 @@ class Site extends Model
     public function canEditBy($user): bool
     {
         return (int) $this->owner_id === (int) $user->id
-            || ($this->team_id && $user->isLeaderOf((int) $this->team_id));
+            || ($this->team_id && $user->canAssignIn((int) $this->team_id));
     }
 }

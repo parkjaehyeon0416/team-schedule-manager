@@ -35,6 +35,11 @@ class TeamController extends Controller
             // ★ v18.44 — 팀마다 내 역할(활성 팀과 무관하게 앱이 팀장 기능을 보여줄지 판단)
             $team->my_role_id = (int) $team->pivot->role_id;
             $team->is_leader  = $team->my_role_id <= 2;
+            // ★ v18.47 — 부팀장(일정 배정 가능), 팀 요금제 기능 사용 가능 여부(앱이 메뉴를 보여줄지 판단)
+            $team->is_sub_leader = $user->isSubLeaderOf($team->id);
+            $team->can_assign    = $team->is_leader || $team->is_sub_leader;
+            $team->team_features = collect(['team_attendance', 'team_settlement', 'team_album', 'team_sub_leader', 'team_notice', 'team_unlimited_members'])
+                ->mapWithKeys(fn($f) => [$f => \App\Services\PlanService::teamCan($team->id, $f)])->all();
         });
 
         return ApiResponse::success($teams, '팀 목록 조회 성공');
@@ -56,6 +61,12 @@ class TeamController extends Controller
             'activity_area' => 'nullable|string|max:100',
             'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
+
+        // ★ v18.47 — 무료는 팀장으로 1팀까지(여러 팀 운영은 팀 요금제)
+        $ledLimit = \App\Services\PlanService::limit($user, 'led_teams', 'multi_team_lead');
+        if ($ledLimit !== null && count($user->ledTeamIds()) >= $ledLimit) {
+            return ApiResponse::error('무료로는 팀을 1개까지 만들 수 있어요. 여러 팀 운영은 팀 요금제에서 쓸 수 있어요.', 'ERR_PLAN_001', 403);
+        }
 
         $team = Team::create([
             'name'          => $data['name'],
@@ -345,6 +356,12 @@ class TeamController extends Controller
             return ApiResponse::error('이미 가입된 팀입니다.', ErrorCode::TEAM_ALREADY_JOINED, 409);
         }
 
+        // ★ v18.47 — 무료 팀은 3명까지(팀장 포함). 팀장이 팀 요금제면 무제한
+        $memberLimit = \App\Services\PlanService::teamLimit($team->id, 'team_members', 'team_unlimited_members');
+        if ($memberLimit !== null && $team->members()->count() >= $memberLimit) {
+            return ApiResponse::error("이 팀은 무료 인원({$memberLimit}명)이 다 찼어요. 팀장에게 팀 요금제를 요청해 주세요.", 'ERR_PLAN_001', 403);
+        }
+
         // 초대코드로 들어온 사람은 팀장이 아니라 팀원
         DB::table('team_members')->insert([
             'team_id'    => $team->id,
@@ -450,6 +467,7 @@ class TeamController extends Controller
                 'users.avatar_color',
                 'users.avatar_image_path',
                 'team_members.role_id',
+                'team_members.is_sub_leader', // ★ v18.47 부팀장
             )
             ->orderBy('team_members.role_id')
             ->orderBy('users.name')
@@ -483,6 +501,51 @@ class TeamController extends Controller
         $user->role_id   = $membership->role_id ?? 3;
         $user->user_type = 'team';
         $user->save();
+    }
+
+    /**
+     * ─── 부팀장 지정/해제 ───  ★ v18.47 (팀 요금제)
+     *   PUT /teams/{id}/members/{userId}/sub-leader  { enabled: bool }
+     *   팀장만. 부팀장은 그 팀 일정·현장 등록/수정과 팀원 배정, 근태 조회, 팀 공지를 할 수 있음
+     *   (팀 정보 수정·해체·부팀장 지정·정산표는 팀장만).
+     */
+    public function setSubLeader(Request $request, string $id, string $userId)
+    {
+        $user = $request->user();
+        $team = $this->ledTeam($user, $id);
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+        if (!\App\Services\PlanService::teamCan($team->id, 'team_sub_leader')) {
+            return ApiResponse::error(\App\Services\PlanService::upgradeMessage('team_sub_leader'), 'ERR_PLAN_001', 403);
+        }
+        $data = $request->validate(['enabled' => 'required|boolean']);
+
+        $membership = DB::table('team_members')
+            ->where('team_id', $team->id)->where('user_id', (int) $userId)->whereNull('deleted_at')->first();
+        if (!$membership) {
+            return ApiResponse::error('이 팀의 팀원이 아니에요.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+        if ((int) $membership->role_id <= 2) {
+            return ApiResponse::error('팀장은 부팀장으로 지정할 수 없어요.', 'ERR_VALIDATION', 422);
+        }
+
+        DB::table('team_members')->where('id', $membership->id)
+            ->update(['is_sub_leader' => $data['enabled'], 'updated_at' => now()]);
+
+        if ($data['enabled']) {
+            \App\Models\Notification::create([
+                'user_id'   => (int) $userId,
+                'category'  => 'team',
+                'title'     => '부팀장 지정',
+                'body'      => "{$team->name}의 부팀장이 되었어요. 이제 팀 일정을 등록하고 팀원을 배정할 수 있어요.",
+                'link_type' => 'team',
+                'link_id'   => $team->id,
+            ]);
+        }
+
+        return ApiResponse::success(['user_id' => (int) $userId, 'is_sub_leader' => (bool) $data['enabled']],
+            $data['enabled'] ? '부팀장으로 지정했어요.' : '부팀장을 해제했어요.');
     }
 
     /** ★ v18.44 — 내가 팀장인 팀만 찾음(superadmin은 전체). 팀원이거나 남의 팀이면 null */

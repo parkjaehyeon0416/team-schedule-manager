@@ -35,15 +35,19 @@ class AttendanceController extends Controller
 
         // ★ v18.44 — 활성 팀이 아니어도 내가 팀장인 팀이면 조회 가능.
         //   팀을 안 고르면 활성 팀(팀장일 때) → 아니면 내가 팀장인 첫 팀.
-        $led = $user->ledTeamIds();
+        $led = $user->assignableTeamIds();
         $teamId = $data['team_id']
-            ?? ($user->isLeaderOf($user->team_id) ? $user->team_id : ($led[0] ?? null));
+            ?? ($user->canAssignIn($user->team_id) ? $user->team_id : ($led[0] ?? null));
 
         if (!$teamId) {
             return ApiResponse::error('팀장으로 있는 팀이 없습니다.', 'ERR_TEAM_001', 404);
         }
-        if (!$user->isLeaderOf((int) $teamId)) {
+        if (!$user->canAssignIn((int) $teamId)) {
             return ApiResponse::error('권한이 없습니다.', 'ERR_AUTH_002', 403);
+        }
+        // ★ v18.47 — 팀 요금제 기능(출시 기념 기간엔 무료)
+        if (!\App\Services\PlanService::teamCan((int) $teamId, 'team_attendance')) {
+            return ApiResponse::error(\App\Services\PlanService::upgradeMessage('team_attendance'), 'ERR_PLAN_001', 403);
         }
 
         $start = Carbon::create($data['year'], $data['month'], 1)->startOfMonth();

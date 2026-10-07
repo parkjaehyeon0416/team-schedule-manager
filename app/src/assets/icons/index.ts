@@ -16,6 +16,7 @@ export const ICONS = {
   doc: require('./doc.png'),
   privacy: require('./privacy.png'),
   info: require('./info.png'),
+  loginLinks: require('./login_links.png'), // ★ v18.51 로그인 연결 관리
 };
 
 export type IconKey = keyof typeof ICONS;

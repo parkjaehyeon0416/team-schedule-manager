@@ -16,6 +16,8 @@ import { getSchedules } from '../api/schedulesApi';
 import { getSites } from '../api/siteApi';
 import { getMyInquiries } from '../api/inquiryApi';
 import { getPlans } from '../api/planApi';
+import { getLoginLinks } from '../api/socialAuthApi';
+import { ProviderBadge } from '../components/AuthUi';
 import dayjs from 'dayjs';
 import { APP_VERSION } from '../constants/appVersion';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
@@ -23,7 +25,10 @@ import { ICONS } from '../assets/icons';
 import type { IconKey } from '../assets/icons';
 
 // ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
-type MenuRow = { key: string; image: IconKey; label: string; sub?: string; right?: string; onPress: () => void };
+type LinkMethod = 'kakao' | 'google' | 'email';
+type MenuRow = { key: string; image: IconKey; label: string; sub?: string; right?: string; badges?: LinkMethod[]; onPress: () => void };
+
+const LINK_NAME: Record<LinkMethod, string> = { kakao: '카카오', google: '구글', email: '이메일' };
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -34,6 +39,7 @@ export default function ProfileScreen() {
   const [siteCount, setSiteCount] = useState<number | null>(null);
   const [unreadAnswers, setUnreadAnswers] = useState(0); // ★ v18.43 고객 문의 새 답변 수
   const [planSub, setPlanSub] = useState<string | undefined>(undefined); // ★ v18.48 요금제 줄 설명
+  const [linked, setLinked] = useState<LinkMethod[]>([]); // ★ v18.51 로그인 연결 관리 줄
 
   useFocusEffect(
     useCallback(() => {
@@ -48,6 +54,9 @@ export default function ProfileScreen() {
         .then(s => setScheduleCount(s.length))
         .catch(() => setScheduleCount(null));
       getSites().then(s => setSiteCount(s.length)).catch(() => setSiteCount(null));
+      getLoginLinks()
+        .then(l => setLinked((['kakao', 'google', 'email'] as LinkMethod[]).filter(m => (m === 'email' ? l.email.set : l[m].linked))))
+        .catch(() => setLinked([]));
       getMyInquiries().then(r => setUnreadAnswers(r.unread_answers)).catch(() => setUnreadAnswers(0));
     }, []),
   );
@@ -76,6 +85,13 @@ export default function ProfileScreen() {
     {
       key: 'public', image: 'profile', label: '공개 프로필 보기', sub: '다른 사람에게 보이는 모습',
       onPress: () => navigation.navigate('ProfilePublic'),
+    },
+    // ★ v18.51 — 디자인(MY_HOME)대로 로그인 연결 관리(연결된 수단을 오른쪽에 작게)
+    {
+      key: 'loginLinks', image: 'loginLinks', label: '로그인 연결 관리',
+      sub: linked.length ? `${linked.map(m => LINK_NAME[m]).join(' · ')} 연결됨` : undefined,
+      badges: linked,
+      onPress: () => navigation.navigate('MyLoginLinks'),
     },
   ];
 
@@ -130,6 +146,11 @@ export default function ProfileScreen() {
         {!!row.sub && <RNText style={styles.rowSub}>{row.sub}</RNText>}
       </View>
       {!!row.right && <RNText style={styles.rowRight}>{row.right}</RNText>}
+      {!!row.badges?.length && (
+        <View style={styles.badges} accessibilityLabel={row.sub}>
+          {row.badges.map(m => <ProviderBadge key={m} provider={m} size={22} ring style={styles.badge} />)}
+        </View>
+      )}
       <Icon name="chevron-right" size={16} color={colors.muted} />
     </TouchableOpacity>
   );
@@ -249,6 +270,8 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   rowSub: { fontSize: 12, color: colors.textSecondary },
   rowRight: { fontSize: 12, color: colors.textSecondary, marginRight: 4 },
+  badges: { flexDirection: 'row', paddingLeft: 6, marginRight: 4 },
+  badge: { marginLeft: -6 },
   versionText: { fontSize: 13, color: colors.textSecondary },
 
   logoutBtn: {

@@ -1,69 +1,58 @@
+// ★ v18.51 — 디자인 AUTH_LOGIN: 카카오·구글 버튼을 위로, 이메일 로그인은 아래.
+//   연결된 계정이 없는 소셜 로그인이면 바로 가입시키지 않고 SocialFirstLogin("처음이신가요?")으로.
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView, Image, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
-import { signInWithGoogle, signInWithKakao } from '../api/socialAuthApi';
-import { useNavigation } from '@react-navigation/native';
-import { colors, radius, spacing } from '../theme/designTokens';
+import { socialLogin, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
+import { colors } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
+import { SocialButton, OrDivider, AuthInput, FindLinks } from '../components/AuthUi';
 import { ICONS } from '../assets/icons';
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<'google' | 'kakao' | null>(null);
+  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
 
-  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
+  const handleSocialLogin = async (provider: SocialProvider) => {
     setSocialLoading(provider);
     try {
-      const data =
-        provider === 'google' ? await signInWithGoogle() : await signInWithKakao();
-      if (data.success) {
+      const data = await socialLogin(provider);
+      if (data.data?.needs_signup) {
+        navigation.navigate('SocialFirstLogin', {
+          provider,
+          display: data.data.social.display,
+          ticket: data.data.link_ticket,
+          keepLoggedIn,
+        });
+      } else if (data.success) {
         setAuth(data.data.user, data.data.token, keepLoggedIn);
       }
     } catch (error: any) {
-      if (error?.code === 'SIGN_IN_CANCELLED' || error?.message?.includes('cancel')) {
-        return;
-      }
-      Alert.alert('로그인 실패', '소셜 로그인 중 오류가 발생했습니다.');
+      if (isSocialCancel(error)) return;
+      Alert.alert('로그인 실패', error?.response?.data?.message ?? '소셜 로그인 중 오류가 발생했습니다.');
     } finally {
       setSocialLoading(null);
     }
   };
 
-  // 네이버/애플 버튼과 함께 주석 처리(아래 JSX 참고) — 복원 시 이 함수도 같이 복원
-  // const handleUnavailableSocial = (name: string) => {
-  //   Alert.alert('준비 중', `${name} 로그인은 아직 지원하지 않습니다.`);
-  // };
-
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('오류', '아이디(이메일)와 비밀번호를 입력해주세요.');
+      Alert.alert('오류', '이메일과 비밀번호를 입력해주세요.');
       return;
     }
     setLoading(true);
     try {
-      const res = await axiosInstance.post('/auth/login', {
-        email,
-        password,
-        platform: 'mobile',
-      });
+      const res = await axiosInstance.post('/auth/login', { email, password, platform: 'mobile' });
       if (res.data.success) {
         setAuth(res.data.data.user, res.data.data.token, keepLoggedIn);
       }
@@ -72,278 +61,74 @@ export default function LoginScreen() {
       if (errCode === 'ERR_AUTH_001') {
         Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
       } else if (errCode === 'ERR_AUTH_008') {
-        Alert.alert(
-          '접근 불가',
-          '운영자 계정은 모바일 앱 이용이 불가합니다.\n웹 관리자에서 로그인해주세요.',
-        );
+        Alert.alert('접근 불가', '운영자 계정은 모바일 앱 이용이 불가합니다.\n웹 관리자에서 로그인해주세요.');
       } else {
-        Alert.alert('오류', '네트워크 오류가 발생했습니다.');
+        Alert.alert('오류', error.response?.data?.message ?? '네트워크 오류가 발생했습니다.');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const busy = loading || socialLoading !== null;
+
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, { paddingTop: insets.top }]}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.logoWrap}>
-        <Image source={ICONS.logo} style={styles.logoImage} />
+      <View style={styles.brand}>
+        <Image source={ICONS.logo} style={styles.logo} />
         <Text style={styles.logoText}>
           Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
         </Text>
+        <Text style={styles.tagline}>일하는 사람들의 더 나은 내일을 위해</Text>
       </View>
 
-      <View style={styles.inputWrap}>
-        <Icon name="account-outline" size={18} color={colors.muted} />
-        <TextInput
-          style={styles.input}
-          placeholder="아이디 또는 이메일"
-          placeholderTextColor={colors.muted}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+      <View style={styles.socialCol}>
+        <SocialButton provider="kakao" onPress={() => handleSocialLogin('kakao')} loading={socialLoading === 'kakao'} disabled={busy} />
+        <SocialButton provider="google" onPress={() => handleSocialLogin('google')} loading={socialLoading === 'google'} disabled={busy} />
       </View>
 
-      <View style={styles.inputWrap}>
-        <Icon name="lock-outline" size={18} color={colors.muted} />
-        <TextInput
-          style={styles.input}
-          placeholder="비밀번호"
-          placeholderTextColor={colors.muted}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!passwordVisible}
-        />
-        <TouchableOpacity onPress={() => setPasswordVisible(v => !v)} hitSlop={8}>
-          <Icon
-            name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
-            size={18}
-            color={colors.muted}
-          />
-        </TouchableOpacity>
-      </View>
+      <OrDivider />
 
-      <TouchableOpacity
-        style={styles.keepLoggedInRow}
-        onPress={() => setKeepLoggedIn(v => !v)}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.checkbox, keepLoggedIn && styles.checkboxChecked]}>
-          {keepLoggedIn && <Icon name="check-bold" size={12} color={colors.surface} />}
+      <AuthInput icon="email-outline" placeholder="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" accessibilityLabel="이메일" />
+      <AuthInput icon="lock-outline" placeholder="비밀번호" value={password} onChangeText={setPassword} secure accessibilityLabel="비밀번호" />
+
+      <Pressable style={styles.keepRow} onPress={() => setKeepLoggedIn(v => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: keepLoggedIn }}>
+        <View style={[styles.checkbox, keepLoggedIn && styles.checkboxOn]}>
+          {keepLoggedIn && <Icon name="check-bold" size={12} color="#FFFFFF" />}
         </View>
-        <Text style={styles.keepLoggedInText}>로그인 상태 유지</Text>
-      </TouchableOpacity>
+        <Text style={styles.keepText}>로그인 상태 유지</Text>
+      </Pressable>
 
-      <GradientButton onPress={handleLogin} loading={loading} style={styles.buttonWrap}>
+      <GradientButton onPress={handleLogin} loading={loading} disabled={socialLoading !== null}>
         로그인
       </GradientButton>
 
-      <View style={styles.findRow}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('FindEmail')}
-          disabled={loading}
-        >
-          <Text style={styles.findLinkText}>아이디 찾기</Text>
-        </TouchableOpacity>
-        <Text style={styles.findDivider}>|</Text>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('ForgotPassword')}
-          disabled={loading}
-        >
-          <Text style={styles.findLinkText}>비밀번호 찾기</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.socialDivider}>
-        <View style={styles.socialDividerLine} />
-        <Text style={styles.socialDividerText}>또는 간편 로그인</Text>
-        <View style={styles.socialDividerLine} />
-      </View>
-
-      <View style={styles.socialRow}>
-        <TouchableOpacity
-          style={[styles.socialCircle, { backgroundColor: '#FEE500' }]}
-          onPress={() => handleSocialLogin('kakao')}
-          disabled={loading || socialLoading !== null}
-        >
-          {socialLoading === 'kakao' ? (
-            <ActivityIndicator color="#191600" size="small" />
-          ) : (
-            <Text style={[styles.socialLetter, { color: '#191600' }]}>K</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* ★ 2026-10-02: 네이버/애플 로그인은 외부 계정(네이버 개발자센터 앱 등록, Apple
-            Sign in with Apple capability) 설정이 선행되어야 연동 가능 — 그 전까지 디자인에서
-            제외(주석 처리). 복원 시 이 블록의 주석만 해제하면 됨. */}
-        {/*
-        <TouchableOpacity
-          style={[styles.socialCircle, { backgroundColor: '#03C75A' }]}
-          onPress={() => handleUnavailableSocial('네이버')}
-          disabled={loading}
-        >
-          <Text style={[styles.socialLetter, { color: '#FFFFFF' }]}>N</Text>
-        </TouchableOpacity>
-        */}
-
-        <TouchableOpacity
-          style={[styles.socialCircle, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: colors.border }]}
-          onPress={() => handleSocialLogin('google')}
-          disabled={loading || socialLoading !== null}
-        >
-          {socialLoading === 'google' ? (
-            <ActivityIndicator color={colors.textPrimary} size="small" />
-          ) : (
-            <Text style={[styles.socialLetter, { color: '#1F2937' }]}>G</Text>
-          )}
-        </TouchableOpacity>
-
-        {/*
-        <TouchableOpacity
-          style={[styles.socialCircle, { backgroundColor: '#111111' }]}
-          onPress={() => handleUnavailableSocial('애플')}
-          disabled={loading}
-        >
-          <Text style={[styles.socialLetter, { color: '#FFFFFF' }]}>A</Text>
-        </TouchableOpacity>
-        */}
-      </View>
-
-      <TouchableOpacity
-        style={styles.registerLink}
-        onPress={() => navigation.navigate('Register')}
-        disabled={loading}
-      >
-        <Text style={styles.registerLinkText}>
-          계정이 없으신가요?{' '}
-          <Text style={styles.registerLinkBold}>회원가입</Text>
-        </Text>
-      </TouchableOpacity>
+      <FindLinks
+        onFindId={() => navigation.navigate('FindEmail')}
+        onFindPw={() => navigation.navigate('ForgotPassword')}
+        onSignup={() => navigation.navigate('Register')}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.surface },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  logoImage: { width: 76, height: 76, resizeMode: 'contain' },
-  logoWrap: {
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: spacing.xl,
-  },
-  logoText: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    color: colors.textPrimary,
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    height: 48,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  keepLoggedInRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
-  },
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 28, gap: 12 },
+  brand: { alignItems: 'center', gap: 12, paddingTop: 28, paddingBottom: 14 },
+  logo: { width: 76, height: 76, resizeMode: 'contain' },
+  logoText: { fontSize: 26, fontWeight: '800', letterSpacing: -0.4, color: colors.textPrimary },
+  tagline: { fontSize: 14, color: '#5F7290' },
+  socialCol: { gap: 10 },
+  keepRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#C5D5E8',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 18, height: 18, borderRadius: 6, borderWidth: 1.5, borderColor: '#C5D5E8',
+    alignItems: 'center', justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  keepLoggedInText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  buttonWrap: {},
-  findRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  findLinkText: {
-    color: colors.primaryDark,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  findDivider: {
-    color: colors.border,
-  },
-  socialDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  socialDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  socialDividerText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.md,
-  },
-  socialCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  socialLetter: { fontSize: 17, fontWeight: '800' },
-  registerLink: {
-    marginTop: spacing.xl,
-    alignItems: 'center',
-  },
-  registerLinkText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-  },
-  registerLinkBold: {
-    color: colors.primaryDark,
-    fontWeight: '700',
-  },
+  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  keepText: { fontSize: 13, color: '#5F7290' },
 });

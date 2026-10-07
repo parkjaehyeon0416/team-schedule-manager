@@ -8,6 +8,12 @@ import { useAuthStore } from '../store/authStore';
 import BottomTabNavigator from './BottomTabNavigator';
 
 import LoginScreen from '../screens/LoginScreen';
+// ★ v18.51 — 소셜 계정 연결(처음 소셜 로그인 안내·약관·가입 완료·쓰던 계정 연결) + 로그인 연결 관리
+import SocialFirstLoginScreen from '../screens/SocialFirstLoginScreen';
+import SocialSignupTermsScreen from '../screens/SocialSignupTermsScreen';
+import SocialSignupDoneScreen from '../screens/SocialSignupDoneScreen';
+import SocialLinkSigninScreen from '../screens/SocialLinkSigninScreen';
+import MyLoginLinksScreen from '../screens/MyLoginLinksScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FindEmailScreen from '../screens/FindEmailScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -156,6 +162,7 @@ export default function AppNavigator() {
             <Stack.Screen name="WageSettings" component={TradeRatesScreen} />
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="ProfilePublic" component={ProfilePublicScreen} />
+            <Stack.Screen name="MyLoginLinks" component={MyLoginLinksScreen} />
             <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} />
             {/* ★ 이번 작업 추가 */}
             <Stack.Screen name="QuoteCreate" component={QuoteFormScreen} />
@@ -180,6 +187,10 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="SocialFirstLogin" component={SocialFirstLoginScreen} />
+            <Stack.Screen name="SocialSignupTerms" component={SocialSignupTermsScreen} />
+            <Stack.Screen name="SocialSignupDone" component={SocialSignupDoneScreen} options={{ gestureEnabled: false }} />
+            <Stack.Screen name="SocialLinkSignin" component={SocialLinkSigninScreen} />
             <Stack.Screen name="FindEmail" component={FindEmailScreen} />
             <Stack.Screen
               name="ForgotPassword"

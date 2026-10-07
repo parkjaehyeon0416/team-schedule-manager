@@ -30,6 +30,7 @@ Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     Route::post('/register',           [AuthController::class, 'register']);
     Route::post('/login',              [AuthController::class, 'login']);
     Route::post('/social-login',       [AuthController::class, 'socialLogin']);
+    Route::post('/social-signup',      [AuthController::class, 'socialSignup']); // ★ v18.51
     Route::post('/find-email/request', [AuthController::class, 'findEmailRequest']);
     Route::post('/find-email/verify',  [AuthController::class, 'findEmailVerify']);
     Route::post('/forgot-password',    [AuthController::class, 'forgotPassword']);
@@ -63,6 +64,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',           [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::delete('/account',   [AuthController::class, 'withdraw']); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
+    // ★ v18.51 — 로그인 연결 관리(카카오·구글 연결/해제)
+    Route::get('/me/login-links',               [\App\Http\Controllers\Api\LoginLinkController::class, 'index']);
+    Route::post('/me/login-links',              [\App\Http\Controllers\Api\LoginLinkController::class, 'link']);
+    Route::delete('/me/login-links/{provider}', [\App\Http\Controllers\Api\LoginLinkController::class, 'unlink']);
 
     // ★ v18.40 — 웹 관리자(운영자 전용) 공지·이벤트 관리
     Route::middleware('operator')->prefix('admin')->group(function () {

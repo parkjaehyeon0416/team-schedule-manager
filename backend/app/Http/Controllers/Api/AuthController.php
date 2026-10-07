@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
+use App\Services\SocialAuthService;
 use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +145,11 @@ class AuthController extends Controller
             return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
         }
 
+        // ★ v18.51 — "이미 계정이 있어요" → 쓰던 계정으로 로그인하면서 소셜 계정 연결
+        if ($request->filled('link_ticket') && ($fail = $this->attachTicket($user, $request->input('link_ticket')))) {
+            return $fail;
+        }
+
         // 5. Sanctum 토큰 발급
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -155,20 +161,25 @@ class AuthController extends Controller
     }
 
     // ────────────────────────────────────
-    // 소셜 로그인(구글/카카오) — 있으면 로그인, 없으면 자동 회원가입
+    // 소셜 로그인(구글/카카오)
     // POST /api/auth/social-login
+    //
+    // ★ v18.51 — 연결된 계정도 같은 이메일 계정도 없으면 바로 가입시키지 않고 needs_signup + link_ticket 반환
+    //   → 앱이 "WorkMate가 처음이신가요?"를 보여주고 가입(social-signup) 또는 기존 계정 로그인(link_ticket 동봉)으로 이어감.
+    //   flow=v2를 안 보내는 예전 앱은 기존처럼 즉시 가입.
+    //   link_ticket을 함께 보내면 "쓰던 계정으로 로그인" 단계 — 로그인 후 티켓의 소셜 계정을 연결.
     // ────────────────────────────────────
     public function socialLogin(Request $request)
     {
         $data = $request->validate([
-            'provider' => 'required|in:google,kakao',
-            'token'    => 'required|string', // 구글: id_token, 카카오: access_token
-            'platform' => 'required|in:web,mobile',
+            'provider'    => 'required|in:google,kakao',
+            'token'       => 'required|string', // 구글: id_token, 카카오: access_token
+            'platform'    => 'required|in:web,mobile',
+            'flow'        => 'nullable|in:v2',
+            'link_ticket' => 'nullable|string',
         ]);
 
-        $profile = $data['provider'] === 'google'
-            ? $this->verifyGoogleToken($data['token'])
-            : $this->verifyKakaoToken($data['token']);
+        $profile = SocialAuthService::verify($data['provider'], $data['token']);
 
         if (!$profile) {
             return ApiResponse::error(
@@ -178,29 +189,38 @@ class AuthController extends Controller
             );
         }
 
-        $idColumn = $data['provider'] === 'google' ? 'google_id' : 'kakao_id';
+        $idColumn = SocialAuthService::column($data['provider']);
+        $linking = !empty($data['link_ticket']);
 
         // 1) 이미 이 소셜 계정으로 가입된 유저인지 확인
         $user = User::with('role')->where($idColumn, $profile['id'])->first();
 
         if (!$user) {
-            // 2) 같은 이메일로 일반(이메일/비번) 가입된 계정이 있으면 소셜 ID만 연동
+            // 2) 같은 이메일로 가입된 계정이 있으면 소셜 ID만 연동
             $existing = $profile['email'] ? User::where('email', $profile['email'])->first() : null;
 
-            if ($existing) {
-                $existing->update([$idColumn => $profile['id']]);
-                $user = $existing->load('role');
+            if ($existing && !SocialAuthService::attach($existing, $data['provider'], $profile['id'])) {
+                $user = $existing->fresh('role');
+            } elseif ($linking) {
+                // "쓰던 계정으로 로그인"에서 고른 소셜 계정에도 연결된 계정이 없음
+                return ApiResponse::error(
+                    '이 계정으로 가입된 WorkMate 계정이 없어요. 다른 방법으로 로그인해주세요.',
+                    ErrorCode::AUTH_SOCIAL_NO_ACCOUNT,
+                    404
+                );
+            } elseif (($data['flow'] ?? null) === 'v2') {
+                // 3) 신규 — 앱에서 "처음이신가요?" 확인 후 가입
+                return ApiResponse::success([
+                    'needs_signup' => true,
+                    'link_ticket'  => SocialAuthService::makeTicket($data['provider'], $profile),
+                    'social'       => [
+                        'provider' => $data['provider'],
+                        'display'  => SocialAuthService::displayName($profile),
+                    ],
+                ], '연결된 계정이 없습니다.');
             } else {
-                // 3) 완전 신규 — 소셜 정보로 즉시 가입 처리 (개인, 팀 없음)
-                $user = User::create([
-                    'name'      => $profile['name'] ?: '사용자',
-                    'email'     => $profile['email'] ?: $data['provider'] . '_' . $profile['id'] . '@social.local',
-                    $idColumn   => $profile['id'],
-                    'password'  => null,
-                    'role_id'   => 2,
-                    'user_type' => 'freelancer',
-                ]);
-                $user->load('role');
+                // 예전 앱 — 즉시 가입
+                $user = $this->createSocialUser($data['provider'], $profile);
             }
         }
 
@@ -209,61 +229,94 @@ class AuthController extends Controller
             return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
         }
 
+        if ($linking && ($fail = $this->attachTicket($user, $data['link_ticket']))) {
+            return $fail;
+        }
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return ApiResponse::success([
-            'user'  => $user,
+            'user'  => $user->fresh('role'),
             'token' => $token,
         ], '로그인 성공');
     }
 
-    /**
-     * 구글 id_token 검증 — Google의 tokeninfo 엔드포인트로 서명/유효기간/aud를 확인.
-     * @return array{id:string,email:?string,name:?string}|null
-     */
-    private function verifyGoogleToken(string $idToken): ?array
+    // ────────────────────────────────────
+    // ★ v18.51 — 소셜 신규 가입("처음이에요, 새로 시작할게요" → 약관 동의 후)
+    // POST /api/auth/social-signup
+    // ────────────────────────────────────
+    public function socialSignup(Request $request)
     {
-        $response = Http::get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $idToken]);
+        $data = $request->validate([
+            'link_ticket'      => 'required|string',
+            'agree_terms'      => 'accepted',
+            'marketing_opt_in' => 'sometimes|boolean',
+        ]);
 
-        if (!$response->successful()) {
-            return null;
+        $ticket = SocialAuthService::readTicket($data['link_ticket']);
+        if (!$ticket) {
+            return ApiResponse::error('시간이 지나 다시 로그인해야 해요.', ErrorCode::AUTH_SOCIAL_TICKET_INVALID, 422);
         }
 
-        $payload = $response->json();
-        $allowedClientIds = config('services.google.client_ids');
+        $col = SocialAuthService::column($ticket['p']);
+        // 그 사이 다른 경로로 가입됐으면 그 계정으로 로그인
+        $user = User::with('role')->where($col, $ticket['id'])->first()
+            ?? DB::transaction(function () use ($ticket, $data) {
+                $user = $this->createSocialUser($ticket['p'], $ticket);
+                \App\Models\NotificationSetting::updateOrCreate(
+                    ['user_id' => $user->id],
+                    ['marketing_opt_in' => (bool) ($data['marketing_opt_in'] ?? false)]
+                );
+                return $user;
+            });
 
-        // aud가 우리 앱의 OAuth 클라이언트 ID 중 하나인지 검증 (다른 앱용 토큰 도용 방지)
-        if (!empty($allowedClientIds) && !in_array($payload['aud'] ?? null, $allowedClientIds, true)) {
-            return null;
+        if ($user->suspended_at) {
+            return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
         }
 
-        return [
-            'id'    => $payload['sub'],
-            'email' => $payload['email'] ?? null,
-            'name'  => $payload['name'] ?? null,
-        ];
+        return ApiResponse::success([
+            'user'  => $user->fresh('role'),
+            'token' => $user->createToken('auth-token')->plainTextToken,
+        ], '회원가입이 완료되었습니다.', 201);
     }
 
-    /**
-     * 카카오 access_token 검증 — 카카오 사용자 정보 조회 API를 그대로 검증용으로 사용.
-     * @return array{id:string,email:?string,name:?string}|null
-     */
-    private function verifyKakaoToken(string $accessToken): ?array
+    private function createSocialUser(string $provider, array $profile): User
     {
-        $response = Http::withToken($accessToken)->get('https://kapi.kakao.com/v2/user/me');
-
-        if (!$response->successful()) {
-            return null;
+        $email = $profile['email'] ?? null;
+        // 같은 이메일 계정이 이미 있으면(소셜 연결이 다른 계정이라 연동 실패한 경우) 대체 이메일 사용
+        if (!$email || User::withTrashed()->where('email', $email)->exists()) {
+            $email = $provider . '_' . $profile['id'] . '@social.local';
         }
+        $user = User::create([
+            'name'      => $profile['name'] ?: '사용자',
+            'email'     => $email,
+            'password'  => null,
+            'role_id'   => 2,
+            'user_type' => 'freelancer',
+        ]);
+        $user->forceFill([SocialAuthService::column($provider) => $profile['id'], "{$provider}_linked_at" => now()])->save();
+        return $user->load('role');
+    }
 
-        $payload = $response->json();
-        $account = $payload['kakao_account'] ?? [];
-
-        return [
-            'id'    => (string) $payload['id'],
-            'email' => $account['email'] ?? null,
-            'name'  => $account['profile']['nickname'] ?? null,
-        ];
+    /** link_ticket의 소셜 계정을 $user에 연결. 실패 시 에러 응답 반환 */
+    private function attachTicket(User $user, string $ticketStr)
+    {
+        $ticket = SocialAuthService::readTicket($ticketStr);
+        if (!$ticket) {
+            return ApiResponse::error('시간이 지나 다시 로그인해야 해요.', ErrorCode::AUTH_SOCIAL_TICKET_INVALID, 422);
+        }
+        $why = SocialAuthService::attach($user, $ticket['p'], $ticket['id']);
+        if ($why) {
+            $name = $ticket['p'] === 'google' ? '구글' : '카카오';
+            return ApiResponse::error(
+                $why === 'taken'
+                    ? "이미 다른 WorkMate 계정에 연결된 {$name} 계정이에요."
+                    : "이 계정에는 이미 다른 {$name} 계정이 연결돼 있어요.",
+                ErrorCode::AUTH_SOCIAL_TAKEN,
+                409
+            );
+        }
+        return null;
     }
 
     // ════════════════════════════════════════════════════════

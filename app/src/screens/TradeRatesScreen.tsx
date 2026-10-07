@@ -89,7 +89,7 @@ export default function TradeRatesScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="공정별 단가 설정" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.intro}>견적서 작성 시 공정별 기본 단가로 사용돼요.</Text>
 
         <View style={styles.listCard}>

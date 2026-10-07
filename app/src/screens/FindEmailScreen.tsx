@@ -76,7 +76,7 @@ export default function FindEmailScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {!foundEmail ? (
           <View style={styles.titleBlock}>
             <Text style={styles.title}>아이디 찾기</Text>

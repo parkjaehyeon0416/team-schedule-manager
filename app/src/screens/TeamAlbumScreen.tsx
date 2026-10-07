@@ -52,7 +52,7 @@ export default function TeamAlbumScreen() {
       ) : !data ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.head}>
             <Image source={ICONS.site} style={{ width: 40, height: 40 }} resizeMode="contain" />
             <View>

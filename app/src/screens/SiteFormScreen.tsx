@@ -209,7 +209,7 @@ export default function SiteFormScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title={isEdit ? '현장 수정' : '현장 등록'} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.field}>
           <Text style={styles.label}>현장명</Text>
           <View style={styles.inputWrap}>

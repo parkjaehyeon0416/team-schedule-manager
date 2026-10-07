@@ -102,7 +102,7 @@ export default function ScheduleReportsScreen({ route }: any) {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="자동 보고서" />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.section}>보고서 생성</Text>
         <TextInput mode="outlined" label="보고서 제목 *" value={title} onChangeText={setTitle} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />
         <TextInput mode="outlined" label="고객명" value={clientName} onChangeText={setClientName} style={styles.input} textColor="#222222" outlineColor="#CCCCCC" activeOutlineColor="#1F3864" />

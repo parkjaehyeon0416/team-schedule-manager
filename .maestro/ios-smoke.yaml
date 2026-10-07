@@ -1,6 +1,7 @@
 # ★ v18.46 — 가상 아이폰 자동 점검(로그인 전 화면). GitHub 맥 서버에서 ios-simulator.yml이 실행.
 #   비밀번호는 입력하지 않음 — 화면 표시·이동·키보드 가림만 확인.
 # ★ v18.53 — 새 로그인 화면(AUTH_LOGIN) 문구로 갱신 + 카카오·구글 로그인 창이 뜨는지(뜨면 바로 취소)
+#   + 키보드가 입력칸을 가리지 않는지(automaticallyAdjustKeyboardInsets)
 appId: com.workmate.app
 ---
 # 앞 단계(링크 열기)에서 뜬 시스템 확인창이 남아 있으면 닫기
@@ -16,14 +17,18 @@ appId: com.workmate.app
 - tapOn: "이메일"
 - inputText: "ios-check"
 - takeScreenshot: 11_login_keyboard
-- hideKeyboard
+# 키보드 위로 비밀번호 칸도 보이는지(아이폰은 입력칸이 키보드 위로 올라와야 함)
+- tapOn: "비밀번호"
+- takeScreenshot: 11b_login_keyboard_password
+# 빈 곳(안내 문구)을 눌러 키보드 닫기 — 시뮬레이터에선 hideKeyboard가 안 먹음
+- tapOn: "또는 이메일로 로그인"
 - tapOn: "이메일로 회원가입"
 - waitForAnimationToEnd
 - takeScreenshot: 12_register
 # 맨 아래 입력칸을 눌렀을 때 키보드가 가리는지
 - tapOn: "비밀번호 확인"
 - takeScreenshot: 13_register_keyboard_bottom
-- hideKeyboard
+- tapOn: "회원가입"
 - stopApp
 - launchApp
 - extendedWaitUntil:

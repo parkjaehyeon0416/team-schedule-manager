@@ -155,7 +155,7 @@ export default function WorkTypePicker({
       {/* 펼침 영역 */}
       {expanded && (
         <View style={styles.dropdown}>
-          <ScrollView
+          <ScrollView automaticallyAdjustKeyboardInsets
             style={styles.scrollArea}
             nestedScrollEnabled
             keyboardShouldPersistTaps="handled"

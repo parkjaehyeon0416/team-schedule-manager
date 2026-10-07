@@ -68,7 +68,7 @@ export default function AppInfoScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="앱 정보" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
         <View style={styles.brandBlock}>
           <Image source={ICONS.logo} style={styles.logo} />
           <Text style={styles.brandText}>

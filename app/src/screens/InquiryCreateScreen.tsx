@@ -62,7 +62,7 @@ export default function InquiryCreateScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="문의하기" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={{ gap: 8 }}>
           <Text style={styles.label}>문의 유형</Text>
           <View style={styles.pillRow}>

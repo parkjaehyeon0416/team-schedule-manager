@@ -91,7 +91,7 @@ export default function SocialLinkSigninScreen() {
           <GradientButton onPress={goHome} style={{ alignSelf: 'stretch' }}>홈으로</GradientButton>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.main} keyboardShouldPersistTaps="handled">
+        <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.main} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
             <Image source={ICONS.logo} style={{ width: 64, height: 64, resizeMode: 'contain' }} />
             <Text style={styles.title}>쓰던 계정으로 로그인</Text>

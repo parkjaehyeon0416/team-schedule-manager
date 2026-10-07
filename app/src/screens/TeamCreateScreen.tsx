@@ -83,7 +83,7 @@ export default function TeamCreateScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title={isEdit ? '팀 정보 수정' : '팀 만들기'} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Pressable style={styles.photoWrap} onPress={handlePickPhoto}>
           {photoUri ? (
             <Image source={{ uri: photoUri }} style={styles.photoImage} />

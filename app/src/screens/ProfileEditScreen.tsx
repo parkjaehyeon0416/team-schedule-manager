@@ -105,7 +105,7 @@ export default function ProfileEditScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="프로필 설정" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.avatarWrap}>
           <View style={styles.avatarOuter}>
             {avatarUri ? (

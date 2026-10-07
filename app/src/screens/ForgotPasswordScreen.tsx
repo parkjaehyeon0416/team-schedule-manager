@@ -85,7 +85,7 @@ export default function ForgotPasswordScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.titleBlock}>
           <Text style={styles.title}>비밀번호 찾기</Text>
           <Text style={styles.subtitle}>

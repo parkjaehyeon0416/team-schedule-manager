@@ -74,7 +74,7 @@ export default function MyRatesScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="내 단가 설정" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>기본 일급 (1공수)</Text>
           <Text style={styles.summaryValue}>{formatMoney(parseMoney(fullDay))}원</Text>

@@ -126,7 +126,7 @@ export default function QuoteFormScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title={isEdit ? '견적서 수정' : '견적서 작성'} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.sectionTitle}>고객 정보</Text>
         <View style={{ gap: spacing.sm }}>
           <View style={styles.field}>

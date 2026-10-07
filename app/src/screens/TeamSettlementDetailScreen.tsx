@@ -94,7 +94,7 @@ export default function TeamSettlementDetailScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="정산 상세" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <View style={styles.head}>
             <Avatar id={m.user_id} name={m.name} color={m.avatar_color} image={m.avatar_image_path} size={52} />

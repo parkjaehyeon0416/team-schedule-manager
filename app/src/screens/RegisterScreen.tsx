@@ -100,7 +100,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title="회원가입" />
-      <ScrollView
+      <ScrollView automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >

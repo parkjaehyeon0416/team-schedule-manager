@@ -253,7 +253,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
   return (
     <View style={styles.screen}>
       <AppHeader leftType="back" title={isEditMode ? '일정 수정' : '일정 등록'} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {hasTeam && (
           <View style={styles.field}>
             <Text style={styles.label}>일정 구분</Text>

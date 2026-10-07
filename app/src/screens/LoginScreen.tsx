@@ -73,7 +73,7 @@ export default function LoginScreen() {
   const busy = loading || socialLoading !== null;
 
   return (
-    <ScrollView
+    <ScrollView automaticallyAdjustKeyboardInsets
       style={styles.screen}
       contentContainerStyle={[styles.container, { paddingTop: insets.top }]}
       keyboardShouldPersistTaps="handled"

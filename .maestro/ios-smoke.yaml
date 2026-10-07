@@ -29,7 +29,7 @@ appId: com.workmate.app
 # 비밀번호 칸 "완료" → 비밀번호가 비어 있으니 안내창(입력 안 함) → 닫기
 - pressKey: Enter
 - tapOn:
-    text: "OK"
+    text: "확인"
     optional: true
 - waitForAnimationToEnd
 - tapOn: "이메일로 회원가입"

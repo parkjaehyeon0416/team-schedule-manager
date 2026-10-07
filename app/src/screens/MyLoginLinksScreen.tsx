@@ -1,8 +1,8 @@
 // ★ v18.51 — 디자인 MY_LOGIN_LINKS: 내 정보 › 로그인 연결 관리 (카카오·구글 연결/해제, 이메일·비밀번호 표시)
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import GradientButton from '../components/GradientButton';
@@ -16,6 +16,8 @@ const REUL: Record<SocialProvider, string> = { kakao: '카카오를', google: '�
 const fmt = (d: string | null) => (d ? d.replace(/-/g, '.') : '');
 
 export default function MyLoginLinksScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const [links, setLinks] = useState<LoginLinks | null>(null);
   const [busy, setBusy] = useState<SocialProvider | null>(null);
   const [confirm, setConfirm] = useState<SocialProvider | null>(null);
@@ -28,6 +30,15 @@ export default function MyLoginLinksScreen() {
   };
 
   useFocusEffect(useCallback(() => { getLoginLinks().then(setLinks).catch(() => {}); }, []));
+
+  // ★ v18.52 — 비밀번호 설정/변경 화면에서 돌아올 때 완료 토스트
+  useEffect(() => {
+    if (route.params?.toast) {
+      showToast(route.params.toast);
+      navigation.setParams({ toast: undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.toast]);
 
   const connect = async (p: SocialProvider) => {
     setBusy(p);
@@ -131,7 +142,22 @@ export default function MyLoginLinksScreen() {
                     <Text style={[styles.rowStatus, { color: '#5F7290' }]}>설정 안 됨</Text>
                   )}
                 </View>
-                {!links.email.set && <Text style={styles.soon}>비밀번호 설정은{'\n'}준비 중이에요</Text>}
+                {/* ★ v18.52 — 설정 안 됨: [설정](파란 버튼) / 설정됨: [변경](테두리 버튼) */}
+                {links.email.set ? (
+                  <Pressable
+                    onPress={() => navigation.navigate('MyPassword', { mode: 'change', email: links.email.email })}
+                    style={[styles.smallBtn, styles.btnGhost]}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.smallText, { color: '#3B4F70' }]}>변경</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={() => navigation.navigate('MyPassword', { mode: 'set', email: links.email.email })} accessibilityRole="button">
+                    <LinearGradient colors={['#2492FF', '#0A6CE0']} style={[styles.smallBtn, { borderWidth: 0 }]}>
+                      <Text style={[styles.smallText, { color: '#FFFFFF' }]}>설정</Text>
+                    </LinearGradient>
+                  </Pressable>
+                )}
               </View>
             </>
           )}
@@ -217,7 +243,6 @@ const styles = StyleSheet.create({
   smallText: { fontSize: 13, fontWeight: '700' },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 52 },
   whyText: { fontSize: 12, fontWeight: '600', color: '#B95E00' },
-  soon: { fontSize: 11, lineHeight: 15, color: '#8FA3BF', textAlign: 'right' },
   note: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12 },
   noteText: { flex: 1, fontSize: 13, lineHeight: 19 },
   toast: {

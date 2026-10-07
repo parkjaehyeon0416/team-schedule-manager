@@ -89,6 +89,17 @@ export async function linkSocial(provider: SocialProvider): Promise<LoginLinks> 
   return res.data.data;
 }
 
+/** ★ v18.52 — 이메일·비밀번호 설정(소셜 가입자)/변경. email은 이메일 없는 계정만, currentPassword는 변경일 때만 */
+export async function setPassword(body: {
+  email?: string;
+  current_password?: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<LoginLinks> {
+  const res = await axiosInstance.put('/me/password', body);
+  return res.data.data;
+}
+
 export async function unlinkSocial(provider: SocialProvider): Promise<LoginLinks> {
   const res = await axiosInstance.delete(`/me/login-links/${provider}`);
   return res.data.data;

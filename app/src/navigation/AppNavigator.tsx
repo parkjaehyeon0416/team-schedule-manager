@@ -14,6 +14,7 @@ import SocialSignupTermsScreen from '../screens/SocialSignupTermsScreen';
 import SocialSignupDoneScreen from '../screens/SocialSignupDoneScreen';
 import SocialLinkSigninScreen from '../screens/SocialLinkSigninScreen';
 import MyLoginLinksScreen from '../screens/MyLoginLinksScreen';
+import MyPasswordScreen from '../screens/MyPasswordScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import FindEmailScreen from '../screens/FindEmailScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -163,6 +164,9 @@ export default function AppNavigator() {
             <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
             <Stack.Screen name="ProfilePublic" component={ProfilePublicScreen} />
             <Stack.Screen name="MyLoginLinks" component={MyLoginLinksScreen} />
+            {/* ★ v18.52 — 이메일·비밀번호 설정/변경, 변경 화면의 '비밀번호를 잊으셨나요?' */}
+            <Stack.Screen name="MyPassword" component={MyPasswordScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} />
             {/* ★ 이번 작업 추가 */}
             <Stack.Screen name="QuoteCreate" component={QuoteFormScreen} />

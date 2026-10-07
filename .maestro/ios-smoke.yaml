@@ -1,5 +1,6 @@
 # ★ v18.46 — 가상 아이폰 자동 점검(로그인 전 화면). GitHub 맥 서버에서 ios-simulator.yml이 실행.
 #   비밀번호는 입력하지 않음 — 화면 표시·이동·키보드 가림만 확인.
+# ★ v18.53 — 새 로그인 화면(AUTH_LOGIN) 문구로 갱신 + 카카오·구글 로그인 창이 뜨는지(뜨면 바로 취소)
 appId: com.workmate.app
 ---
 # 앞 단계(링크 열기)에서 뜬 시스템 확인창이 남아 있으면 닫기
@@ -12,12 +13,11 @@ appId: com.workmate.app
     visible: "아이디 찾기"
     timeout: 40000
 - takeScreenshot: 10_login
-- tapOn: "아이디 또는 이메일"
+- tapOn: "이메일"
 - inputText: "ios-check"
 - takeScreenshot: 11_login_keyboard
 - hideKeyboard
-# "계정이 없으신가요? 회원가입" 한 문장 안에 있어서 부분 일치로 찾음
-- tapOn: ".*회원가입"
+- tapOn: "이메일로 회원가입"
 - waitForAnimationToEnd
 - takeScreenshot: 12_register
 # 맨 아래 입력칸을 눌렀을 때 키보드가 가리는지
@@ -40,6 +40,34 @@ appId: com.workmate.app
 - tapOn: "아이디 찾기"
 - waitForAnimationToEnd
 - takeScreenshot: 15_find_id
+# 카카오 로그인 — 카카오톡이 없는 시뮬레이터라 웹 로그인 확인창/창이 떠야 정상(입력 없이 취소)
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "카카오로 로그인"
+    timeout: 30000
+- tapOn: "카카오로 로그인"
+- waitForAnimationToEnd
+- takeScreenshot: 17_kakao_prompt
+- tapOn:
+    text: "Cancel"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 18_after_kakao_cancel
+# 구글 로그인 — 시스템 확인창 또는 구글 로그인 창이 떠야 정상(입력 없이 취소)
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "구글로 로그인"
+    timeout: 30000
+- tapOn: "구글로 로그인"
+- waitForAnimationToEnd
+- takeScreenshot: 19_google_prompt
+- tapOn:
+    text: "Cancel"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 20_after_google_cancel
 # 초대 링크로 앱 열기 — 로그인 전이면 링크를 기억해 두고 로그인 화면을 보여줘야 함
 - openLink: "workmate://join/6NXTAX"
 - tapOn:

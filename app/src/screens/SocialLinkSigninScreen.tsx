@@ -1,7 +1,7 @@
 // ★ v18.51 — 디자인 SOCIAL_LINK_SIGNIN: "이미 계정이 있어요" → 쓰던 방법으로 로그인하면 들어온 소셜 계정이 자동 연결.
 //   완료 상태(SOCIAL_LINK_SIGNIN_DONE)는 같은 화면에서 보여주고 "홈으로"를 눌러야 로그인 상태로 전환.
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, Image, Pressable, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +22,7 @@ export default function SocialLinkSigninScreen() {
   const insets = useSafeAreaInsets();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
+  const pwRef = useRef<TextInput>(null); // ★ v18.54 이메일 칸 "다음" → 비밀번호 칸(아이폰 키보드가 비밀번호 칸을 가려서)
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState<SocialProvider | 'email' | null>(null);
   const [done, setDone] = useState<{ user: any; token: string } | null>(null);
@@ -114,8 +115,8 @@ export default function SocialLinkSigninScreen() {
           </View>
 
           <OrDivider />
-          <AuthInput icon="email-outline" placeholder="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" accessibilityLabel="이메일" />
-          <AuthInput icon="lock-outline" placeholder="비밀번호" value={password} onChangeText={setPassword} secure accessibilityLabel="비밀번호" />
+          <AuthInput icon="email-outline" placeholder="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" accessibilityLabel="이메일" returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => pwRef.current?.focus()} />
+          <AuthInput ref={pwRef} icon="lock-outline" placeholder="비밀번호" value={password} onChangeText={setPassword} secure accessibilityLabel="비밀번호" returnKeyType="done" onSubmitEditing={loginWithEmail} />
           <GradientButton onPress={loginWithEmail} loading={busy === 'email'} disabled={busy !== null && busy !== 'email'}>
             로그인하고 연결하기
           </GradientButton>

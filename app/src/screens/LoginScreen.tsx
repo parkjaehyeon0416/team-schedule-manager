@@ -1,7 +1,7 @@
 // ★ v18.51 — 디자인 AUTH_LOGIN: 카카오·구글 버튼을 위로, 이메일 로그인은 아래.
 //   연결된 계정이 없는 소셜 로그인이면 바로 가입시키지 않고 SocialFirstLogin("처음이신가요?")으로.
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Image, Pressable } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView, Image, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { setAuth } = useAuthStore();
   const [email, setEmail] = useState('');
+  const pwRef = useRef<TextInput>(null); // ★ v18.54 이메일 칸 "다음" → 비밀번호 칸(아이폰 키보드가 비밀번호 칸을 가려서)
   const [password, setPassword] = useState('');
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -93,8 +94,8 @@ export default function LoginScreen() {
 
       <OrDivider />
 
-      <AuthInput icon="email-outline" placeholder="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" accessibilityLabel="이메일" />
-      <AuthInput icon="lock-outline" placeholder="비밀번호" value={password} onChangeText={setPassword} secure accessibilityLabel="비밀번호" />
+      <AuthInput icon="email-outline" placeholder="이메일" value={email} onChangeText={setEmail} keyboardType="email-address" accessibilityLabel="이메일" returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => pwRef.current?.focus()} />
+      <AuthInput ref={pwRef} icon="lock-outline" placeholder="비밀번호" value={password} onChangeText={setPassword} secure accessibilityLabel="비밀번호" returnKeyType="done" onSubmitEditing={handleLogin} />
 
       <Pressable style={styles.keepRow} onPress={() => setKeepLoggedIn(v => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: keepLoggedIn }}>
         <View style={[styles.checkbox, keepLoggedIn && styles.checkboxOn]}>

@@ -15,21 +15,31 @@ appId: com.workmate.app
     timeout: 40000
 - takeScreenshot: 10_login
 - tapOn: "이메일"
+# 시뮬레이터 첫 키보드 사용 안내(밀어서 입력) 창이 뜨면 닫기
+- tapOn:
+    text: "Continue"
+    optional: true
 - inputText: "ios-check"
 - waitForAnimationToEnd
 - takeScreenshot: 11_login_keyboard
-# 키보드 위로 비밀번호 칸도 보이는지(아이폰은 입력칸이 키보드 위로 올라와야 함)
-- tapOn: "비밀번호"
+# 이메일 칸 "다음" 키 → 비밀번호 칸으로 넘어가 키보드 위에 보여야 함
+- pressKey: Enter
 - waitForAnimationToEnd
 - takeScreenshot: 11b_login_keyboard_password
-# return 키로 키보드 닫기 — 시뮬레이터에선 hideKeyboard가 안 먹고, 스크롤돼서 빈 곳 글자도 못 찾음
+# 비밀번호 칸 "완료" → 비밀번호가 비어 있으니 안내창(입력 안 함) → 닫기
 - pressKey: Enter
+- tapOn:
+    text: "OK"
+    optional: true
 - waitForAnimationToEnd
 - tapOn: "이메일로 회원가입"
 - waitForAnimationToEnd
 - takeScreenshot: 12_register
 # 맨 아래 입력칸을 눌렀을 때 키보드가 가리는지
 - tapOn: "비밀번호 확인"
+- tapOn:
+    text: "Continue"
+    optional: true
 - waitForAnimationToEnd
 - takeScreenshot: 13_register_keyboard_bottom
 - pressKey: Enter

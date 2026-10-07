@@ -69,13 +69,17 @@ export function OrDivider({ label = '또는 이메일로 로그인' }: { label?:
   );
 }
 
-/** 아이콘 달린 입력칸(이메일·비밀번호) */
-export function AuthInput({ icon, secure, ...props }: { icon: string; secure?: boolean } & TextInputProps) {
+/** 아이콘 달린 입력칸(이메일·비밀번호). ref는 "다음" 키로 비밀번호 칸에 포커스 넘길 때 씀 */
+export const AuthInput = React.forwardRef<TextInput, { icon: string; secure?: boolean } & TextInputProps>(function AuthInput(
+  { icon, secure, ...props },
+  ref,
+) {
   const [visible, setVisible] = useState(false);
   return (
     <View style={s.inputWrap}>
       <Icon name={icon} size={18} color="#8FA3BF" />
       <TextInput
+        ref={ref}
         style={s.input}
         placeholderTextColor="#9AACC4"
         secureTextEntry={secure && !visible}
@@ -89,7 +93,7 @@ export function AuthInput({ icon, secure, ...props }: { icon: string; secure?: b
       )}
     </View>
   );
-}
+});
 
 /** 흰 바탕 파란 테두리 버튼(이미 계정이 있어요) */
 export function OutlineButton({ children, onPress }: { children: string; onPress: () => void }) {

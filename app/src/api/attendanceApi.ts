@@ -9,6 +9,9 @@ export interface AttendanceMember {
   id: number;
   name: string;
   role_id: number;
+  role?: '팀장' | '부팀장' | '팀원'; // ★ v18.48
+  avatar_color?: string | null;
+  avatar_image_path?: string | null;
   work_days: number;
   dates: string[];
 }

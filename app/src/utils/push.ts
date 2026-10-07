@@ -33,6 +33,7 @@ function openFromNotification(msg: RemoteMessage | null) {
   else if (linkType === 'team') navigateFromOutside('TeamDetail', { teamId: linkId });
   else if (linkType === 'quote') navigateFromOutside('QuoteDetail', { quoteId: linkId });
   else if (linkType === 'inquiry') navigateFromOutside('InquiryDetail', { id: linkId }); // ★ v18.43 문의 답변
+  else if (linkType === 'team_notice') navigateFromOutside('TeamNoticeList', { teamId: linkId }); // ★ v18.48 팀 공지
 }
 
 async function ensurePermission(messaging: Messaging): Promise<boolean> {

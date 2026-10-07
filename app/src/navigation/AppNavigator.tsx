@@ -55,6 +55,13 @@ import SplashScreen from '../screens/SplashScreen';
 import NoticeListScreen from '../screens/NoticeListScreen';
 import NoticeDetailScreen from '../screens/NoticeDetailScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
+// ★ v18.48 — 팀 요금제 화면 + 요금제
+import TeamNoticeListScreen from '../screens/TeamNoticeListScreen';
+import TeamSettlementScreen from '../screens/TeamSettlementScreen';
+import TeamSettlementDetailScreen from '../screens/TeamSettlementDetailScreen';
+import TeamAlbumScreen from '../screens/TeamAlbumScreen';
+import TeamAlbumSiteScreen from '../screens/TeamAlbumSiteScreen';
+import PlanScreen from '../screens/PlanScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -114,6 +121,12 @@ export default function AppNavigator() {
             <Stack.Screen name="TeamJoin" component={TeamJoinScreen} />
             {/* ★ v18.43 연락처 초대 · 고객 문의 */}
             <Stack.Screen name="TeamContactPick" component={TeamContactPickScreen} />
+            <Stack.Screen name="TeamNoticeList" component={TeamNoticeListScreen} />
+            <Stack.Screen name="TeamSettlement" component={TeamSettlementScreen} />
+            <Stack.Screen name="TeamSettlementDetail" component={TeamSettlementDetailScreen} />
+            <Stack.Screen name="TeamAlbum" component={TeamAlbumScreen} />
+            <Stack.Screen name="TeamAlbumSite" component={TeamAlbumSiteScreen} />
+            <Stack.Screen name="Plan" component={PlanScreen} />
             <Stack.Screen name="InquiryList" component={InquiryListScreen} />
             <Stack.Screen name="InquiryCreate" component={InquiryCreateScreen} />
             <Stack.Screen name="InquiryDetail" component={InquiryDetailScreen} />

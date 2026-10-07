@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePlanLockStore } from '../store/planLockStore';
 
 // ─────────────────────────────────────────────────────────
 // ★ 10.0.2.2 = Android 에뮬레이터에서 내 PC의 localhost를 가리키는 주소
@@ -59,6 +60,11 @@ axiosInstance.interceptors.response.use(
   async error => {
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('token');
+    }
+    // ★ v18.48 — 요금제 한도(무료 견적 월 3건 등)에 걸리면 잠금 안내 시트(PLAN_LOCKED)를 띄움
+    const data = error.response?.data;
+    if (error.response?.status === 403 && data?.error_code === 'ERR_PLAN_001') {
+      usePlanLockStore.getState().show({ ...(data.plan ?? {}), message: data.message });
     }
     return Promise.reject(error);
   },

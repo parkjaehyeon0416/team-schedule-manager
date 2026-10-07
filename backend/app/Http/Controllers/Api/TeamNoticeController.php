@@ -32,9 +32,17 @@ class TeamNoticeController extends Controller
             ->orderByDesc('pinned')->latest()->orderByDesc('id')
             ->limit(100)->get();
 
+        // ★ v18.48 — 작성자 역할 표시(팀장/부팀장/팀원/나간 팀원) + 읽음 처리(팀 상세 "새 글 N")
+        $roles = DB::table('team_members')->where('team_id', $team->id)->whereNull('deleted_at')
+            ->get(['user_id', 'role_id', 'is_sub_leader'])->keyBy('user_id');
+        DB::table('team_members')->where('team_id', $team->id)->where('user_id', $user->id)->whereNull('deleted_at')
+            ->update(['notices_read_at' => now()]);
+
         return ApiResponse::success([
-            'can_write' => $user->canAssignIn($team->id) && PlanService::teamCan($team->id, 'team_notice'),
-            'items'     => $notices->map(fn(TeamNotice $n) => $this->row($n, $user, $team->id)),
+            'team_name'    => $team->name,
+            'can_write'    => $user->canAssignIn($team->id) && PlanService::teamCan($team->id, 'team_notice'),
+            'member_count' => $roles->count(),
+            'items'        => $notices->map(fn(TeamNotice $n) => $this->row($n, $user, $team->id) + ['author_role' => self::roleLabel($roles->get($n->user_id))]),
         ], '팀 공지 조회 성공');
     }
 
@@ -47,7 +55,7 @@ class TeamNoticeController extends Controller
             return ApiResponse::error('팀장·부팀장만 공지를 쓸 수 있어요.', 'ERR_AUTH_002', 403);
         }
         if (!PlanService::teamCan($team->id, 'team_notice')) {
-            return ApiResponse::error(PlanService::upgradeMessage('team_notice'), 'ERR_PLAN_001', 403);
+            return PlanService::denied('team_notice', PlanService::upgradeMessage('team_notice'));
         }
         $data = $request->validate([
             'body'   => 'required|string|max:1000',
@@ -77,7 +85,8 @@ class TeamNoticeController extends Controller
         }
 
         $notice->load('author:id,name,avatar_color,avatar_image_path');
-        return ApiResponse::success($this->row($notice, $user, $team->id) + ['notified' => $memberIds->count()], '공지를 올렸어요.', 201);
+        $mine = DB::table('team_members')->where('team_id', $team->id)->where('user_id', $user->id)->whereNull('deleted_at')->first();
+        return ApiResponse::success($this->row($notice, $user, $team->id) + ['notified' => $memberIds->count(), 'author_role' => self::roleLabel($mine)], '공지를 올렸어요.', 201);
     }
 
     // PATCH /teams/{id}/notices/{noticeId}/pin
@@ -126,6 +135,14 @@ class TeamNoticeController extends Controller
             'can_delete' => $n->user_id === $user->id || $user->isLeaderOf($teamId),
             'created_at' => $n->created_at?->toIso8601String(),
         ];
+    }
+
+    public static function roleLabel($membership): string
+    {
+        if (!$membership) {
+            return '나간 팀원';
+        }
+        return (int) $membership->role_id <= 2 ? '팀장' : ($membership->is_sub_leader ? '부팀장' : '팀원');
     }
 
     private function memberTeam(Request $request, string $id): ?Team

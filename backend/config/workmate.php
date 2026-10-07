@@ -5,4 +5,6 @@
 return [
     'app_store_url'  => env('APP_STORE_URL'),
     'play_store_url' => env('PLAY_STORE_URL'),
+    // ★ v18.48 — 앱 소개 페이지 하단 사업자 정보("상호 · 대표 · 사업자등록번호 · 연락처"). 사업자 등록 전엔 비워 둠(숨김)
+    'company_info'   => env('COMPANY_INFO'),
 ];

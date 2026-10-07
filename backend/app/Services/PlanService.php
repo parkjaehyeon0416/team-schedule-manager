@@ -89,6 +89,29 @@ class PlanService
         ];
     }
 
+    /**
+     * ★ v18.47 — 요금제 때문에 막혔을 때의 403 응답. 앱이 "잠금 안내 시트"(PLAN_LOCKED)를 띄우는 데 필요한
+     *   정보(무슨 기능인지, 한도·사용량, 다시 채워지는 날, 어떤 요금제로 풀리는지)를 같이 내려줌.
+     *   $usage: ['limit'=>3,'used'=>3,'unit'=>'건','monthly'=>true]
+     */
+    public static function denied(string $feature, string $message, array $usage = []): \Illuminate\Http\JsonResponse
+    {
+        $isTeam = str_starts_with($feature, 'team_') || $feature === 'multi_team_lead';
+        return response()->json([
+            'success'    => false,
+            'message'    => $message,
+            'error_code' => 'ERR_PLAN_001',
+            'plan'       => [
+                'feature'      => $feature,
+                'upgrade_plan' => $isTeam ? 'team' : 'pro',
+                'limit'        => $usage['limit'] ?? null,
+                'used'         => $usage['used'] ?? null,
+                'unit'         => $usage['unit'] ?? null,
+                'resets_on'    => !empty($usage['monthly']) ? now()->addMonthNoOverflow()->startOfMonth()->toDateString() : null,
+            ],
+        ], 403);
+    }
+
     /** 403 응답용 공통 문구 */
     public static function upgradeMessage(string $feature): string
     {

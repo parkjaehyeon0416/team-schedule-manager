@@ -40,6 +40,13 @@ class TeamController extends Controller
             $team->can_assign    = $team->is_leader || $team->is_sub_leader;
             $team->team_features = collect(['team_attendance', 'team_settlement', 'team_album', 'team_sub_leader', 'team_notice', 'team_unlimited_members'])
                 ->mapWithKeys(fn($f) => [$f => \App\Services\PlanService::teamCan($team->id, $f)])->all();
+            // ★ v18.48 — 팀 상세 메뉴 타일: 안 읽은 공지 수(남이 쓴 것), 현장 앨범 사진 수
+            $readAt = DB::table('team_members')->where('team_id', $team->id)->where('user_id', $user->id)->whereNull('deleted_at')->value('notices_read_at');
+            $team->notice_unread = \App\Models\TeamNotice::where('team_id', $team->id)->where('user_id', '!=', $user->id)
+                ->when($readAt, fn($q) => $q->where('created_at', '>', $readAt))->count();
+            $team->photo_count = DB::table('site_files')->join('sites', 'sites.id', '=', 'site_files.site_id')
+                ->where('sites.team_id', $team->id)->whereNull('sites.deleted_at')->whereNull('site_files.deleted_at')
+                ->where('site_files.file_type', 'photo')->count();
         });
 
         return ApiResponse::success($teams, '팀 목록 조회 성공');
@@ -65,7 +72,8 @@ class TeamController extends Controller
         // ★ v18.47 — 무료는 팀장으로 1팀까지(여러 팀 운영은 팀 요금제)
         $ledLimit = \App\Services\PlanService::limit($user, 'led_teams', 'multi_team_lead');
         if ($ledLimit !== null && count($user->ledTeamIds()) >= $ledLimit) {
-            return ApiResponse::error('무료로는 팀을 1개까지 만들 수 있어요. 여러 팀 운영은 팀 요금제에서 쓸 수 있어요.', 'ERR_PLAN_001', 403);
+            return \App\Services\PlanService::denied('multi_team_lead', '무료로는 팀을 1개까지 만들 수 있어요. 여러 팀 운영은 팀 요금제에서 쓸 수 있어요.',
+                ['limit' => $ledLimit, 'used' => count($user->ledTeamIds()), 'unit' => '팀']);
         }
 
         $team = Team::create([
@@ -358,8 +366,9 @@ class TeamController extends Controller
 
         // ★ v18.47 — 무료 팀은 3명까지(팀장 포함). 팀장이 팀 요금제면 무제한
         $memberLimit = \App\Services\PlanService::teamLimit($team->id, 'team_members', 'team_unlimited_members');
-        if ($memberLimit !== null && $team->members()->count() >= $memberLimit) {
-            return ApiResponse::error("이 팀은 무료 인원({$memberLimit}명)이 다 찼어요. 팀장에게 팀 요금제를 요청해 주세요.", 'ERR_PLAN_001', 403);
+        if ($memberLimit !== null && ($used = $team->members()->count()) >= $memberLimit) {
+            return \App\Services\PlanService::denied('team_unlimited_members', "이 팀은 무료 인원({$memberLimit}명)이 다 찼어요. 팀장에게 팀 요금제를 요청해 주세요.",
+                ['limit' => $memberLimit, 'used' => $used, 'unit' => '명']);
         }
 
         // 초대코드로 들어온 사람은 팀장이 아니라 팀원
@@ -517,7 +526,7 @@ class TeamController extends Controller
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
         if (!\App\Services\PlanService::teamCan($team->id, 'team_sub_leader')) {
-            return ApiResponse::error(\App\Services\PlanService::upgradeMessage('team_sub_leader'), 'ERR_PLAN_001', 403);
+            return \App\Services\PlanService::denied('team_sub_leader', \App\Services\PlanService::upgradeMessage('team_sub_leader'));
         }
         $data = $request->validate(['enabled' => 'required|boolean']);
 

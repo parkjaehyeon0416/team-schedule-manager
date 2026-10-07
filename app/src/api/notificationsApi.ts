@@ -10,7 +10,7 @@ export interface AppNotification {
   category: 'schedule' | 'team' | 'quote' | 'tax';
   title: string;
   body: string;
-  link_type: 'schedule' | 'team' | 'quote' | 'tax_month' | 'inquiry' | null;
+  link_type: 'schedule' | 'team' | 'quote' | 'tax_month' | 'inquiry' | 'team_notice' | null; // ★ v18.48 team_notice(link_id=팀)
   link_id: number | null;
   is_read: boolean;
   created_at: string;

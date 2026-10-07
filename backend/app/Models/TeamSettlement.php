@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 /** ★ v18.47 — 팀원별 월 정산 지급 기록 (금액 자체는 그 달 팀 일정에서 계산) */
 class TeamSettlement extends Model
 {
-    protected $fillable = ['team_id', 'user_id', 'year_month', 'paid_amount', 'paid_at', 'paid_by', 'memo'];
+    protected $fillable = ['team_id', 'user_id', 'year_month', 'paid_amount', 'snapshot', 'paid_at', 'paid_by', 'memo'];
 
     protected $casts = [
         'paid_amount' => 'decimal:2',
+        'snapshot'    => 'array', // ★ v18.48 {schedule_id: {wage, units}} — 지급 처리 당시 값
+
         'paid_at'     => 'datetime',
     ];
 }

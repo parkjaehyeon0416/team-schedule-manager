@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getReports, createReport, deleteReport, getPublicReportUrl } from '../api/reportApi';
 import type { SiteReport } from '../types/api';
 import AppHeader from '../components/AppHeader';
+import { isPlanLocked } from '../utils/planLock';
 
 export default function ScheduleReportsScreen({ route }: any) {
   const { scheduleId } = route.params;
@@ -63,7 +64,7 @@ export default function ScheduleReportsScreen({ route }: any) {
       setGreeting('');
       await load();
     } catch (e: any) {
-      Alert.alert('생성 실패', e?.response?.data?.message || '보고서 생성에 실패했습니다. 현장이 연결된 일정인지 확인해주세요.');
+      if (!isPlanLocked(e)) Alert.alert('생성 실패', e?.response?.data?.message || '보고서 생성에 실패했습니다. 현장이 연결된 일정인지 확인해주세요.');
     } finally {
       setCreating(false);
     }

@@ -72,6 +72,7 @@ export default function NotificationsScreen() {
     else if (n.link_type === 'team' && n.link_id) navigation.navigate('TeamDetail', { teamId: n.link_id });
     else if (n.link_type === 'quote' && n.link_id) navigation.navigate('QuoteDetail', { quoteId: n.link_id });
     else if (n.link_type === 'inquiry' && n.link_id) navigation.navigate('InquiryDetail', { id: n.link_id }); // ★ v18.43
+    else if (n.link_type === 'team_notice' && n.link_id) navigation.navigate('TeamNoticeList', { teamId: n.link_id }); // ★ v18.48 팀 공지
   };
 
   const handleMarkAll = async () => {

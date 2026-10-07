@@ -40,17 +40,27 @@ class TeamAlbumController extends Controller
                 DB::raw('MAX(site_files.created_at) as last_uploaded_at'),
             ]);
 
-        // 현장마다 미리보기 사진 4장
+        // 현장마다 미리보기 사진 4장 — ★ v18.48 디자인(TEAM_ALBUM)대로 시공 전 2장 + 시공 후 2장을 우선,
+        //   모자라면 다른 사진으로 채움. 사진마다 단계(전/중/후/기타) 표시
         $previews = DB::table('site_files')
             ->whereIn('site_id', $sites->pluck('id'))
             ->whereNull('deleted_at')->where('file_type', 'photo')
             ->orderByDesc('created_at')
-            ->get(['site_id', 'file_path'])
+            ->get(['id', 'site_id', 'file_path', 'photo_category'])
             ->groupBy('site_id')
-            ->map(fn($g) => $g->take(4)->map(fn($f) => '/storage/' . $f->file_path)->values());
+            ->map(function ($g) {
+                $pick = $g->where('photo_category', 'before')->take(2)->concat($g->where('photo_category', 'after')->take(2));
+                $pick = $pick->concat($g->whereNotIn('id', $pick->pluck('id'))->take(4 - $pick->count()));
+                $order = ['before' => 0, 'during' => 1, 'after' => 2, 'other' => 3];
+                return $pick->sortBy(fn($f) => $order[$f->photo_category] ?? 9)
+                    ->map(fn($f) => ['url' => '/storage/' . $f->file_path, 'category' => $f->photo_category])->values();
+            });
 
         return ApiResponse::success([
-            'team_id' => $team->id,
+            'team_id'     => $team->id,
+            'team_name'   => $team->name,
+            'site_count'  => $sites->count(),
+            'photo_count' => (int) $sites->sum('photo_count'),
             'sites'   => $sites->map(fn($s) => [
                 'id'               => $s->id,
                 'name'             => $s->apt_name ?: $s->address,
@@ -88,11 +98,32 @@ class TeamAlbumController extends Controller
             ->select([
                 'site_files.id', 'site_files.file_path', 'site_files.photo_category', 'site_files.description', 'site_files.created_at',
                 'site_files.paired_with_id', 'sites.id as site_id', 'sites.apt_name', 'sites.address', 'users.id as uploader_id', 'users.name as uploader_name',
+                'users.avatar_color as uploader_color', 'users.avatar_image_path as uploader_avatar',
             ]);
 
         $page = $query->paginate(60);
 
+        // ★ v18.48 — "올린 사람" 필터 칩용: 이 현장(또는 팀 전체)에 사진을 올린 사람 목록
+        $uploaders = DB::table('site_files')
+            ->join('sites', 'sites.id', '=', 'site_files.site_id')
+            ->join('users', 'users.id', '=', 'site_files.uploaded_by')
+            ->where('sites.team_id', $team->id)->whereNull('site_files.deleted_at')->where('site_files.file_type', 'photo')
+            ->when($request->query('site_id'), fn($q, $v) => $q->where('sites.id', (int) $v))
+            ->groupBy('users.id', 'users.name')
+            ->orderByRaw('COUNT(*) DESC')
+            ->get(['users.id', 'users.name']);
+
+        $site = $request->query('site_id')
+            ? DB::table('sites')->where('team_id', $team->id)->find((int) $request->query('site_id'), ['id', 'apt_name', 'address', 'dong', 'ho'])
+            : null;
+
         return ApiResponse::success([
+            'site'      => $site ? [
+                'id' => $site->id, 'name' => $site->apt_name ?: $site->address,
+                'address' => trim(implode(' ', array_filter([$site->address, $site->dong ? "{$site->dong}동" : null, $site->ho ? "{$site->ho}호" : null]))),
+                'can_upload' => \App\Models\Site::find($site->id)?->canEditBy($request->user()) ?? false,
+            ] : null,
+            'uploaders' => $uploaders,
             'items' => collect($page->items())->map(fn($p) => [
                 'id'             => $p->id,
                 'url'            => '/storage/' . $p->file_path,
@@ -100,7 +131,8 @@ class TeamAlbumController extends Controller
                 'description'    => $p->description,
                 'paired_with_id' => $p->paired_with_id,
                 'site'           => ['id' => $p->site_id, 'name' => $p->apt_name ?: $p->address],
-                'uploader'       => $p->uploader_id ? ['id' => $p->uploader_id, 'name' => $p->uploader_name] : null,
+                'uploader'       => $p->uploader_id ? ['id' => $p->uploader_id, 'name' => $p->uploader_name,
+                    'avatar_color' => $p->uploader_color, 'avatar_image_path' => $p->uploader_avatar] : null,
                 'created_at'     => $p->created_at,
             ]),
             'page'  => $page->currentPage(),
@@ -117,7 +149,7 @@ class TeamAlbumController extends Controller
             return [null, ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404)];
         }
         if (!PlanService::teamCan($team->id, 'team_album')) {
-            return [null, ApiResponse::error(PlanService::upgradeMessage('team_album'), 'ERR_PLAN_001', 403)];
+            return [null, PlanService::denied('team_album', PlanService::upgradeMessage('team_album'))];
         }
         return [$team, null];
     }

@@ -47,7 +47,7 @@ class AttendanceController extends Controller
         }
         // ★ v18.47 — 팀 요금제 기능(출시 기념 기간엔 무료)
         if (!\App\Services\PlanService::teamCan((int) $teamId, 'team_attendance')) {
-            return ApiResponse::error(\App\Services\PlanService::upgradeMessage('team_attendance'), 'ERR_PLAN_001', 403);
+            return \App\Services\PlanService::denied('team_attendance', \App\Services\PlanService::upgradeMessage('team_attendance'));
         }
 
         $start = Carbon::create($data['year'], $data['month'], 1)->startOfMonth();
@@ -60,7 +60,7 @@ class AttendanceController extends Controller
             ->where('team_members.team_id', $teamId)
             ->whereNull('team_members.deleted_at')
             ->whereNull('users.deleted_at')
-            ->select('users.id', 'users.name', 'team_members.role_id')
+            ->select('users.id', 'users.name', 'users.avatar_color', 'users.avatar_image_path', 'team_members.role_id', 'team_members.is_sub_leader')
             ->orderBy('team_members.role_id')
             ->orderBy('users.name')
             ->get();
@@ -90,6 +90,10 @@ class AttendanceController extends Controller
                 'id'        => $member->id,
                 'name'      => $member->name,
                 'role_id'   => $member->role_id,
+                // ★ v18.48 — 디자인(ATTENDANCE) 역할 표시·아바타
+                'role'      => (int) $member->role_id <= 2 ? '팀장' : ($member->is_sub_leader ? '부팀장' : '팀원'),
+                'avatar_color'      => $member->avatar_color,
+                'avatar_image_path' => $member->avatar_image_path,
                 'work_days' => count($dates),
                 'dates'     => $dates,
             ];

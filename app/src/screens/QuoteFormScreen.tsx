@@ -19,6 +19,7 @@ import type { Quote, QuoteLine, Site, UserMaterial } from '../types/api';
 import { formatMoney, parseMoney } from '../utils/format';
 import { formatPhoneInput } from '../utils/phone';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { isPlanLocked } from '../utils/planLock';
 
 interface LineForm {
   name: string;
@@ -116,7 +117,7 @@ export default function QuoteFormScreen() {
         navigation.replace('QuoteDetail', { quoteId: created.id });
       }
     } catch (e: any) {
-      Alert.alert('저장 실패', e?.response?.data?.message || '견적서 저장에 실패했습니다.');
+      if (!isPlanLocked(e)) Alert.alert('저장 실패', e?.response?.data?.message || '견적서 저장에 실패했습니다.');
     } finally {
       setSaving(false);
     }

@@ -29,6 +29,7 @@ import PhotoPairPicker from '../components/PhotoPairPicker';
 import AppHeader from '../components/AppHeader';
 import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { isPlanLocked } from '../utils/planLock';
 
 const WEEKDAY_LABEL = ['일', '월', '화', '수', '목', '금', '토'];
 const AVATAR_BG = ['#FFE3C2', '#D6ECFF', '#D9F6F1', '#ECE5FF', '#FFE0E0'];
@@ -127,7 +128,7 @@ export default function ScheduleDetailScreen({ route }: any) {
       await uploadSchedulePhoto(id, photo, currentCategory, undefined, pairedWithId);
       fetchPhotos();
     } catch (e: any) {
-      Alert.alert('업로드 실패', e?.response?.data?.message || '다시 시도해주세요.');
+      if (!isPlanLocked(e)) Alert.alert('업로드 실패', e?.response?.data?.message || '다시 시도해주세요.');
     }
   };
 

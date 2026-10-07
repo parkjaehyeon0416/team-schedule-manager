@@ -444,8 +444,10 @@ class PhotoController extends Controller
             return null;
         }
         $limit = (int) config('plans.free_limits.photos_per_site');
-        if (SiteFile::where('site_id', $siteId)->where('file_type', 'photo')->count() >= $limit) {
-            return ApiResponse::error("무료로는 현장마다 사진을 {$limit}장까지 올릴 수 있어요. 개인 프로나 팀 요금제에서 무제한으로 쓸 수 있어요.", 'ERR_PLAN_001', 403);
+        if (($used = SiteFile::where('site_id', $siteId)->where('file_type', 'photo')->count()) >= $limit) {
+            return \App\Services\PlanService::denied('photo_unlimited',
+                "무료로는 현장마다 사진을 {$limit}장까지 올릴 수 있어요. 개인 프로나 팀 요금제에서 무제한으로 쓸 수 있어요.",
+                ['limit' => $limit, 'used' => $used, 'unit' => '장']);
         }
         return null;
     }

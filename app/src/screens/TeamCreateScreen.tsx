@@ -15,6 +15,7 @@ import { getWorkTypes } from '../api/workTypesApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import type { Team, WorkType } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { isPlanLocked } from '../utils/planLock';
 
 export default function TeamCreateScreen() {
   const navigation = useNavigation<any>();
@@ -73,7 +74,7 @@ export default function TeamCreateScreen() {
         navigation.popTo('TeamList');
       }
     } catch (e: any) {
-      Alert.alert('실패', e?.response?.data?.message || '요청에 실패했습니다.');
+      if (!isPlanLocked(e)) Alert.alert('실패', e?.response?.data?.message || '요청에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }

@@ -41,9 +41,10 @@ class TeamSettlementController extends Controller
         if ($err) {
             return $err;
         }
+        // paid를 빼고 memo만 보내면 메모만 저장(★ v18.48 정산 상세 화면의 메모 칸)
         $data = $request->validate([
             'month' => ['required', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
-            'paid'  => 'required|boolean',
+            'paid'  => 'nullable|boolean',
             'memo'  => 'nullable|string|max:200',
         ]);
 
@@ -52,21 +53,30 @@ class TeamSettlementController extends Controller
             return ApiResponse::error('이 달 정산 대상 팀원이 아니에요.', 'ERR_NOT_FOUND', 404);
         }
 
-        $settlement = TeamSettlement::updateOrCreate(
-            ['team_id' => $team->id, 'user_id' => (int) $userId, 'year_month' => $data['month']],
-            [
-                'paid_amount' => $data['paid'] ? $row['amount'] : null,
-                'paid_at'     => $data['paid'] ? now() : null,
-                'paid_by'     => $data['paid'] ? $request->user()->id : null,
-                'memo'        => $data['memo'] ?? null,
-            ],
-        );
+        $key = ['team_id' => $team->id, 'user_id' => (int) $userId, 'year_month' => $data['month']];
+        $values = [];
+        if ($request->has('memo')) {
+            $values['memo'] = $data['memo'] ?? null;
+        }
+        if ($request->has('paid')) {
+            $paid = (bool) $data['paid'];
+            $values += [
+                'paid_amount' => $paid ? $row['amount'] : null,
+                // 지급 처리 당시 일정별 단가·공수 → 나중에 바뀌면 일정별로 "단가 변경" 표시
+                'snapshot'    => $paid ? collect($row['schedules'])->mapWithKeys(fn($s) => [$s['schedule_id'] => ['wage' => $s['daily_wage'], 'units' => $s['work_units']]])->all() : null,
+                'paid_at'     => $paid ? now() : null,
+                'paid_by'     => $paid ? $request->user()->id : null,
+            ];
+        }
+        $settlement = TeamSettlement::updateOrCreate($key, $values);
 
+        $message = !$request->has('paid') ? '메모를 저장했어요.' : ($data['paid'] ? '지급 완료로 표시했어요.' : '지급 완료를 취소했어요.');
         return ApiResponse::success([
             'user_id' => (int) $userId,
             'paid'    => (bool) $settlement->paid_at,
             'paid_at' => $settlement->paid_at?->toIso8601String(),
-        ], $data['paid'] ? '지급 완료로 표시했어요.' : '지급 완료를 취소했어요.');
+            'memo'    => $settlement->memo,
+        ], $message);
     }
 
     // GET /teams/{id}/settlements/xlsx-link?month= — 10분짜리 서명 링크
@@ -149,10 +159,18 @@ class TeamSettlementController extends Controller
         $paid = TeamSettlement::where('team_id', $team->id)->where('year_month', $month)->get()->keyBy('user_id');
 
         $list = $members->map(function ($m) use ($rows, $paid) {
-            $schedules = collect($rows->get($m->id, []))->map(function ($s) {
+            $p = $paid->get($m->id);
+            $snap = $p?->paid_at ? ($p->snapshot ?? []) : [];
+            $schedules = collect($rows->get($m->id, []))->map(function ($s) use ($snap, $p) {
                 $wage  = (float) ($s->daily_wage ?? 0);
                 $units = (float) ($s->work_units ?? 0);
+                // ★ v18.48 — 지급 처리 뒤 바뀐 일정: 이전 단가·공수 / 지급 처리 뒤 새로 생긴 일정
+                $before = $snap[$s->schedule_id] ?? $snap[(string) $s->schedule_id] ?? null;
+                $changed = $before && ((float) $before['wage'] != $wage || (float) $before['units'] != $units)
+                    ? ['from_wage' => (float) $before['wage'], 'from_units' => (float) $before['units']] : null;
                 return [
+                    'changed'     => $changed,
+                    'added_after_paid' => $p?->paid_at && !empty($snap) && !$before,
                     'schedule_id' => $s->schedule_id,
                     'date'        => substr((string) $s->date, 0, 10),
                     'site'        => $s->apt_name ?: ($s->site_address ?: ($s->address ?: $s->title)),
@@ -163,7 +181,6 @@ class TeamSettlementController extends Controller
                 ];
             })->values();
             $amount = (float) $schedules->sum('amount');
-            $p = $paid->get($m->id);
 
             return [
                 'user_id'           => $m->id,
@@ -208,7 +225,7 @@ class TeamSettlementController extends Controller
             return [null, ApiResponse::error('팀장만 정산표를 볼 수 있어요.', 'ERR_AUTH_002', 403)];
         }
         if (!PlanService::teamCan($team->id, 'team_settlement')) {
-            return [null, ApiResponse::error(PlanService::upgradeMessage('team_settlement'), 'ERR_PLAN_001', 403)];
+            return [null, PlanService::denied('team_settlement', PlanService::upgradeMessage('team_settlement'))];
         }
         return [$team, null];
     }

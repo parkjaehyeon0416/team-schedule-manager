@@ -86,6 +86,7 @@ export interface TeamMember {
   id: number;
   name: string;
   role_id: number;
+  is_sub_leader?: boolean | number; // ★ v18.47 부팀장
   // ★ v18.23 — 같은 팀 사람끼리 연락할 수 있도록 members()에서 추가로 내려줌
   phone?: string | null;
   kakao_talk_id?: string | null;
@@ -246,6 +247,12 @@ export interface Team {
   // ★ v18.44 — 이 팀에서 내 역할(활성 팀과 무관). GET /teams 응답에서만 내려옴
   my_role_id?: number;
   is_leader?: boolean;
+  // ★ v18.47~48 — 부팀장·팀 요금제 기능·메뉴 타일 숫자 (GET /teams)
+  is_sub_leader?: boolean;
+  can_assign?: boolean;
+  team_features?: Record<string, boolean>;
+  notice_unread?: number;
+  photo_count?: number;
   created_at?: string;
   // ★ DESIGN-CANVAS(TEAM_CREATE) 추가
   photo_path?: string | null;

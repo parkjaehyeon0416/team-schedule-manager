@@ -15,6 +15,7 @@ import AppHeader from '../components/AppHeader';
 import { exportTaxCsv } from '../api/taxSummaryApi';
 import { downloadTaxPdf, downloadTaxXlsx } from '../api/pdfDownload';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { isPlanLocked } from '../utils/planLock';
 
 const FORMATS = [
   { key: 'xlsx', title: 'Excel', sub: '엑셀 파일(.xlsx)로 저장돼요' },
@@ -52,7 +53,7 @@ export default function TaxExportScreen() {
       try {
         await downloadTaxPdf(dayjs(to).year());
       } catch (e: any) {
-        Alert.alert('생성 실패', e?.response?.data?.message || 'PDF를 만들지 못했습니다.');
+        if (!isPlanLocked(e)) Alert.alert('생성 실패', e?.response?.data?.message || 'PDF를 만들지 못했습니다.');
       } finally {
         setGenerating(false);
       }
@@ -65,7 +66,7 @@ export default function TaxExportScreen() {
       try {
         await downloadTaxXlsx(dayjs(from).format('YYYY-MM'), dayjs(to).format('YYYY-MM'), selectedItems);
       } catch (e: any) {
-        Alert.alert('생성 실패', e?.response?.data?.message || '엑셀 파일을 만들지 못했습니다.');
+        if (!isPlanLocked(e)) Alert.alert('생성 실패', e?.response?.data?.message || '엑셀 파일을 만들지 못했습니다.');
       } finally {
         setGenerating(false);
       }
@@ -79,7 +80,7 @@ export default function TaxExportScreen() {
         message: csv,
       });
     } catch (e: any) {
-      Alert.alert('생성 실패', e?.response?.data?.message || '자료 생성에 실패했습니다.');
+      if (!isPlanLocked(e)) Alert.alert('생성 실패', e?.response?.data?.message || '자료 생성에 실패했습니다.');
     } finally {
       setGenerating(false);
     }

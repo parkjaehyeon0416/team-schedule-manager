@@ -15,6 +15,7 @@ import { joinTeam, previewTeam } from '../api/teamApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import type { TeamPreview } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { isPlanLocked } from '../utils/planLock';
 
 const AVATAR_BG = ['#FFE3C2', '#D6ECFF', '#D9F6F1', '#ECE5FF'];
 const AVATAR_FG = ['#B95E00', '#0A6CE0', '#0B8574', '#6B4FD8'];
@@ -56,7 +57,7 @@ export default function TeamJoinScreen() {
         { text: '확인', onPress: () => navigation.popTo('TeamList') },
       ]);
     } catch (e: any) {
-      Alert.alert('가입 실패', e?.response?.data?.message || '초대 코드를 확인해주세요.');
+      if (!isPlanLocked(e)) Alert.alert('가입 실패', e?.response?.data?.message || '초대 코드를 확인해주세요.');
     } finally {
       setSubmitting(false);
     }

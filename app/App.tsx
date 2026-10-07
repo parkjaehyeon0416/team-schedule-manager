@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context'; // ★ v11.1.1 추가
 import AppNavigator from './src/navigation/AppNavigator';
+import PlanLockedSheet from './src/components/PlanLockedSheet';
 
 // GestureHandlerRootView: gesture-handler 라이브러리 필수 래퍼
 //   → 앱 최상단에 감싸야 스와이프·터치 기능이 정상 작동합니다
@@ -16,6 +17,8 @@ export default function App() {
       <SafeAreaProvider>
         <PaperProvider>
           <AppNavigator />
+          {/* ★ v18.48 — 무료 한도에 걸리면 어느 화면에서든 뜨는 잠금 안내 시트 */}
+          <PlanLockedSheet />
         </PaperProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

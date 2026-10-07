@@ -20,6 +20,7 @@ import { getMyTeams } from '../api/teamApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import type { Site, Team, SiteFile as SitePhoto } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { isPlanLocked } from '../utils/planLock';
 
 function parseDongHo(input: string): { dong: string | null; ho: string | null } {
   const trimmed = input.trim();
@@ -106,7 +107,7 @@ export default function SiteFormScreen() {
         await uploadSitePhoto(editing.id, photo, category);
         loadPhotos();
       } catch (e: any) {
-        Alert.alert('업로드 실패', e?.response?.data?.message || '사진 업로드에 실패했습니다.');
+        if (!isPlanLocked(e)) Alert.alert('업로드 실패', e?.response?.data?.message || '사진 업로드에 실패했습니다.');
       }
     } else {
       if (category === 'before') setQueuedBefore(prev => [...prev, photo]);

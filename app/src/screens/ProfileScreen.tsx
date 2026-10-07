@@ -15,6 +15,8 @@ import { getMyTeams } from '../api/teamApi';
 import { getSchedules } from '../api/schedulesApi';
 import { getSites } from '../api/siteApi';
 import { getMyInquiries } from '../api/inquiryApi';
+import { getPlans } from '../api/planApi';
+import dayjs from 'dayjs';
 import { APP_VERSION } from '../constants/appVersion';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
@@ -31,10 +33,16 @@ export default function ProfileScreen() {
   const [scheduleCount, setScheduleCount] = useState<number | null>(null);
   const [siteCount, setSiteCount] = useState<number | null>(null);
   const [unreadAnswers, setUnreadAnswers] = useState(0); // ★ v18.43 고객 문의 새 답변 수
+  const [planSub, setPlanSub] = useState<string | undefined>(undefined); // ★ v18.48 요금제 줄 설명
 
   useFocusEffect(
     useCallback(() => {
       const now = new Date();
+      getPlans()
+        .then(p => setPlanSub(p.me.launch_free_until
+          ? `${dayjs(p.me.launch_free_until).subtract(1, 'day').format('M월 D일')}까지 전부 무료`
+          : p.me.plan_name))
+        .catch(() => setPlanSub(undefined));
       getMyTeams().then(t => setTeamCount(t.length)).catch(() => setTeamCount(null));
       getSchedules(now.getFullYear(), now.getMonth() + 1)
         .then(s => setScheduleCount(s.length))
@@ -72,6 +80,12 @@ export default function ProfileScreen() {
   ];
 
   const settingsMenu: MenuRow[] = [
+    // ★ v18.48 — 디자인(MY_HOME)대로 요금제 항목(출시 기념 무료 기간이면 "M월 D일까지 전부 무료")
+    {
+      key: 'plan', image: 'gift', label: '요금제',
+      sub: planSub,
+      onPress: () => navigation.navigate('Plan'),
+    },
     {
       key: 'rates', image: 'income', label: '내 단가 설정', sub: '공수 · 일급',
       onPress: () => navigation.navigate('MyRates'),

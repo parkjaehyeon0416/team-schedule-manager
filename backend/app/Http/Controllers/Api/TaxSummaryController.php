@@ -317,6 +317,6 @@ class TaxSummaryController extends Controller
         if (\App\Services\PlanService::can($request->user(), 'tax_export')) {
             return null;
         }
-        return ApiResponse::error(\App\Services\PlanService::upgradeMessage('tax_export'), 'ERR_PLAN_001', 403);
+        return \App\Services\PlanService::denied('tax_export', \App\Services\PlanService::upgradeMessage('tax_export'));
     }
 }

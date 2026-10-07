@@ -70,6 +70,42 @@ class LoginLinkController extends Controller
         return ApiResponse::success($this->summary($user->fresh()), '연결을 해제했습니다.');
     }
 
+    // ★ v18.52 — 이메일·비밀번호 설정/변경 (디자인 MY_PASSWORD_SET)
+    // PUT /me/password  {email?, current_password?, password, password_confirmation}
+    // - 비밀번호가 없던 소셜 가입자: 바로 설정. 이메일이 없으면(가짜 @social.local) 이메일도 같이 받음
+    // - 이미 비밀번호가 있으면 변경 → 현재 비밀번호 확인
+    public function setPassword(Request $request)
+    {
+        $user = $request->user();
+        $needsEmail = $this->needsEmail($user);
+        $data = $request->validate([
+            'email'            => [$needsEmail ? 'required' : 'prohibited', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)],
+            'current_password' => [$user->password ? 'required' : 'nullable', 'string'],
+            'password'         => 'required|string|min:6|confirmed',
+        ], [
+            'email.unique'       => '이미 다른 계정에서 쓰는 이메일이에요.',
+            'password.min'       => '비밀번호는 6자 이상이어야 해요.',
+            'password.confirmed' => '비밀번호 확인이 일치하지 않아요.',
+        ]);
+
+        if ($user->password && !\Illuminate\Support\Facades\Hash::check($data['current_password'] ?? '', $user->password)) {
+            return ApiResponse::error('현재 비밀번호가 맞지 않아요.', ErrorCode::AUTH_LOGIN_FAILED, 422);
+        }
+
+        $wasSet = (bool) $user->password;
+        $user->forceFill(array_filter([
+            'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+            'email'    => $needsEmail ? $data['email'] : null,
+        ]))->save();
+
+        return ApiResponse::success($this->summary($user->fresh()), $wasSet ? '비밀번호를 변경했어요.' : '이메일 로그인을 설정했어요.');
+    }
+
+    private function needsEmail(User $user): bool
+    {
+        return str_ends_with($user->email, '@social.local');
+    }
+
     private function methodCount(User $user): int
     {
         return ($user->google_id ? 1 : 0) + ($user->kakao_id ? 1 : 0) + ($user->password ? 1 : 0);
@@ -86,7 +122,7 @@ class LoginLinkController extends Controller
             'google' => $row('google'),
             'email' => [
                 'set'   => (bool) $user->password,
-                'email' => str_ends_with($user->email, '@social.local') ? null : $user->email,
+                'email' => $this->needsEmail($user) ? null : $user->email,
             ],
             'count' => $this->methodCount($user),
         ];

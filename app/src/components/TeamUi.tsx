@@ -22,7 +22,12 @@ export const ROLE_COLORS: Record<string, [string, string]> = {
 export function avatarColors(id: number, picked?: string | null): [string, string] {
   const i = picked ? AVB.indexOf(picked.toUpperCase()) : -1;
   if (i >= 0) return [AVB[i], AVT[i]];
-  if (picked) return [picked, colors.textPrimary];
+  if (picked) {
+    // 팔레트 밖 색(예전 버전에서 고른 진한 색 등)은 밝기에 따라 글자를 흰색/남색으로
+    const hex = picked.replace('#', '');
+    const [r, g, b] = [0, 2, 4].map(i => parseInt(hex.substr(i, 2), 16) || 0);
+    return [picked, r * 0.299 + g * 0.587 + b * 0.114 < 150 ? '#FFFFFF' : colors.textPrimary];
+  }
   return [AVB[id % AVB.length], AVT[id % AVT.length]];
 }
 

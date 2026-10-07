@@ -37,9 +37,12 @@ export function SocialButton({ provider, onPress, loading, disabled }: {
   provider: SocialProvider; onPress: () => void; loading?: boolean; disabled?: boolean;
 }) {
   const b = BRAND[provider];
+  const label = provider === 'kakao' ? '카카오로 로그인' : '구글로 로그인';
   return (
     <Pressable
       accessibilityRole="button"
+      // 장식용 K·G 글자는 읽지 않게(아이폰 VoiceOver가 "K, 카카오로 로그인"으로 읽던 것)
+      accessibilityLabel={label}
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
@@ -52,7 +55,7 @@ export function SocialButton({ provider, onPress, loading, disabled }: {
       {loading ? (
         <ActivityIndicator color={b.fg} size="small" />
       ) : (
-        <Text style={[s.socialLabel, { color: b.fg }]}>{provider === 'kakao' ? '카카오로 로그인' : '구글로 로그인'}</Text>
+        <Text style={[s.socialLabel, { color: b.fg }]}>{label}</Text>
       )}
     </Pressable>
   );

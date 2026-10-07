@@ -85,7 +85,8 @@ android {
 
     namespace "com.app"
     defaultConfig {
-        applicationId "com.app"
+        // ★ v18.50 — 스토어용 고유 앱 ID(아이폰 번들 ID와 동일). 코드 패키지(namespace)는 com.app 그대로
+        applicationId "com.workmate.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

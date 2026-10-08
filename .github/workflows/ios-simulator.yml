@@ -64,7 +64,7 @@ jobs:
           xcrun simctl boot "$DEV"
           xcrun simctl bootstatus "$DEV" -b
           xcrun simctl install "$DEV" "$APP"
-          xcrun simctl launch "$DEV" com.workmate.app
+          xcrun simctl launch "$DEV" com.workmatekr.app
           sleep 30
           xcrun simctl io "$DEV" screenshot ../ios-results/01_launch.png
           # 초대 링크로 앱 열기 점검은 Maestro 흐름 끝에서 함(여기서 열면 시스템 확인창이 남아 다음 점검을 가림)
@@ -90,7 +90,7 @@ jobs:
           rm -rf maestro-out
           tail -40 maestro.log
           # 점검 후 앱 로그·충돌 보고서(링크로 열 때 꺼지는지 등 확인용)
-          xcrun simctl spawn booted log show --last 4m --style compact --predicate 'process == "app" OR eventMessage CONTAINS "com.workmate.app"' > after-maestro.log 2>&1 || true
+          xcrun simctl spawn booted log show --last 4m --style compact --predicate 'process == "app" OR eventMessage CONTAINS "com.workmatekr.app"' > after-maestro.log 2>&1 || true
           mkdir -p crash
           find ~/Library/Logs/DiagnosticReports -name "*app*" -newer "$GITHUB_WORKSPACE/ios-results/01_launch.png" -exec cp {} crash/ \; 2>/dev/null || true
           ls crash > crashes-after.txt

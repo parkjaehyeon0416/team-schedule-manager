@@ -2,7 +2,7 @@
 #   비밀번호는 입력하지 않음 — 화면 표시·이동·키보드 가림만 확인.
 # ★ v18.53 — 새 로그인 화면(AUTH_LOGIN) 문구로 갱신 + 카카오·구글 로그인 창이 뜨는지(뜨면 바로 취소)
 #   + 키보드가 입력칸을 가리지 않는지(automaticallyAdjustKeyboardInsets)
-appId: com.workmate.app
+appId: com.workmatekr.app
 ---
 # 앞 단계(링크 열기)에서 뜬 시스템 확인창이 남아 있으면 닫기
 - tapOn:

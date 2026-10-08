@@ -7,14 +7,14 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
-import { socialLogin, isSocialCancel, PROVIDER_NAME, SocialProvider } from '../api/socialAuthApi';
+import { socialLogin, isSocialCancel, PROVIDER_NAME, SocialProvider, APPLE_LOGIN_AVAILABLE } from '../api/socialAuthApi';
 import GradientButton from '../components/GradientButton';
 import { ProviderBadge, SocialButton, OrDivider, AuthInput, FindLinks } from '../components/AuthUi';
 import { ICONS } from '../assets/icons';
 import type { SocialFlowParams } from './SocialFirstLoginScreen';
 
-const GA: Record<SocialProvider, string> = { kakao: '카카오가', google: '구글이' };
-const OTHERS: SocialProvider[] = ['kakao', 'google'];
+const GA: Record<SocialProvider, string> = { kakao: '카카오가', google: '구글이', apple: 'Apple이' };
+const OTHERS: SocialProvider[] = APPLE_LOGIN_AVAILABLE ? ['kakao', 'google', 'apple'] : ['kakao', 'google'];
 
 export default function SocialLinkSigninScreen() {
   const navigation = useNavigation<any>();

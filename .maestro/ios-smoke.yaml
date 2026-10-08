@@ -87,6 +87,24 @@ appId: com.workmatekr.app
     optional: true
 - waitForAnimationToEnd
 - takeScreenshot: 20_after_google_cancel
+# ★ v18.60 Apple 로그인 — 서명 안 된 시뮬레이터 빌드라 애플 창 또는 실패 알림이 떠야 정상(앱이 꺼지면 안 됨)
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Apple로 로그인"
+    timeout: 30000
+- takeScreenshot: 21_login_with_apple
+- tapOn: "Apple로 로그인"
+- waitForAnimationToEnd
+- takeScreenshot: 22_apple_prompt
+- tapOn:
+    text: "Cancel"
+    optional: true
+- tapOn:
+    text: "확인"
+    optional: true
+- waitForAnimationToEnd
+- assertVisible: "Apple로 로그인"
 # 초대 링크로 앱 열기 — 로그인 전이면 링크를 기억해 두고 로그인 화면을 보여줘야 함
 - openLink: "workmate://join/6NXTAX"
 - tapOn:

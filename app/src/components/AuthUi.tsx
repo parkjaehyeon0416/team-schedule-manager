@@ -7,10 +7,11 @@ import type { SocialProvider } from '../api/socialAuthApi';
 const BRAND: Record<SocialProvider | 'email', { bg: string; fg: string; border?: string; letter: string }> = {
   kakao: { bg: '#FEE500', fg: '#191600', letter: 'K' },
   google: { bg: '#FFFFFF', fg: '#1F2937', border: '#DDE6F0', letter: 'G' },
+  apple: { bg: '#111111', fg: '#FFFFFF', letter: '' }, // ★ v18.60 글자 대신 애플 로고(애플 디자인 지침)
   email: { bg: '#EAF4FF', fg: '#0A6CE0', letter: '@' },
 };
 
-/** 동그란 로그인 수단 표시(K·G·@) */
+/** 동그란 로그인 수단 표시(K·G·애플로고·@) */
 export function ProviderBadge({ provider, size = 40, ring = false, style }: {
   provider: SocialProvider | 'email'; size?: number; ring?: boolean; style?: object;
 }) {
@@ -27,17 +28,21 @@ export function ProviderBadge({ provider, size = 40, ring = false, style }: {
         style,
       ]}
     >
-      <Text style={{ color: b.fg, fontSize: Math.round(size * 0.4), fontWeight: '800' }}>{b.letter}</Text>
+      {provider === 'apple' ? (
+        <Icon name="apple" size={Math.round(size * 0.5)} color={b.fg} />
+      ) : (
+        <Text style={{ color: b.fg, fontSize: Math.round(size * 0.4), fontWeight: '800' }}>{b.letter}</Text>
+      )}
     </View>
   );
 }
 
-/** 카카오로 로그인 / 구글로 로그인 — 가로 꽉 찬 버튼 */
+/** 카카오로 로그인 / 구글로 로그인 / Apple로 로그인 — 가로 꽉 찬 버튼 */
 export function SocialButton({ provider, onPress, loading, disabled }: {
   provider: SocialProvider; onPress: () => void; loading?: boolean; disabled?: boolean;
 }) {
   const b = BRAND[provider];
-  const label = provider === 'kakao' ? '카카오로 로그인' : '구글로 로그인';
+  const label = { kakao: '카카오로 로그인', google: '구글로 로그인', apple: 'Apple로 로그인' }[provider];
   return (
     <Pressable
       accessibilityRole="button"
@@ -51,7 +56,11 @@ export function SocialButton({ provider, onPress, loading, disabled }: {
         b.border ? { borderWidth: 1, borderColor: b.border } : null,
       ]}
     >
-      <Text style={[s.socialLetter, { color: b.fg }]}>{b.letter}</Text>
+      {provider === 'apple' ? (
+        <Icon name="apple" size={20} color={b.fg} style={s.socialIcon} />
+      ) : (
+        <Text style={[s.socialLetter, { color: b.fg }]}>{b.letter}</Text>
+      )}
       {loading ? (
         <ActivityIndicator color={b.fg} size="small" />
       ) : (
@@ -127,6 +136,7 @@ export function FindLinks({ onFindId, onFindPw, onSignup }: { onFindId: () => vo
 const s = StyleSheet.create({
   socialBtn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   socialLetter: { position: 'absolute', left: 18, width: 22, textAlign: 'center', fontSize: 17, fontWeight: '900' },
+  socialIcon: { position: 'absolute', left: 19 },
   socialLabel: { fontSize: 15, fontWeight: '700' },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6, marginBottom: 2 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#DDEAF7' },

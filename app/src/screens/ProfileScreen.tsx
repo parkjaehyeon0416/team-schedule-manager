@@ -25,10 +25,10 @@ import { ICONS } from '../assets/icons';
 import type { IconKey } from '../assets/icons';
 
 // ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
-type LinkMethod = 'kakao' | 'google' | 'email';
+type LinkMethod = 'kakao' | 'google' | 'apple' | 'email';
 type MenuRow = { key: string; image: IconKey; label: string; sub?: string; right?: string; badges?: LinkMethod[]; onPress: () => void };
 
-const LINK_NAME: Record<LinkMethod, string> = { kakao: '카카오', google: '구글', email: '이메일' };
+const LINK_NAME: Record<LinkMethod, string> = { kakao: '카카오', google: '구글', apple: 'Apple', email: '이메일' };
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -55,7 +55,7 @@ export default function ProfileScreen() {
         .catch(() => setScheduleCount(null));
       getSites().then(s => setSiteCount(s.length)).catch(() => setSiteCount(null));
       getLoginLinks()
-        .then(l => setLinked((['kakao', 'google', 'email'] as LinkMethod[]).filter(m => (m === 'email' ? l.email.set : l[m].linked))))
+        .then(l => setLinked((['kakao', 'google', 'apple', 'email'] as LinkMethod[]).filter(m => (m === 'email' ? l.email.set : !!l[m]?.linked))))
         .catch(() => setLinked([]));
       getMyInquiries().then(r => setUnreadAnswers(r.unread_answers)).catch(() => setUnreadAnswers(0));
     }, []),

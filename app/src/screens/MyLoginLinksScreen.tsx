@@ -1,4 +1,5 @@
 // ★ v18.51 — 디자인 MY_LOGIN_LINKS: 내 정보 › 로그인 연결 관리 (카카오·구글 연결/해제, 이메일·비밀번호 표시)
+//   ★ v18.60 Apple 줄 — 아이폰에서만(안드로이드는 이미 연결된 경우에만 보여서 해제 가능)
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,11 +9,11 @@ import AppHeader from '../components/AppHeader';
 import GradientButton from '../components/GradientButton';
 import { ProviderBadge } from '../components/AuthUi';
 import {
-  getLoginLinks, linkSocial, unlinkSocial, isSocialCancel, LoginLinks, PROVIDER_NAME, SocialProvider,
+  getLoginLinks, linkSocial, unlinkSocial, isSocialCancel, LoginLinks, PROVIDER_NAME, SocialProvider, APPLE_LOGIN_AVAILABLE,
 } from '../api/socialAuthApi';
 
-const GA: Record<SocialProvider, string> = { kakao: '카카오가', google: '구글이' };
-const REUL: Record<SocialProvider, string> = { kakao: '카카오를', google: '구글을' };
+const GA: Record<SocialProvider, string> = { kakao: '카카오가', google: '구글이', apple: 'Apple이' };
+const REUL: Record<SocialProvider, string> = { kakao: '카카오를', google: '구글을', apple: 'Apple을' };
 const fmt = (d: string | null) => (d ? d.replace(/-/g, '.') : '');
 
 export default function MyLoginLinksScreen() {
@@ -69,7 +70,7 @@ export default function MyLoginLinksScreen() {
     }
   };
 
-  const onlyOne = !!links && links.count === 1 && (links.kakao.linked || links.google.linked);
+  const onlyOne = !!links && links.count === 1 && (links.kakao.linked || links.google.linked || !!links.apple?.linked);
 
   const renderRow = (p: SocialProvider) => {
     if (!links) return null;
@@ -130,6 +131,7 @@ export default function MyLoginLinksScreen() {
               <Text style={styles.count}>로그인 방법 {links.count}개 사용 중</Text>
               {renderRow('kakao')}
               {renderRow('google')}
+              {(APPLE_LOGIN_AVAILABLE || links.apple?.linked) && renderRow('apple')}
               <View style={[styles.row, { paddingVertical: 14 }]}>
                 <ProviderBadge provider="email" />
                 <View style={styles.rowText}>

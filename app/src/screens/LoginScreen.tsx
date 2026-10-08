@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
-import { socialLogin, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
+import { socialLogin, isSocialCancel, SocialProvider, APPLE_LOGIN_AVAILABLE } from '../api/socialAuthApi';
 import { colors } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
 import { SocialButton, OrDivider, AuthInput, FindLinks } from '../components/AuthUi';
@@ -90,6 +90,9 @@ export default function LoginScreen() {
       <View style={styles.socialCol}>
         <SocialButton provider="kakao" onPress={() => handleSocialLogin('kakao')} loading={socialLoading === 'kakao'} disabled={busy} />
         <SocialButton provider="google" onPress={() => handleSocialLogin('google')} loading={socialLoading === 'google'} disabled={busy} />
+        {APPLE_LOGIN_AVAILABLE && (
+          <SocialButton provider="apple" onPress={() => handleSocialLogin('apple')} loading={socialLoading === 'apple'} disabled={busy} />
+        )}
       </View>
 
       <OrDivider />

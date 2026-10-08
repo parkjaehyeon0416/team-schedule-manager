@@ -1,5 +1,7 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { login as kakaoLogin } from '@react-native-seoul/kakao-login';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
+import { Platform } from 'react-native';
 import axiosInstance from './axiosInstance';
 import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '../config/socialAuth';
 
@@ -9,9 +11,9 @@ GoogleSignin.configure({
   offlineAccess: false,
 });
 
-export type SocialProvider = 'google' | 'kakao';
+export type SocialProvider = 'google' | 'kakao' | 'apple';
 
-export const PROVIDER_NAME: Record<SocialProvider, string> = { kakao: '카카오', google: '구글' };
+export const PROVIDER_NAME: Record<SocialProvider, string> = { kakao: '카카오', google: '구글', apple: 'Apple' };
 
 // ★ v18.51 — 연결된 계정이 없을 때 서버가 돌려주는 정보("WorkMate가 처음이신가요?" 화면용)
 export type SocialSignupNeeded = {
@@ -20,8 +22,30 @@ export type SocialSignupNeeded = {
   social: { provider: SocialProvider; display: string };
 };
 
-/** 소셜 SDK로 로그인해 서버 검증용 토큰을 받음(구글: id_token, 카카오: access_token) */
-export async function getSocialToken(provider: SocialProvider): Promise<string> {
+/** ★ v18.60 — Apple 로그인은 아이폰(iOS 13+)에서만 */
+export const APPLE_LOGIN_AVAILABLE = Platform.OS === 'ios' && appleAuth.isSupported;
+
+/**
+ * 소셜 SDK로 로그인해 서버 검증용 토큰을 받음(구글: id_token, 카카오: access_token, 애플: identity token).
+ * name은 애플만 — 애플은 이름을 토큰에 안 넣고 처음 로그인 때 앱에만 한 번 알려 줌.
+ */
+export async function getSocialCredential(provider: SocialProvider): Promise<{ token: string; name?: string }> {
+  if (provider === 'apple') {
+    const res = await appleAuth.performRequest({
+      requestedOperation: appleAuth.Operation.LOGIN,
+      requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+    });
+    if (!res.identityToken) {
+      throw Object.assign(new Error('cancelled'), { code: 'SIGN_IN_CANCELLED' });
+    }
+    // 한국식 이름 순서(성+이름)
+    const name = [res.fullName?.familyName, res.fullName?.givenName].filter(Boolean).join('') || undefined;
+    return { token: res.identityToken, name };
+  }
+  return { token: await getSocialToken(provider) };
+}
+
+async function getSocialToken(provider: 'google' | 'kakao'): Promise<string> {
   if (provider === 'kakao') {
     const token = await kakaoLogin();
     return token.accessToken;
@@ -43,10 +67,11 @@ export async function getSocialToken(provider: SocialProvider): Promise<string> 
  * linkTicket을 주면 "쓰던 계정으로 로그인" — 로그인한 계정에 티켓의 소셜 계정을 연결.
  */
 export async function socialLogin(provider: SocialProvider, linkTicket?: string) {
-  const token = await getSocialToken(provider);
+  const { token, name } = await getSocialCredential(provider);
   const res = await axiosInstance.post('/auth/social-login', {
     provider,
     token,
+    ...(name ? { name } : {}),
     platform: 'mobile',
     flow: 'v2',
     ...(linkTicket ? { link_ticket: linkTicket } : {}),
@@ -67,13 +92,15 @@ export async function socialSignup(linkTicket: string, marketingOptIn: boolean) 
 /** 소셜 사용자가 취소한 경우(에러 알림 생략용) */
 export function isSocialCancel(error: any): boolean {
   const msg = String(error?.message ?? '').toLowerCase();
-  return error?.code === 'SIGN_IN_CANCELLED' || error?.code === '12501' || msg.includes('cancel');
+  // 애플 취소: code '1001'(ERR_REQUEST_CANCELED)
+  return error?.code === 'SIGN_IN_CANCELLED' || error?.code === '12501' || error?.code === appleAuth.Error.CANCELED || msg.includes('cancel');
 }
 
 // ── 로그인 연결 관리 (내 정보) ──
 export type LoginLinks = {
   kakao: { linked: boolean; linked_at: string | null };
   google: { linked: boolean; linked_at: string | null };
+  apple: { linked: boolean; linked_at: string | null };
   email: { set: boolean; email: string | null };
   count: number;
 };
@@ -84,7 +111,7 @@ export async function getLoginLinks(): Promise<LoginLinks> {
 }
 
 export async function linkSocial(provider: SocialProvider): Promise<LoginLinks> {
-  const token = await getSocialToken(provider);
+  const { token } = await getSocialCredential(provider);
   const res = await axiosInstance.post('/me/login-links', { provider, token });
   return res.data.data;
 }

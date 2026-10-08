@@ -42,7 +42,7 @@ export default function EventDetailScreen() {
     if (!event) return;
     const period = formatEventPeriod(event.starts_at, event.ends_at);
     Share.share({
-      message: `[WorkMate 이벤트] ${event.title}${period ? `\n기간: ${period}` : ''}${event.summary ? `\n\n${event.summary}` : ''}`,
+      message: `[현장메이트 이벤트] ${event.title}${period ? `\n기간: ${period}` : ''}${event.summary ? `\n\n${event.summary}` : ''}`,
     }).catch(() => {});
   };
 

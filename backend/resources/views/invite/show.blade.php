@@ -4,8 +4,8 @@
 @section('title', $team ? $team->name . ' 팀 초대' : '초대 링크')
 
 @section('meta')
-<meta property="og:title" content="{{ $team ? '['.$team->name.'] 팀에 초대합니다' : 'WorkMate 팀 초대' }}">
-<meta property="og:description" content="WorkMate 앱에서 초대 코드 {{ $code }}로 바로 참여할 수 있어요.">
+<meta property="og:title" content="{{ $team ? '['.$team->name.'] 팀에 초대합니다' : '현장메이트 팀 초대' }}">
+<meta property="og:description" content="현장메이트 앱에서 초대 코드 {{ $code }}로 바로 참여할 수 있어요.">
 <meta property="og:type" content="website">
 @endsection
 
@@ -29,9 +29,9 @@
     <span class="pill"><span class="ava" style="width:24px;height:24px;font-size:9px">{{ mb_substr($inviter, 0, 1) }}</span>{{ $inviter }}님이 초대했어요</span>
     @endif
     <h1>{{ $team->name }}에서<br>함께 일해요</h1>
-    <p class="lead">WorkMate에서 팀 일정을 함께 보고,<br>내 수입과 현장을 한 곳에서 관리할 수 있어요.</p>
+    <p class="lead">현장메이트에서 팀 일정을 함께 보고,<br>내 수입과 현장을 한 곳에서 관리할 수 있어요.</p>
     <ol class="steps">
-      <li><span class="num">1</span><span class="t"><b>앱 설치하기</b><small>아래 버튼으로 WorkMate를 설치해요</small></span></li>
+      <li><span class="num">1</span><span class="t"><b>앱 설치하기</b><small>아래 버튼으로 현장메이트를 설치해요</small></span></li>
       <li><span class="num">2</span><span class="t"><b>로그인 또는 가입</b><small>1분이면 가입할 수 있어요</small></span></li>
       <li><span class="num">3</span><span class="t"><b>초대 코드 입력</b><small>앱에서 열면 코드가 자동으로 입력돼요</small></span></li>
     </ol>
@@ -57,7 +57,7 @@
     </div>
 
     <a class="btn btn-primary" href="{{ $appLink }}">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>WorkMate 앱에서 열기
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>현장메이트 앱에서 열기
     </a>
     <div class="stores">
       @if($appStoreUrl)
@@ -78,7 +78,7 @@
 @endif
 @endsection
 
-@section('footer', '초대를 요청하지 않았다면 이 페이지를 닫아주세요 · © WorkMate')
+@section('footer', '초대를 요청하지 않았다면 이 페이지를 닫아주세요 · © 현장메이트')
 
 @section('script')
 <script>

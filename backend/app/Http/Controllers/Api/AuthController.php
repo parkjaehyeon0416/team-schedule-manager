@@ -168,7 +168,7 @@ class AuthController extends Controller
     // POST /api/auth/social-login
     //
     // ★ v18.51 — 연결된 계정도 같은 이메일 계정도 없으면 바로 가입시키지 않고 needs_signup + link_ticket 반환
-    //   → 앱이 "WorkMate가 처음이신가요?"를 보여주고 가입(social-signup) 또는 기존 계정 로그인(link_ticket 동봉)으로 이어감.
+    //   → 앱이 "현장메이트가 처음이신가요?"를 보여주고 가입(social-signup) 또는 기존 계정 로그인(link_ticket 동봉)으로 이어감.
     //   flow=v2를 안 보내는 예전 앱은 기존처럼 즉시 가입.
     //   link_ticket을 함께 보내면 "쓰던 계정으로 로그인" 단계 — 로그인 후 티켓의 소셜 계정을 연결.
     // ────────────────────────────────────
@@ -215,7 +215,7 @@ class AuthController extends Controller
             } elseif ($linking) {
                 // "쓰던 계정으로 로그인"에서 고른 소셜 계정에도 연결된 계정이 없음
                 return ApiResponse::error(
-                    '이 계정으로 가입된 WorkMate 계정이 없어요. 다른 방법으로 로그인해주세요.',
+                    '이 계정으로 가입된 현장메이트 계정이 없어요. 다른 방법으로 로그인해주세요.',
                     ErrorCode::AUTH_SOCIAL_NO_ACCOUNT,
                     404
                 );
@@ -321,7 +321,7 @@ class AuthController extends Controller
             $name = SocialAuthService::NAMES[$ticket['p']] ?? $ticket['p'];
             return ApiResponse::error(
                 $why === 'taken'
-                    ? "이미 다른 WorkMate 계정에 연결된 {$name} 계정이에요."
+                    ? "이미 다른 현장메이트 계정에 연결된 {$name} 계정이에요."
                     : "이 계정에는 이미 다른 {$name} 계정이 연결돼 있어요.",
                 ErrorCode::AUTH_SOCIAL_TAKEN,
                 409
@@ -356,7 +356,7 @@ class AuthController extends Controller
         //   대신 storage/logs/laravel.log에 코드가 찍힘. 나중에 다이렉트샌드 등
         //   실제 SMS 서비스를 붙일 땐 SmsServiceInterface 구현체 하나 추가하고
         //   .env의 SMS_DRIVER만 바꾸면 되고, 여기(AuthController)는 손댈 필요 없음.
-        $this->sms->send($phone, "[WorkMate] 인증번호는 {$code} 입니다. (10분간 유효)");
+        $this->sms->send($phone, "[현장메이트] 인증번호는 {$code} 입니다. (10분간 유효)");
     }
 
     /**

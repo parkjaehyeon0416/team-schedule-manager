@@ -40,9 +40,9 @@ export default function AdminLayout() {
     <div className="adm-root">
       <aside className="adm-side">
         <Link to="/" className="adm-brand">
-          <img src={logo} alt="WorkMate" />
+          <img src={logo} alt="현장메이트" />
           <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-            <span className="adm-brand-name">Work<b>Mate</b></span>
+            <span className="adm-brand-name">현장<b>메이트</b></span>
             <span className="adm-brand-sub">운영자 관리자</span>
           </span>
         </Link>
@@ -79,8 +79,8 @@ export default function AdminLayout() {
       <div className="adm-mtop">
         <div className="adm-mtop-row">
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-            <img src={logo} alt="WorkMate" width={30} height={30} style={{ objectFit: "contain" }} />
-            <span className="adm-brand-name" style={{ fontSize: 17 }}>Work<b>Mate</b></span>
+            <img src={logo} alt="현장메이트" width={30} height={30} style={{ objectFit: "contain" }} />
+            <span className="adm-brand-name" style={{ fontSize: 17 }}>현장<b>메이트</b></span>
             <span className="adm-soon-tag" style={{ marginLeft: 0, fontSize: 11 }}>관리자</span>
           </Link>
           <button type="button" aria-label="로그아웃" onClick={logout}

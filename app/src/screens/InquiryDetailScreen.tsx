@@ -78,7 +78,7 @@ export default function InquiryDetailScreen() {
             <View style={styles.answerHead}>
               <Image source={ICONS.logo} style={styles.logo} />
               <View>
-                <Text style={styles.answerName}>WorkMate 고객지원</Text>
+                <Text style={styles.answerName}>현장메이트 고객지원</Text>
                 {!!item.answered_at && <Text style={styles.muted}>{dayjs(item.answered_at).format('YYYY.MM.DD HH:mm')} 답변</Text>}
               </View>
             </View>
@@ -93,7 +93,7 @@ export default function InquiryDetailScreen() {
         {answered && (
           <View style={[styles.card, { gap: 10 }]}>
             {item.helpful === true ? (
-              <Text style={styles.feedbackTitle}>의견 고마워요! 더 나은 WorkMate가 될게요.</Text>
+              <Text style={styles.feedbackTitle}>의견 고마워요! 더 나은 현장메이트가 될게요.</Text>
             ) : (
               <>
                 <Text style={styles.feedbackTitle}>답변이 도움이 되었나요?</Text>

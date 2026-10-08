@@ -125,7 +125,7 @@ export default function SmsTemplateEdit() {
               </span>
             </div>
             <textarea id="tt" className="adm-textarea" rows={7} maxLength={1800} value={body} onChange={e => setBody(e.target.value)}
-              placeholder="[WorkMate] {이름}님, ..." style={{ borderRadius: 12, padding: "14px 16px" }} />
+              placeholder="[현장메이트] {이름}님, ..." style={{ borderRadius: 12, padding: "14px 16px" }} />
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
               <button type="button" className="adm-pill" style={{ height: 28, borderColor: "#BFDBFB", background: "#F3F9FF", color: "#0A6CE0" }} onClick={() => setBody(b => b + "{이름}")}>+ {"{이름}"} 넣기</button>
               <span className="adm-hint">받는 사람 이름으로 바뀌어요</span>

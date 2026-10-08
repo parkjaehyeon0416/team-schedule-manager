@@ -82,7 +82,7 @@ export default function LoginScreen() {
       <View style={styles.brand}>
         <Image source={ICONS.logo} style={styles.logo} />
         <Text style={styles.logoText}>
-          Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
+          현장<Text style={{ color: colors.primaryDark }}>메이트</Text>
         </Text>
         <Text style={styles.tagline}>일하는 사람들의 더 나은 내일을 위해</Text>
       </View>

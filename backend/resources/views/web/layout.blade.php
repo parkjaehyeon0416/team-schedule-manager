@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{-- ★ v18.43 웹 페이지 공통 틀 (디자인 WEB_INVITE / WEB_INVITE_M) — 초대 링크, 공지 바로가기 링크에서 사용 --}}
-<title>@yield('title') · WorkMate</title>
+<title>@yield('title') · 현장메이트</title>
 @yield('meta')
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -54,7 +54,7 @@ footer { width: 100%; padding: 20px 24px 32px; text-align: center; font-size: 12
 <body>
 <div class="page">
   <header class="top">
-    <a class="brand" href="{{ url('/download/latest') }}"><img src="/img/web/logo.png" alt="WorkMate"><span>Work<b>Mate</b></span></a>
+    <a class="brand" href="{{ url('/download/latest') }}"><img src="/img/web/logo.png" alt="현장메이트"><span>현장<b>메이트</b></span></a>
   </header>
   @yield('content')
   <section class="features">
@@ -63,7 +63,7 @@ footer { width: 100%; padding: 20px 24px 32px; text-align: center; font-size: 12
     <div class="feat"><img src="/img/web/quote.png" alt=""><span><b>견적서 작성</b><small>고객에게 바로 발송</small></span></div>
     <div class="feat"><img src="/img/web/tax.png" alt=""><span><b>세무 자료</b><small>엑셀로 한 번에 내보내기</small></span></div>
   </section>
-  <footer>@yield('footer', '© WorkMate')</footer>
+  <footer>@yield('footer', '© 현장메이트')</footer>
 </div>
 @yield('script')
 </body>

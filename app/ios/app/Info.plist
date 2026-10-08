@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ko</string>
 	<key>CFBundleDisplayName</key>
-	<string>WorkMate</string>
+	<string>현장메이트</string>
 	<!-- ★ v18.46 — 초대·공지 링크(workmate://join/코드, workmate://notice/번호, workmate://event/번호)로 앱 열기 -->
 	<key>CFBundleURLTypes</key>
 	<array>
@@ -68,7 +68,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>WorkMate</string>
+	<string>현장메이트</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

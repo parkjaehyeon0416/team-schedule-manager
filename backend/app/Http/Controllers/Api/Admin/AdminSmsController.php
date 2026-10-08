@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
  * ★ v18.43 — 운영자 웹 "문자 발송"·"문자 템플릿" (디자인 ADMIN_SMS_SEND / ADMIN_SMS_TEMPLATES / ADMIN_SMS_TEMPLATE_EDIT)
  *
  * 법적 규칙(정보통신망법)을 서버에서 강제함:
- *   - 광고성(ad): 마케팅 수신 동의한 회원에게만, 맨 앞 "(광고)", 보내는 곳(WorkMate) 표기, 끝에 무료 수신거부 번호,
+ *   - 광고성(ad): 마케팅 수신 동의한 회원에게만, 맨 앞 "(광고)", 보내는 곳(현장메이트) 표기, 끝에 무료 수신거부 번호,
  *     밤 9시~아침 8시 발송 금지. 수신거부 번호(SMS_AD_OPT_OUT)가 설정 안 돼 있으면 발송 막음.
  *   - 안내성(info): 서버 점검 같은 서비스 안내. 전체 회원에게 보낼 수 있음.
  * 문구 안의 {이름}은 받는 사람 이름으로 바뀜. 공지·이벤트를 연결하면 바로가기 링크(/n/{id})가 붙음.
@@ -249,8 +249,8 @@ class AdminSmsController extends Controller
         }
         // 광고성: (광고) + 보내는 곳 이름(문구에 없으면 붙임) + 본문 + 링크 + 무료 수신거부
         $body = preg_replace('/^\(광고\)\s*/u', '', $body);
-        if (!str_contains($body, 'WorkMate')) {
-            $body = '[WorkMate] ' . $body;
+        if (!str_contains($body, '현장메이트')) {
+            $body = '[현장메이트] ' . $body;
         }
         $optOut = trim((string) config('sms.ad_opt_out'));
 

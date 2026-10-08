@@ -80,7 +80,7 @@ export default function SplashScreen() {
         </Animated.View>
       </View>
       <Animated.Text style={[styles.brand, { opacity: fadeTitle }]}>
-        Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
+        현장<Text style={{ color: colors.primaryDark }}>메이트</Text>
       </Animated.Text>
       <Animated.Text style={[styles.tagline, { opacity: fadeTagline }]}>현장의 하루를 한 곳에서</Animated.Text>
 

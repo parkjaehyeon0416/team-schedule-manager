@@ -74,7 +74,7 @@ export default function BusinessCardScreen() {
   const specialtyLabel = card.specialty ? card.specialty.split(',').map(s => s.trim()).filter(Boolean).join(' · ') : '전문 분야 미입력';
   const locationLabel = [card.service_area, activeTeam?.name].filter(Boolean).join(' · ') || '활동 지역 미입력';
   const shareUrl = getPublicCardUrl(card.share_code);
-  const shareMessage = `[WorkMate] ${card.display_name ?? user.name} 명함\n${specialtyLabel}\n${card.contact_phone ?? ''}\n${shareUrl}`;
+  const shareMessage = `[현장메이트] ${card.display_name ?? user.name} 명함\n${specialtyLabel}\n${card.contact_phone ?? ''}\n${shareUrl}`;
 
   const handleShare = () => Share.share({ message: shareMessage }).catch(() => {});
   const handleCopyLink = () => {
@@ -94,7 +94,7 @@ export default function BusinessCardScreen() {
       }
       const uri = await cardShotRef.current?.capture?.();
       if (!uri) throw new Error('capture failed');
-      await CameraRoll.save(uri, { type: 'photo', album: 'WorkMate' });
+      await CameraRoll.save(uri, { type: 'photo', album: '현장메이트' });
       Alert.alert('저장 완료', '명함 이미지가 갤러리에 저장되었습니다.');
     } catch (e) {
       Alert.alert('저장 실패', '명함 이미지 저장에 실패했습니다.');
@@ -116,7 +116,7 @@ export default function BusinessCardScreen() {
               </View>
               <View style={styles.brandRow}>
                 <Icon name="home-city-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.brandText}>WorkMate</Text>
+                <Text style={styles.brandText}>현장메이트</Text>
               </View>
             </View>
             <View style={{ gap: 6 }}>

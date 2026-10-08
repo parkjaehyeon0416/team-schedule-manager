@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// 📄 designTokens.ts — WorkMate DESIGN-CANVAS 기준 디자인 토큰 (v18.31)
+// 📄 designTokens.ts — 현장메이트 DESIGN-CANVAS 기준 디자인 토큰 (v18.31)
 //   claude.ai/artifact/QD41RYo8jRrRZ5vWbxQWS2 (HOME/SCHEDULE_MONTH/MY_HOME/
 //   NOTIFICATIONS/AUTH_*.dc.html)에서 실제 쓰인 색상을 그대로 포팅함.
 //   그라데이션 버튼(linear-gradient(180deg,#2492FF,#0A6CE0))은 네이티브

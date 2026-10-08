@@ -116,7 +116,7 @@
 
 @if($showBranding ?? true)
 <div class="footer">
-    이 견적서는 WorkMate로 작성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
+    이 견적서는 현장메이트로 작성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
 </div>
 @endif
 

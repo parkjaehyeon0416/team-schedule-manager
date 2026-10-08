@@ -170,7 +170,7 @@ export default function EventEdit() {
               <div key={l} className="adm-field">
                 <label className="adm-label" htmlFor={`einfo-${l}`}>{l}</label>
                 <input id={`einfo-${l}`} className="adm-input" value={info[l]} onChange={e => setInfo(prev => ({ ...prev, [l]: e.target.value }))}
-                  placeholder={l === "대상" ? "WorkMate 회원 누구나" : l === "혜택" ? "[경품 내용]" : "2026.11.07 · 앱 알림"} />
+                  placeholder={l === "대상" ? "현장메이트 회원 누구나" : l === "혜택" ? "[경품 내용]" : "2026.11.07 · 앱 알림"} />
               </div>
             ))}
           </div>

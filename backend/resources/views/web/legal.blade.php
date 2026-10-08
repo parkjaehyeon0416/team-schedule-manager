@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{-- ★ v18.48 웹 이용약관·개인정보 처리방침 — 앱(LegalDocumentScreen)과 같은 문구(scripts/sync-legal.js로 복사) --}}
-<title>{{ $title }} · WorkMate</title>
+<title>{{ $title }} · 현장메이트</title>
 <link rel="icon" href="/img/web/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
@@ -26,11 +26,11 @@ footer a { color: #0A6CE0; text-decoration: none; margin: 0 8px; }
 </style>
 </head>
 <body>
-<header><div class="bar"><a href="/"><img src="/img/web/logo.png" alt="WorkMate"><span>Work<b>Mate</b></span></a></div></header>
+<header><div class="bar"><a href="/"><img src="/img/web/logo.png" alt="현장메이트"><span>현장<b>메이트</b></span></a></div></header>
 <main>
   <h1>{{ $title }}</h1>
   <div class="doc">{{ $body }}</div>
 </main>
-<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/">WorkMate 소개</a></footer>
+<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/">현장메이트 소개</a></footer>
 </body>
 </html>

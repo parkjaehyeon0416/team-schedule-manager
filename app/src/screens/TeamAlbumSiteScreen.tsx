@@ -82,7 +82,7 @@ export default function TeamAlbumSiteScreen() {
       }
       const uri = await shotRef.current?.capture?.();
       if (!uri) throw new Error('capture failed');
-      await CameraRoll.save(uri, { type: 'photo', album: 'WorkMate' });
+      await CameraRoll.save(uri, { type: 'photo', album: '현장메이트' });
       Alert.alert('저장 완료', '사진을 갤러리에 저장했어요.');
     } catch {
       Alert.alert('저장 실패', '사진을 저장하지 못했어요.');

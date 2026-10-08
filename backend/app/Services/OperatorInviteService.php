@@ -51,7 +51,7 @@ class OperatorInviteService
         $token = Str::random(64);
         Cache::put("operator_setpw:{$token}", $user->id, now()->addMinutes(30));
         $link = rtrim(config('app.url'), '/') . '/admin/set-password?token=' . $token;
-        $this->sms->send($user->operator_phone, "[WorkMate] 운영자 비밀번호 설정 링크입니다(30분, 1회용).\n{$link}");
+        $this->sms->send($user->operator_phone, "[현장메이트] 운영자 비밀번호 설정 링크입니다(30분, 1회용).\n{$link}");
         return true;
     }
 

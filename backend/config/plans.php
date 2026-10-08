@@ -22,7 +22,7 @@ return [
     'features' => [
         // 개인 프로: 내 일로 돈 벌기(고객에게 보내는 결과물·장부)
         'quote_unlimited'  => ['pro', 'team_pro'],
-        'quote_branding'   => ['pro', 'team_pro'], // 견적서 하단 "WorkMate로 작성" 문구 제거
+        'quote_branding'   => ['pro', 'team_pro'], // 견적서 하단 "현장메이트로 작성" 문구 제거
         'report_unlimited' => ['pro', 'team_pro'],
         'tax_export'       => ['pro', 'team_pro'],
         'photo_unlimited'  => ['pro', 'team', 'team_pro'],

@@ -15,7 +15,7 @@ export type SocialProvider = 'google' | 'kakao' | 'apple';
 
 export const PROVIDER_NAME: Record<SocialProvider, string> = { kakao: '카카오', google: '구글', apple: 'Apple' };
 
-// ★ v18.51 — 연결된 계정이 없을 때 서버가 돌려주는 정보("WorkMate가 처음이신가요?" 화면용)
+// ★ v18.51 — 연결된 계정이 없을 때 서버가 돌려주는 정보("현장메이트가 처음이신가요?" 화면용)
 export type SocialSignupNeeded = {
   needs_signup: true;
   link_ticket: string;

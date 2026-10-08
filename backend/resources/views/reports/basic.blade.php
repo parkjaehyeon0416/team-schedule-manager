@@ -42,7 +42,7 @@
 
 <div class="cover">
     <h1>{{ $report->title }}</h1>
-    <div class="subtitle">WorkMate · 시공 완료 보고서</div>
+    <div class="subtitle">현장메이트 · 시공 완료 보고서</div>
 </div>
 
 <table class="meta-table">
@@ -116,7 +116,7 @@
 @endif
 
 <div class="footer">
-    본 보고서는 WorkMate에서 자동 생성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
+    본 보고서는 현장메이트에서 자동 생성되었습니다. · 생성일: {{ now()->format('Y-m-d H:i') }}
 </div>
 
 </body>

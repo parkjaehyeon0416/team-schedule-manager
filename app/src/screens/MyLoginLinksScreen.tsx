@@ -211,7 +211,7 @@ export default function MyLoginLinksScreen() {
             <View style={styles.failIcon}><Icon name="information-outline" size={26} color="#B95E00" /></View>
             <Text style={[styles.dTitle, { marginTop: 4, textAlign: 'center' }]}>{fail ? REUL[fail] : ''} 연결하지 못했어요</Text>
             <Text style={[styles.dDesc, { textAlign: 'center' }]}>
-              이미 다른 WorkMate 계정에 연결된{'\n'}{fail ? PROVIDER_NAME[fail] : ''} 계정이에요.
+              이미 다른 현장메이트 계정에 연결된{'\n'}{fail ? PROVIDER_NAME[fail] : ''} 계정이에요.
             </Text>
             <Text style={styles.failSub}>
               그 계정에서 먼저 연결을 해제하거나{'\n'}다른 {fail ? PROVIDER_NAME[fail] : ''} 계정으로 시도해주세요.

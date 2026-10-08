@@ -1,4 +1,4 @@
-// ★ v18.40~41 — WorkMate 운영자 전용 웹 관리자 (http://서버/admin, DESIGN-CANVAS ADMIN_*)
+// ★ v18.40~41 — 현장메이트 운영자 전용 웹 관리자 (http://서버/admin, DESIGN-CANVAS ADMIN_*)
 //   웹 로그인은 운영자 계정만 가능(서버 정책). 팀장용 화면은 모바일 앱으로 일원화.
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./components/Layout/AdminLayout";

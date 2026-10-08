@@ -67,7 +67,7 @@ class SocialAuthService
 
     /**
      * 사용자에게 소셜 계정 연결. 실패 사유 문자열 반환(성공이면 null)
-     * - taken: 이 소셜 계정이 이미 다른 WorkMate 계정에 연결됨
+     * - taken: 이 소셜 계정이 이미 다른 현장메이트 계정에 연결됨
      * - other: 이 사용자에게 같은 종류의 다른 소셜 계정이 이미 연결됨
      */
     public static function attach(User $user, string $provider, string $providerId): ?string

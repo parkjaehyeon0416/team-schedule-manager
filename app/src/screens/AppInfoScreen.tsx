@@ -72,7 +72,7 @@ export default function AppInfoScreen() {
         <View style={styles.brandBlock}>
           <Image source={ICONS.logo} style={styles.logo} />
           <Text style={styles.brandText}>
-            Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
+            현장<Text style={{ color: colors.primaryDark }}>메이트</Text>
           </Text>
           <Text style={styles.versionText}>현재 버전 v1.0.0 · 최신 버전입니다</Text>
         </View>

@@ -459,7 +459,7 @@ class QuoteController extends Controller
                 'quote'         => $quote,
                 'user'          => $user,
                 'cardQrDataUri' => $cardQrDataUri,
-                // ★ v18.47 — 무료는 하단에 "WorkMate로 작성" 문구, 개인 프로는 제거
+                // ★ v18.47 — 무료는 하단에 "현장메이트로 작성" 문구, 개인 프로는 제거
                 'showBranding'  => !\App\Services\PlanService::can($user, 'quote_branding'),
             ]);
         } catch (\Throwable $e) {

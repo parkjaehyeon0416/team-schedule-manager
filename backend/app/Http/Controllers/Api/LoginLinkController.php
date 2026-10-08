@@ -41,7 +41,7 @@ class LoginLinkController extends Controller
             $name = SocialAuthService::NAMES[$data['provider']];
             return ApiResponse::error(
                 $why === 'taken'
-                    ? "이미 다른 WorkMate 계정에 연결된 {$name} 계정이에요."
+                    ? "이미 다른 현장메이트 계정에 연결된 {$name} 계정이에요."
                     : "이미 다른 {$name} 계정이 연결돼 있어요. 먼저 해제해주세요.",
                 ErrorCode::AUTH_SOCIAL_TAKEN,
                 409

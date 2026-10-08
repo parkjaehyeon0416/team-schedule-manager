@@ -56,9 +56,9 @@ export default function SetPassword() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24, padding: "32px 16px", boxSizing: "border-box", background: "#F4F8FD" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <img src={logo} alt="WorkMate" width={36} height={36} style={{ objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(10,108,224,0.16))" }} />
+        <img src={logo} alt="현장메이트" width={36} height={36} style={{ objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(10,108,224,0.16))" }} />
         <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.4 }}>Work<span style={{ color: "#0A6CE0" }}>Mate</span></span>
+          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.4 }}>현장<span style={{ color: "#0A6CE0" }}>메이트</span></span>
           <span style={{ fontSize: 11, color: "#5F7290", fontWeight: 600 }}>운영자 관리자</span>
         </span>
       </div>

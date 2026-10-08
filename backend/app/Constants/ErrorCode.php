@@ -26,7 +26,7 @@ class ErrorCode
     public const AUTH_SOCIAL_EMAIL_TAKEN   = 'ERR_AUTH_012'; // v18.18 — 이미 일반 가입된 이메일로 소셜 로그인 시도(연동 필요)
     public const AUTH_SOCIAL_TICKET_INVALID = 'ERR_AUTH_013'; // v18.51 — 소셜 연결 티켓 만료/위조(처음부터 다시)
     public const AUTH_SOCIAL_TAKEN          = 'ERR_AUTH_014'; // v18.51 — 이미 다른 계정에 연결된 소셜 계정(또는 같은 종류 다른 계정이 이미 연결됨)
-    public const AUTH_SOCIAL_NO_ACCOUNT     = 'ERR_AUTH_015'; // v18.51 — "쓰던 계정으로 로그인"에서 고른 소셜 계정에 연결된 WorkMate 계정 없음
+    public const AUTH_SOCIAL_NO_ACCOUNT     = 'ERR_AUTH_015'; // v18.51 — "쓰던 계정으로 로그인"에서 고른 소셜 계정에 연결된 현장메이트 계정 없음
     public const AUTH_LOGIN_LINK_LAST       = 'ERR_AUTH_016'; // v18.51 — 마지막 남은 로그인 방법은 해제 불가
 
     // ═══════════════════════════════════════════════

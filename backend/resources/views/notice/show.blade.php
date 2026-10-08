@@ -5,7 +5,7 @@
 
 @section('meta')
 <meta property="og:title" content="{{ $notice->title }}">
-<meta property="og:description" content="{{ $notice->summary ?? 'WorkMate ' . ($notice->type === 'event' ? '이벤트' : '공지사항') }}">
+<meta property="og:description" content="{{ $notice->summary ?? '현장메이트 ' . ($notice->type === 'event' ? '이벤트' : '공지사항') }}">
 <meta property="og:type" content="article">
 @endsection
 
@@ -45,9 +45,9 @@
   </div>
 
   <section class="card">
-    <span style="font-size:17px;font-weight:800">WorkMate 앱에서 자세히 보기</span>
+    <span style="font-size:17px;font-weight:800">현장메이트 앱에서 자세히 보기</span>
     <span class="lead" style="font-size:14px">앱에서는 {{ $notice->type === 'event' ? '이벤트 참여까지' : '다른 공지와 알림까지' }} 한 번에 확인할 수 있어요.</span>
-    <a class="btn btn-primary" href="{{ $appLink }}">WorkMate 앱에서 열기</a>
+    <a class="btn btn-primary" href="{{ $appLink }}">현장메이트 앱에서 열기</a>
     <div class="stores" style="display:flex;gap:8px;flex-wrap:wrap">
       @if($appStoreUrl)
       <a class="btn btn-dark" href="{{ $appStoreUrl }}"><small>iPhone</small>App Store</a>

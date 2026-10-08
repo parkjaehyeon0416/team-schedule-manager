@@ -72,7 +72,7 @@ export default function NoticeDetailScreen() {
 
   const handleShare = () => {
     if (!notice) return;
-    Share.share({ message: `[WorkMate 공지] ${notice.title}\n\n${notice.body ?? ''}` }).catch(() => {});
+    Share.share({ message: `[현장메이트 공지] ${notice.title}\n\n${notice.body ?? ''}` }).catch(() => {});
   };
 
   const shareButton = (

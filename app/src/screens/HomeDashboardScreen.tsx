@@ -133,7 +133,7 @@ export default function HomeDashboardScreen() {
         <View style={styles.brandRow}>
           <Image source={ICONS.logo} style={styles.brandLogo} />
           <Text style={styles.brandText}>
-            Work<Text style={{ color: colors.primaryDark }}>Mate</Text>
+            현장<Text style={{ color: colors.primaryDark }}>메이트</Text>
           </Text>
         </View>
       </View>

@@ -146,7 +146,7 @@ export default function NoticeEdit() {
                 </button>
               </div>
               <textarea id="nbody" ref={bodyRef} rows={12} value={body} onChange={e => setBody(e.target.value)}
-                placeholder={"안녕하세요, WorkMate입니다.\n\n- 목록은 줄 앞에 '- '\n- 빈 줄로 문단을 나눠요"}
+                placeholder={"안녕하세요, 현장메이트입니다.\n\n- 목록은 줄 앞에 '- '\n- 빈 줄로 문단을 나눠요"}
                 style={{ width: "100%", border: 0, outline: 0, padding: "14px 16px", font: "inherit", fontSize: 14, lineHeight: 1.7, color: "#102A56", resize: "vertical", display: "block" }} />
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function NoticeEdit() {
                 {pin && <span className="adm-badge orange">중요</span>}
               </div>
               <span style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.45 }}>{title || "제목을 입력하세요"}</span>
-              <span style={{ fontSize: 11, color: "#5F7290" }}>{loaded?.author ?? "WorkMate 운영팀"} · {fmtDate(loaded?.published_at ?? new Date().toISOString())}</span>
+              <span style={{ fontSize: 11, color: "#5F7290" }}>{loaded?.author ?? "현장메이트 운영팀"} · {fmtDate(loaded?.published_at ?? new Date().toISOString())}</span>
               <div style={{ height: 1, background: "#DDEAF7" }} />
               {previewImage && <img src={previewImage} alt="" style={{ width: "100%", borderRadius: 10 }} />}
               <BodyPreview body={body} />

@@ -18,7 +18,7 @@ import { ICONS } from '../assets/icons';
 
 // 초대 문구 — 연락처 초대(문자)에서도 같이 씀
 export function inviteMessage(invite: TeamInviteInfo): string {
-  return `[WorkMate] "${invite.team_name}" 팀에 초대합니다.\n아래 링크를 눌러 참여해 주세요.\n${invite.invite_url}\n(초대 코드: ${invite.invite_code})`;
+  return `[현장메이트] "${invite.team_name}" 팀에 초대합니다.\n아래 링크를 눌러 참여해 주세요.\n${invite.invite_url}\n(초대 코드: ${invite.invite_code})`;
 }
 
 export default function TeamInviteScreen() {

@@ -75,7 +75,7 @@ export default function ProfilePublicScreen() {
       Alert.alert('공유 불가', '먼저 명함 정보를 입력해주세요.');
       return;
     }
-    Share.share({ message: `[WorkMate] ${card.display_name ?? user.name} 프로필\n${getPublicCardUrl(card.share_code)}` }).catch(() => {});
+    Share.share({ message: `[현장메이트] ${card.display_name ?? user.name} 프로필\n${getPublicCardUrl(card.share_code)}` }).catch(() => {});
   };
 
   const handleCall = () => {

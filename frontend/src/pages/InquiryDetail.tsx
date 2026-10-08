@@ -10,9 +10,9 @@ const MAX = 2000;
 
 // 디자인의 "자주 쓰는 답변"
 const PRESETS = [
-  { n: "확인 후 안내", t: "안녕하세요, WorkMate입니다.\n문의하신 내용을 확인하고 있어요. 확인되는 대로 다시 안내드릴게요." },
-  { n: "오류 수정 예정", t: "안녕하세요, WorkMate입니다.\n불편을 드려 죄송합니다. 말씀하신 오류를 확인했고 다음 업데이트에서 수정될 예정이에요." },
-  { n: "사용 방법 안내", t: "안녕하세요, WorkMate입니다.\n해당 기능은 [메뉴 경로]에서 이용하실 수 있어요." },
+  { n: "확인 후 안내", t: "안녕하세요, 현장메이트입니다.\n문의하신 내용을 확인하고 있어요. 확인되는 대로 다시 안내드릴게요." },
+  { n: "오류 수정 예정", t: "안녕하세요, 현장메이트입니다.\n불편을 드려 죄송합니다. 말씀하신 오류를 확인했고 다음 업데이트에서 수정될 예정이에요." },
+  { n: "사용 방법 안내", t: "안녕하세요, 현장메이트입니다.\n해당 기능은 [메뉴 경로]에서 이용하실 수 있어요." },
 ];
 
 export default function InquiryDetail() {
@@ -121,7 +121,7 @@ export default function InquiryDetail() {
           ) : (
             <section className="adm-card" style={{ padding: 22 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img src={logo} alt="WorkMate" width={32} height={32} style={{ objectFit: "contain" }} />
+                <img src={logo} alt="현장메이트" width={32} height={32} style={{ objectFit: "contain" }} />
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>운영자 답변</span>
                   <span style={{ fontSize: 12, color: "#5F7290" }}>

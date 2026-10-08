@@ -85,7 +85,7 @@ export function buildSmsBody(kind: SmsKind, body: string, noticeId: number | nul
   const link = noticeId && cfg ? `\n${cfg.link_base}${noticeId}` : "";
   if (kind !== "ad") return text + link;
   text = text.replace(/^\(광고\)\s*/, "");
-  if (!text.includes("WorkMate")) text = `[WorkMate] ${text}`;
+  if (!text.includes("현장메이트")) text = `[현장메이트] ${text}`;
   return `(광고)${text}${link}\n${cfg?.ad_opt_out ?? ""}`;
 }
 

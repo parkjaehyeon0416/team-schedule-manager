@@ -27,9 +27,9 @@ export default function SocialFirstLoginScreen() {
       <ScrollView contentContainerStyle={styles.main}>
         <View style={styles.hero}>
           <Image source={ICONS.logo} style={styles.logo} />
-          <Text style={styles.title}>WorkMate가 처음이신가요?</Text>
+          <Text style={styles.title}>현장메이트가 처음이신가요?</Text>
           <Text style={styles.desc}>
-            이 {via} 계정과 연결된 WorkMate 계정이 없어요.{'\n'}새로 시작할지, 쓰던 계정에 연결할지 골라주세요.
+            이 {via} 계정과 연결된 현장메이트 계정이 없어요.{'\n'}새로 시작할지, 쓰던 계정에 연결할지 골라주세요.
           </Text>
         </View>
 

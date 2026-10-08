@@ -52,14 +52,14 @@ export default function Login() {
         justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src={logo} alt="WorkMate" width={44} height={44} style={{ objectFit: "contain" }} />
-          <span style={{ fontSize: 20, fontWeight: 800 }}>WorkMate 관리자</span>
+          <img src={logo} alt="현장메이트" width={44} height={44} style={{ objectFit: "contain" }} />
+          <span style={{ fontSize: 20, fontWeight: 800 }}>현장메이트 관리자</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <h1 style={{ margin: 0, fontSize: 40, fontWeight: 800, lineHeight: 1.3, letterSpacing: -0.8 }}>앱 운영을<br />한 곳에서 관리하세요</h1>
           <p style={{ margin: 0, fontSize: 16, lineHeight: 1.6, color: "rgba(255,255,255,0.88)" }}>회원 현황 확인, 공지·이벤트 게시까지<br />운영자 전용 화면입니다.</p>
         </div>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>© WorkMate · 운영자 전용</span>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>© 현장메이트 · 운영자 전용</span>
       </div>
 
       <div style={{ flex: "1 1 0", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>

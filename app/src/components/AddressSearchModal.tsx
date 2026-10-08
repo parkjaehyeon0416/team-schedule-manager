@@ -8,6 +8,7 @@ import { Modal, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Text } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SERVER_BASE_URL } from '../api/axiosInstance';
 
 export interface DaumAddressResult {
   zonecode: string;
@@ -28,7 +29,8 @@ interface Props {
 //   주소 목록은 보이는데 클릭 시 "선택완료" postMessage가 조용히 전달 안 되는
 //   문제가 있었음(에뮬레이터로 직접 재현/확인). 지금은 우리 서버에 정적 파일로
 //   올려서 HTTPS로 서빙 중 — backend/public/postcode.html 참고.
-const POSTCODE_URL = 'https://211-233-210-85.sslip.io/postcode.html';
+// ★ v18.58 — 정식 도메인으로(서버 주소 상수 하나만 바꾸면 따라오게)
+const POSTCODE_URL = `${SERVER_BASE_URL}/postcode.html`;
 
 export default function AddressSearchModal({ visible, onClose, onSelect }: Props) {
   const insets = useSafeAreaInsets();

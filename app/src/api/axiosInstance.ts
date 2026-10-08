@@ -17,7 +17,8 @@ import { usePlanLockStore } from '../store/planLockStore';
 //   백엔드에 연결이 안 됨. 실서버(NCP) 주소로 고정해야 wifi/데이터 상관없이 어디서든 접속됨.
 // ★ v18.46 — HTTPS로 전환(Let's Encrypt, sslip.io 도메인). 아이폰은 http 접속을 막아서 필수.
 //   정식 도메인을 사면 이 주소만 바꾸면 됨.
-export const SERVER_BASE_URL = 'https://211-233-210-85.sslip.io';
+// ★ v18.58 — 정식 도메인 workmatekr.com (2026-10-08 구입). 예전 sslip.io 주소도 서버에서 계속 열어 둠(옛 앱용).
+export const SERVER_BASE_URL = 'https://workmatekr.com';
 export const API_BASE_URL = `${SERVER_BASE_URL}/api`;
 
 const axiosInstance = axios.create({

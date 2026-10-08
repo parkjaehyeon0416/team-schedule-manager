@@ -42,7 +42,7 @@ class AdminOperatorController extends Controller
             'email' => 'required|email|max:255',
             'phone' => ['required', 'string', 'regex:/^01[016789]-?\d{3,4}-?\d{4}$/'],
         ], [
-            'phone.regex' => '휴대폰 번호를 확인해주세요. (예: 010-1234-5678)',
+            'phone.regex' => '휴대폰 번호 형식이 맞지 않아요. 010-0000-0000처럼 입력해주세요.',
         ]);
 
         [$user, $why] = $invites->invite($data['name'], $data['email'], $data['phone']);

@@ -26,6 +26,8 @@ const PATHS: Record<string, string> = {
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   phone: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/>',
   ban: '<circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/>',
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>', // ★ v18.56 운영자 관리
+  userPlus: '<circle cx="10" cy="8.5" r="3.6"/><path d="M3.5 20c1-3.5 3.5-5.2 6.5-5.2 1.4 0 2.6.3 3.7 1M18 13v6M15 16h6"/>',
 };
 
 export default function Icon({ name, size = 18, color = 'currentColor', width = 1.8 }: { name: keyof typeof PATHS | string; size?: number; color?: string; width?: number }) {

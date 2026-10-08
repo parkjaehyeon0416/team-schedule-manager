@@ -20,6 +20,8 @@ const GROUPS: { title?: string; items: Item[] }[] = [
     ],
   },
   { title: "회원", items: [{ to: "/members", label: "회원 관리", icon: "members" }] },
+  // ★ v18.56 — 디자인(ADMIN_OPERATORS) 사이드 메뉴 "설정 › 운영자 관리"
+  { title: "설정", items: [{ to: "/operators", label: "운영자 관리", icon: "shield" }] },
   { title: "준비 중", items: [{ to: "/payments", label: "결제", icon: "payment", soon: true }] },
 ];
 const ALL = GROUPS.flatMap(g => g.items);

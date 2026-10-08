@@ -9,6 +9,7 @@ import NoticeList from "./pages/NoticeList";
 import NoticeEdit from "./pages/NoticeEdit";
 import EventList from "./pages/EventList";
 import EventEdit from "./pages/EventEdit";
+import Operators from "./pages/Operators";
 import Members from "./pages/Members";
 import ComingSoon from "./pages/ComingSoon";
 import InquiryList from "./pages/InquiryList";
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="events/new" element={<EventEdit />} />
             <Route path="events/:id" element={<EventEdit />} />
             <Route path="members" element={<Members />} />
+            <Route path="operators" element={<Operators />} />
             {/* ★ v18.43 운영 메뉴 */}
             <Route path="inquiries" element={<InquiryList />} />
             <Route path="inquiries/:id" element={<InquiryDetail />} />

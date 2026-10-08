@@ -16,7 +16,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastCtx.Provider value={show}>
       {children}
-      {toast && <div role="status" className={`adm-toast${toast.err ? " err" : ""}`}>{toast.text}</div>}
+      {toast && (
+        <div role="status" className={`adm-toast${toast.err ? " err" : ""}`}>
+          {/* ★ v18.56 디자인 토스트 — 성공은 초록 체크 */}
+          {!toast.err && <span className="adm-toast-check"><Icon name="check" size={14} color="#FFFFFF" width={3} /></span>}
+          {toast.text}
+        </div>
+      )}
     </ToastCtx.Provider>
   );
 }

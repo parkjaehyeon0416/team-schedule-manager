@@ -160,7 +160,9 @@ button { font: inherit; }
 .adm-modal h2 { margin: 4px 0 0; font-size: 19px; font-weight: 800; }
 .adm-modal p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
 .adm-modal-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
-.adm-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 60; background: var(--navy); color: #FFFFFF; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(16,42,86,0.3); max-width: calc(100% - 32px); }
+/* ★ v18.56 디자인(ADMIN_OPERATORS 등) 토스트 — 초록 체크 동그라미 */
+.adm-toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 60; background: rgba(16,42,86,0.94); color: #FFFFFF; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 30px rgba(16,42,86,0.25); max-width: calc(100% - 32px); display: flex; align-items: center; gap: 10px; }
+.adm-toast-check { width: 22px; height: 22px; border-radius: 50%; background: #2CC4B2; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .adm-toast.err { background: var(--danger); }
 
 /* ── 상세 패널(회원) ────────────────────── */
@@ -179,6 +181,8 @@ button { font: inherit; }
   .adm-h1 { font-size: 20px !important; }
   .adm-grid2 { grid-template-columns: minmax(0, 1fr); }
   .adm-hide-m { display: none !important; }
+  .op-table { display: none !important; }
+  .op-cards { display: flex !important; }
 }
 
 /* ── ★ v18.43 운영 메뉴(문의·문자·통계) ──── */
@@ -208,3 +212,21 @@ button { font: inherit; }
 .adm-bars .bar:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--navy); color: #FFFFFF; font-size: 11px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; z-index: 2; }
 .adm-bar-labels { display: flex; gap: 4px; }
 .adm-bar-labels span { flex: 1 1 0; font-size: 10px; color: var(--faint); text-align: center; white-space: nowrap; overflow: visible; }
+
+/* ── ★ v18.56 운영자 관리(ADMIN_OPERATORS) ── */
+.op-cards { display: none; flex-direction: column; gap: 10px; }
+.op-card { border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.op-solo { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 14px; background: #F3F9FF; border: 1px dashed #9CC9FA; flex-wrap: wrap; }
+.op-me { height: 20px; padding: 0 7px; border-radius: 6px; background: #102A56; color: #FFFFFF; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; }
+.op-st { align-self: flex-start; height: 24px; padding: 0 9px; border-radius: 7px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; }
+.op-st.active { background: #E2F8F4; color: #0B8574; }
+.op-st.invited { background: #FFF2E2; color: #B95E00; }
+.op-btn { height: 34px; padding: 0 12px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.op-btn.link { border: 1px solid #BFDBFB; background: #FFFFFF; color: #0A6CE0; }
+.op-btn.del { border: 1px solid #FFD5D6; background: #FFF2F2; color: #E5484D; }
+.op-btn:disabled { border: 1px solid #E6ECF3; background: #F3F6FA; color: #A9B6C8; cursor: not-allowed; }
+.op-dialog { width: 100%; max-width: 480px; background: #FFFFFF; border-radius: 20px; padding: 26px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 50px rgba(16,42,86,0.25); box-sizing: border-box; }
+.op-input { height: 48px; border-radius: 10px; border: 1px solid #DDEAF7; display: flex; align-items: center; gap: 10px; padding: 0 14px; box-sizing: border-box; }
+.op-input input { flex: 1 1 0; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 15px; color: var(--navy); }
+.op-err { display: flex; align-items: flex-start; gap: 4px; font-size: 12px; font-weight: 600; color: #E5484D; line-height: 1.5; }
+.op-help { font-size: 12px; color: var(--muted); }

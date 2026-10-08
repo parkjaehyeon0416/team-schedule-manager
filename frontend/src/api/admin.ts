@@ -103,3 +103,29 @@ export const unsuspendMember = async (id: number) => {
   const res = await axiosInstance.post<ApiResponse<null>>(`/api/admin/members/${id}/unsuspend`);
   return res.data;
 };
+
+// ★ v18.56 — 운영자 관리 (디자인 ADMIN_OPERATORS / ADMIN_OPERATOR_INVITE)
+export type Operator = {
+  id: number; name: string; email: string; phone: string | null;
+  status: "active" | "invited"; last_login_at: string | null; created_at: string | null; is_me: boolean;
+};
+
+export const getOperators = async () => {
+  const res = await axiosInstance.get<ApiResponse<{ operators: Operator[] }>>("/api/admin/operators");
+  return res.data.data.operators;
+};
+
+export const inviteOperator = async (body: { name: string; email: string; phone: string }) => {
+  const res = await axiosInstance.post<ApiResponse<{ id: number; name: string }>>("/api/admin/operators", body);
+  return res.data;
+};
+
+export const resendOperatorLink = async (id: number) => {
+  const res = await axiosInstance.post<ApiResponse<null>>(`/api/admin/operators/${id}/resend`);
+  return res.data;
+};
+
+export const deleteOperator = async (id: number) => {
+  const res = await axiosInstance.delete<ApiResponse<null>>(`/api/admin/operators/${id}`);
+  return res.data;
+};

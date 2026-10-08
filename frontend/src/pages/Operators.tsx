@@ -98,7 +98,7 @@ export default function Operators() {
             <b style={{ fontSize: 16 }}>함께 관리할 운영자를 초대해 보세요</b>
             <span style={{ fontSize: 13, color: "#5F7290", lineHeight: 1.6 }}>초대한 사람의 휴대폰으로 비밀번호 설정 링크가 가요. 지금은 운영자가 나 혼자예요.</span>
           </span>
-          <InviteButton onClick={() => setInviting(true)} />
+          {/* 디자인엔 여기에도 [운영자 초대]가 있었지만 위쪽 버튼과 중복이라 뺌(사용자 요청 2026-10-08) */}
         </div>
       )}
 

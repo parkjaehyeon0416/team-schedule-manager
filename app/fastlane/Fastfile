@@ -1,0 +1,63 @@
+# ★ v18.60 — GitHub 맥 서버에서 TestFlight 업로드(.github/workflows/ios-testflight.yml이 실행).
+#   Xcode 자동 서명은 보관(archive) 단계에서 "개발용" 프로필을 만들려다 등록된 아이폰이 없어 실패함 →
+#   App Store Connect API 키로 배포용 인증서 + App Store 프로필(기기 등록 불필요)을 직접 만들어 수동 서명.
+#   배포용 인증서는 계정당 개수 제한이 있어, 실행할 때마다 가장 최근 것 1개만 남기고 예전 것은 지움
+#   (방금 올린 빌드의 인증서는 다음 실행까지 살아 있음).
+require 'net/http'
+require 'json'
+
+BUNDLE_ID = 'com.workmatekr.app'
+
+def asc_request(token, method, path)
+  uri = URI("https://api.appstoreconnect.apple.com#{path}")
+  req = (method == :delete ? Net::HTTP::Delete : Net::HTTP::Get).new(uri)
+  req['Authorization'] = "Bearer #{token.text}"
+  res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |http| http.request(req) }
+  raise "App Store Connect #{method} #{path} → #{res.code} #{res.body}" unless res.code.to_i < 300
+  res.body.to_s.empty? ? {} : JSON.parse(res.body)
+end
+
+default_platform(:ios)
+
+platform :ios do
+  lane :release do
+    setup_ci(force: true) # 임시 키체인(비밀번호 없음)
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch('ASC_KEY_ID'),
+      issuer_id: ENV.fetch('ASC_ISSUER_ID'),
+      key_filepath: ENV.fetch('ASC_KEY_PATH')
+    )
+    token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+
+    # 예전 CI 인증서 정리 — 최신 1개만 남김
+    certs = asc_request(token, :get, '/v1/certificates?filter[certificateType]=DISTRIBUTION,IOS_DISTRIBUTION&limit=50')['data']
+    certs.sort_by { |c| c.dig('attributes', 'expirationDate').to_s }.reverse.drop(1).each do |c|
+      UI.message("예전 배포 인증서 삭제: #{c['id']} (만료 #{c.dig('attributes', 'expirationDate')})")
+      asc_request(token, :delete, "/v1/certificates/#{c['id']}")
+    end
+
+    tmp = ENV.fetch('RUNNER_TEMP')
+    keychain = File.expand_path('~/Library/Keychains/fastlane_tmp_keychain-db')
+    get_certificates(api_key: api_key, development: false, force: true, output_path: "#{tmp}/certs",
+                     keychain_path: keychain, keychain_password: '')
+    get_provisioning_profile(api_key: api_key, app_identifier: BUNDLE_ID, force: true,
+                             cert_id: lane_context[SharedValues::CERT_CERTIFICATE_ID], output_path: "#{tmp}/profiles")
+    profile = lane_context[SharedValues::SIGH_NAME]
+
+    update_code_signing_settings(
+      path: 'ios/app.xcodeproj', targets: ['app'], build_configurations: ['Release'],
+      use_automatic_signing: false, team_id: ENV.fetch('APPLE_TEAM_ID'),
+      code_sign_identity: 'Apple Distribution', profile_name: profile, bundle_identifier: BUNDLE_ID
+    )
+
+    build_app(
+      workspace: 'ios/app.xcworkspace', scheme: 'app', configuration: 'Release',
+      export_method: 'app-store',
+      export_options: { provisioningProfiles: { BUNDLE_ID => profile } },
+      xcargs: "CURRENT_PROJECT_VERSION=#{ENV.fetch('BUILD_NUMBER')}",
+      output_directory: "#{tmp}/export", buildlog_path: "#{tmp}/buildlogs"
+    )
+
+    upload_to_testflight(api_key: api_key, skip_waiting_for_build_processing: true)
+  end
+end

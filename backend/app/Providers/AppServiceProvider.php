@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Schedule;
 use App\Observers\ScheduleObserver;
 use App\Services\Sms\SmsServiceInterface;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,5 +38,19 @@ class AppServiceProvider extends ServiceProvider
         // ★ v18.35 — PDF(보고서/견적서/세무)에 한글 폰트(맑은고딕 13MB)를 통째로 임베드하다가
         //   PHP 메모리(128M) 초과로 500이 나던 문제 수정. 실제 쓰인 글자만 임베드(서브셋)하도록 함.
         config(['dompdf.options.enable_font_subsetting' => true]);
+
+        // ★ v18.57 — N+1 자동 감지(개발 환경만). 목록을 돌면서 관계를 하나씩 불러오면(지연 로딩)
+        //   storage/logs/laravel.log에 "[N+1]" 경고를 남김. 실서버(production)에서는 꺼져 있음.
+        //   예외를 던지지 않고 로그만 남겨서 개발 중 화면이 깨지지 않게 함.
+        if (!$this->app->isProduction()) {
+            Model::preventLazyLoading();
+            Model::handleLazyLoadingViolationUsing(function ($model, string $relation) {
+                Log::warning('[N+1] ' . $model::class . "::{$relation} 를 하나씩 불러옴 — with('{$relation}') 추가 필요", [
+                    'at' => collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 30))
+                        ->first(fn($f) => isset($f['file']) && str_contains($f['file'], DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR)
+                            && !str_contains($f['file'], 'AppServiceProvider'))['file'] ?? null,
+                ]);
+            });
+        }
     }
 }

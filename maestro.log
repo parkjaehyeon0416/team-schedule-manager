@@ -1,0 +1,71 @@
+Running on iPhone SE (3rd generation) - iOS 26.2 - 48B2DA2E-AF18-4E36-BB25-B25969A4EBCF
+ > Flow ios-smoke
+Tap on (Optional) "Cancel"... WARNED
+Stop com.workmatekr.app... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Take screenshot 10_login... COMPLETED
+Tap on "이메일"... COMPLETED
+Tap on (Optional) "Continue"... WARNED
+Input text ios-check... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 11_login_keyboard... COMPLETED
+Press Enter key... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 11b_login_keyboard_password... COMPLETED
+Press Enter key... COMPLETED
+Tap on (Optional) "확인"... COMPLETED
+Wait for animation to end... COMPLETED
+Tap on "이메일로 회원가입"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 12_register... COMPLETED
+Tap on "비밀번호 확인"... COMPLETED
+Tap on (Optional) "Continue"... WARNED
+Wait for animation to end... COMPLETED
+Take screenshot 13_register_keyboard_bottom... COMPLETED
+Press Enter key... COMPLETED
+Stop com.workmatekr.app... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "비밀번호 찾기" is visible... COMPLETED
+Tap on "비밀번호 찾기"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 14_forgot_password... COMPLETED
+Stop com.workmatekr.app... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Tap on "아이디 찾기"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 15_find_id... COMPLETED
+Stop com.workmatekr.app... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "카카오로 로그인" is visible... COMPLETED
+Tap on "카카오로 로그인"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 17_kakao_prompt... COMPLETED
+Tap on (Optional) "Cancel"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 18_after_kakao_cancel... COMPLETED
+Stop com.workmatekr.app... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "구글로 로그인" is visible... COMPLETED
+Tap on "구글로 로그인"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 19_google_prompt... COMPLETED
+Tap on (Optional) "Cancel"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 20_after_google_cancel... COMPLETED
+Stop com.workmatekr.app... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "Apple로 로그인" is visible... COMPLETED
+Take screenshot 21_login_with_apple... COMPLETED
+Tap on "Apple로 로그인"... COMPLETED
+Wait for animation to end... COMPLETED
+Take screenshot 22_apple_prompt... COMPLETED
+Tap on (Optional) "Cancel"... WARNED
+Tap on (Optional) "확인"... COMPLETED
+Wait for animation to end... COMPLETED
+Assert that "Apple로 로그인" is visible... COMPLETED
+Open workmate://join/6NXTAX... COMPLETED
+Tap on (Optional) "Open"... WARNED
+Wait for animation to end... COMPLETED
+Take screenshot 16_deeplink_open... COMPLETED

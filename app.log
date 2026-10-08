@@ -1,0 +1,402 @@
+getpwuid_r did not find a match for uid 501
+Timestamp               Ty Process[PID:TID]
+2026-10-08 06:55:00.605 Df app[29957:147bc] [com.apple.xpc:connection] [0x101506130] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+2026-10-08 06:55:00.605 Df app[29957:147a6] (libMobileGestalt.dylib) No persisted cache on this platform.
+2026-10-08 06:55:00.611 Df app[29957:147bf] [com.apple.BoardServices:XPCErrors] [C:1] Alloc com.apple.frontboard.systemappservices
+2026-10-08 06:55:00.611 Df app[29957:147bf] [com.apple.xpc:connection] [0x101506470] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-08 06:55:00.617 A  app[29957:147be] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2026-10-08 06:55:00.628 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-10-08 06:55:00.638 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-10-08 06:55:00.639 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:00.639 Df app[29957:147bc] [com.apple.runningboard:connection] Initializing connection
+2026-10-08 06:55:00.639 Df app[29957:147bc] [com.apple.runningboard:process] Removing all cached process handles
+2026-10-08 06:55:00.639 Df app[29957:147bc] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+2026-10-08 06:55:00.639 Df app[29957:147bc] [com.apple.xpc:connection] [0x101809ab0] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-10-08 06:55:00.640 Df app[29957:147c1] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+2026-10-08 06:55:00.641 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason added: 10; deactivation reasons: 0 -> 1024; animating application lifecycle event: 0
+2026-10-08 06:55:00.642 Df app[29957:147a6] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.open
+2026-10-08 06:55:00.643 A  app[29957:147c2] (RunningBoardServices) didChangeInheritances
+2026-10-08 06:55:00.643 Df app[29957:147a6] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.workspace-service
+2026-10-08 06:55:00.643 Df app[29957:147c1] [com.apple.runningboard:connection] Handshake succeeded
+2026-10-08 06:55:00.643 Df app[29957:147c1] [com.apple.runningboard:connection] Identity resolved as app<com.workmatekr.app((null))>
+2026-10-08 06:55:00.645 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:00.645 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x60000170d300>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 1048 (elapsed = 0).
+2026-10-08 06:55:00.645 Df app[29957:147a6] [com.apple.FrontBoard:Common] FBSWorkspace registering source: com.apple.frontboard.systemappservices
+2026-10-08 06:55:00.646 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UIApplicationSceneKeyboardSettings on FBSSceneSettings
+2026-10-08 06:55:00.648 Df app[29957:147a6] [com.apple.FrontBoard:Common] FBSWorkspace connected to endpoint : <BSServiceConnectionEndpoint: 0x60000020f7e0; target: com.apple.frontboard.systemappservices; service: com.apple.frontboard.workspace-service>
+2026-10-08 06:55:00.652 Df app[29957:147a6] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x600003004630 com.apple.frontboard.systemappservices> attempting immediate handshake from activate
+2026-10-08 06:55:00.652 Df app[29957:147a6] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x600003004630 com.apple.frontboard.systemappservices> sent handshake
+2026-10-08 06:55:00.652 Df app[29957:147a6] [com.apple.runningboard:general] Added observer for process assertions expiration warning: <_RBSExpirationWarningClient: 0x600000211720>
+2026-10-08 06:55:00.652 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneOcclusionSettings> on FBSSceneSettings
+2026-10-08 06:55:00.655 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneInterfaceProtectionSettings> on FBSSceneSettings
+2026-10-08 06:55:00.656 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneLayoutPreferencesHostSettingsExtension on FBSSceneSettings
+2026-10-08 06:55:00.657 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneSafeAreaSettingsExtension on FBSSceneSettings
+2026-10-08 06:55:00.660 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneLayoutPreferenceClientSettingsExtension on FBSSceneClientSettings
+2026-10-08 06:55:00.662 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIHomeAffordanceHostSceneSettings> on FBSSceneSettings
+2026-10-08 06:55:00.664 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISystemShellSceneHostingEnvironmentSettings on FBSSceneSettings
+2026-10-08 06:55:00.664 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneRenderingEnvironmentSettings on FBSSceneSettings
+2026-10-08 06:55:00.665 Df app[29957:147a6] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x1015078a0> for initial
+2026-10-08 06:55:00.665 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneRenderingEnvironmentClientSettings> on FBSSceneClientSettings
+2026-10-08 06:55:00.665 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneTransitioningHostSettings> on FBSSceneSettings
+2026-10-08 06:55:00.665 Df app[29957:147a6] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x1015078a0> for CADisplay KVO
+2026-10-08 06:55:00.666 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneFocusSystemSettings> on FBSSceneSettings
+2026-10-08 06:55:00.666 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneOrientationSettingsExtension on FBSSceneSettings
+2026-10-08 06:55:00.666 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneOrientationClientSettingsExtension on FBSSceneClientSettings
+2026-10-08 06:55:00.667 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneWindowingControlClientSettings on FBSSceneClientSettings
+2026-10-08 06:55:00.667 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingContentSizePreferenceClientSettings> on FBSSceneClientSettings
+2026-10-08 06:55:00.667 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneHostingTraitCollectionPropagationSettings on FBSSceneSettings
+2026-10-08 06:55:00.669 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationSettings> on FBSSceneSettings
+2026-10-08 06:55:00.670 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationClientSettings> on FBSSceneClientSettings
+2026-10-08 06:55:00.671 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingEventDeferringSettings> on FBSSceneSettings
+2026-10-08 06:55:00.671 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneSettings
+2026-10-08 06:55:00.672 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneClientSettings
+2026-10-08 06:55:00.673 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingViewControllerPreferencePropagationClientSettings> on FBSSceneClientSettings
+2026-10-08 06:55:00.675 Df app[29957:147bc] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneZoomTransitionSettings> on FBSSceneSettings
+2026-10-08 06:55:00.676 Df app[29957:147c2] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneSettingsCore on FBSSceneSettings
+2026-10-08 06:55:00.684 Df app[29957:147c2] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneClientSettingsCore on FBSSceneClientSettings
+2026-10-08 06:55:00.692 Df app[29957:147a6] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 1, category name = (null)
+2026-10-08 06:55:00.693 Df app[29957:147a6] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 0, category name = (null)
+2026-10-08 06:55:00.733 Df app[29957:147a6] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+2026-10-08 06:55:00.733 Df app[29957:147a6] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-08 06:55:00.734 Df app[29957:147a6] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-08 06:55:00.735 Df app[29957:147a6] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2026-10-08 06:55:00.736 Df app[29957:147a6] [com.apple.UIKit:UpdateScheduler] Selected display: name=LCD (PurpleMain), id=1
+2026-10-08 06:55:00.741 Df app[29957:147c2] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneSettings setting counterpart class: UIApplicationSceneSettings
+2026-10-08 06:55:00.742 Df app[29957:147c2] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneClientSettings setting counterpart class: UIApplicationSceneClientSettings
+2026-10-08 06:55:00.743 Df app[29957:147c2] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneTransitionContextCore on FBSSceneTransitionContext
+2026-10-08 06:55:00.759 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: Persistent SceneSession Map Update, expirationHandler: <__NSGlobalBlock__: 0x1e61729e0>
+2026-10-08 06:55:00.759 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Reusing background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:00.759 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:00.759 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x600001715480>: taskID = 2, taskName = Persistent SceneSession Map Update, creationTime = 1048 (elapsed = 0).
+2026-10-08 06:55:00.760 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason added: 5; deactivation reasons: 1024 -> 1056; animating application lifecycle event: 1
+2026-10-08 06:55:00.761 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.761 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Should send trait collection or coordinate space update, interface style 1 -> 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.763 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.763 Df app[29957:147a6] [com.apple.UIKit:HomeAffordanceObservation] Initializing: <_UIHomeAffordanceSceneNotifier: 0x60000290c310>; with scene: <UIWindowScene: 0x101704900>
+2026-10-08 06:55:00.764 Df app[29957:147a6] [com.apple.BacklightServices:scenes] 0x600000c18330 setDelegate:<0x600000c18780 _UIBacklightEnvironment> hasDelegate:YES for environment:sceneID:com.workmatekr.app-default
+2026-10-08 06:55:00.764 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.765 Df app[29957:147a6] [com.apple.UIKit:EventDeferring] [0x600002914e00] Initialized with scene: <UIWindowScene: 0x101704900>; behavior: <_UIEventDeferringBehavior_iOS: 0x6000002139a0>; availableForProcess: 1, systemShellManagesKeyboardFocus: 1
+2026-10-08 06:55:00.765 Df app[29957:147a6] [com.apple.BoardServices:XPCErrors] [C:2] Alloc com.apple.backboard.hid-services.xpc
+2026-10-08 06:55:00.765 Df app[29957:147a6] [com.apple.xpc:connection] [0x101704500] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-08 06:55:00.767 Df app[29957:147bc] [com.apple.BackBoard:EventDelivery] BKSHIDEventObserver - connection activation
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x6000026001e0; process scope; status: target> was:none
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to LastOneWins
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Scene target of keyboard event deferring environment did change: 1; scene: UIWindowScene: 0x101704900; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.workmatekr.app-default
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.UIKit:EventDeferring] [0x600002914e00] Scene target of event deferring environments did update: scene: 0x101704900; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x101704900; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.workmatekr.app-default
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Stack[KeyWindow] 0x600000c0e550: Taking no further action for migration from LastOneWins -> SystemShellManaged as there are no scenes
+2026-10-08 06:55:00.767 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to SystemShellManaged
+2026-10-08 06:55:00.768 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Key window needs update: 0; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x101704900; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x0; reason: UIWindowScene: 0x101704900: Window scene became target of keyboard environment
+2026-10-08 06:55:00.768 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.769 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.770 F  app[29957:147a6] [com.apple.runtime-issues:UIKit App Config] `UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+2026-10-08 06:55:00.770 A  app[29957:147a6] (libsystem_trace.dylib) Activity for state dumps
+2026-10-08 06:55:00.770 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.777 Df app[29957:147a6] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.workmatekr.app-default  persistentID: BD7F6F05-6DD9-4857-8B8D-F3169A044D4E
+2026-10-08 06:55:00.778 Df app[29957:147a6] [com.apple.UIKit:Application] Ignoring already applied deactivation reason: 5; deactivation reasons: 1056
+2026-10-08 06:55:00.778 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason added: 11; deactivation reasons: 1056 -> 3104; animating application lifecycle event: 1
+2026-10-08 06:55:00.779 Df app[29957:147a6] [com.apple.KeyboardArbiter:Client] startConnection
+2026-10-08 06:55:00.782 Df app[29957:147a6] [com.apple.xpc:connection] [0x10180e490] activating connection: mach=true listener=false peer=false name=com.apple.UIKit.KeyboardManagement.hosted
+2026-10-08 06:55:00.792 A  app[29957:147a6] (Security) SecItemCopyMatching_ios
+2026-10-08 06:55:00.792 Df app[29957:147a6] [com.apple.securityd:secitemratelimit] Not internal release, disabling SIRL
+2026-10-08 06:55:00.793 Df app[29957:147a6] [com.apple.securityd:thread-local-client-debug] SecSecurityClientGet new thread!
+2026-10-08 06:55:00.793 Df app[29957:147a6] [com.apple.securityd:keychain] System Keychain Always Supported set via feature flag to disabled
+2026-10-08 06:55:00.793 Df app[29957:147a6] [com.apple.xpc:connection] [0x1015074e0] activating connection: mach=true listener=false peer=false name=com.apple.securityd
+2026-10-08 06:55:00.794 Df app[29957:147a6] [com.apple.network:] networkd_settings_read_from_file initialized networkd settings by reading plist directly
+2026-10-08 06:55:00.794 Df app[29957:147a6] [com.apple.network:] networkd_settings_read_from_file initialized networkd settings by reading plist directly
+2026-10-08 06:55:00.797 Df app[29957:147a6] [com.apple.network:] -[NWConcrete_nw_resolver initWithEndpoint:parameters:path:log_str:] [R1] created for Hostname#61f2b21d:0 using: generic, attribution: developer
+2026-10-08 06:55:00.798 Df app[29957:147c6] [com.apple.network:] nw_resolver_set_update_handler_block_invoke [R1] started
+2026-10-08 06:55:00.798 Df app[29957:147a6] [com.apple.network:path] nw_path_evaluator_start [BBDA7DED-33D5-4431-B594-CCD8F60D98DD Hostname#61f2b21d:0 generic, attribution: developer]
+	path: satisfied (Path is satisfied), interface: en0
+2026-10-08 06:55:00.803 A  app[29957:147a6] (Security) SecItemCopyMatching_ios
+2026-10-08 06:55:00.817 Df app[29957:147a6] [com.apple.UserNotifications:Connections] [com.workmatekr.app] Creating a user notification center
+2026-10-08 06:55:00.818 Df app[29957:147a6] (React) _setUpFeatureFlags called with release level 2
+2026-10-08 06:55:00.910 Df app[29957:147a6] [com.apple.UIKit:Orientation] <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E) Scene updated orientation preferences: none -> ( Pu )
+2026-10-08 06:55:00.910 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Key window API is scene-level: YES
+2026-10-08 06:55:00.911 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] UIWindowScene: 0x101704900: Window became key in scene: UIWindow: 0x10150ce60; contextId: 0x1E05094D: reason: UIWindowScene: 0x101704900: Window requested to become key in scene: 0x10150ce60
+2026-10-08 06:55:00.911 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Key window needs update: 1; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x101704900; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x10150ce60; reason: UIWindowScene: 0x101704900: Window requested to become key in scene: 0x10150ce60
+2026-10-08 06:55:00.911 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Window did become application key: UIWindow: 0x10150ce60; contextId: 0x1E05094D; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.workmatekr.app-default
+2026-10-08 06:55:00.911 Df app[29957:147a6] [com.apple.UIKit:EventDeferring] [0x600002914e00] Begin local event deferring requested for token: 0x60000260dda0; environments: 1; reason: UIWindowScene: 0x101704900: Begin event deferring in keyboardFocus for window: 0x10150ce60
+2026-10-08 06:55:00.914 Df app[29957:147c6] [com.apple.BackBoard:EventDelivery] BKSHIDEventDeliveryManager - connection activation
+2026-10-08 06:55:00.918 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason removed: 10; deactivation reasons: 3104 -> 2080; animating application lifecycle event: 1
+2026-10-08 06:55:00.919 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason added: 12; deactivation reasons: 2080 -> 6176; animating application lifecycle event: 1
+2026-10-08 06:55:00.920 Df app[29957:147c6] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x6000026001e0; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.workmatekr.app-default; status: ancestor> was:target
+2026-10-08 06:55:00.920 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason removed: 11; deactivation reasons: 6176 -> 4128; animating application lifecycle event: 1
+2026-10-08 06:55:00.920 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneIntelligenceSupportSettings> on FBSSceneSettings
+2026-10-08 06:55:00.923 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:00.924 Df app[29957:147c6] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2026-10-08 06:55:00.929 Df app[29957:147a6] [com.apple.xpc:connection] [0x10150e0c0] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+2026-10-08 06:55:00.930 Df app[29957:147c6] [com.apple.xpc:session] [0x600002112030] Session created.
+2026-10-08 06:55:00.930 Df app[29957:147c6] [com.apple.xpc:session] [0x600002112030] Session created from connection [0x101505110]
+2026-10-08 06:55:00.930 Df app[29957:147c6] [com.apple.xpc:connection] [0x101505110] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2026-10-08 06:55:00.932 Df app[29957:147c6] [com.apple.xpc:session] [0x600002112030] Session activated
+2026-10-08 06:55:00.939 A  app[29957:147c6] (Security) SecItemDelete_ios
+2026-10-08 06:55:00.939 Df app[29957:147c6] [com.apple.securityd:thread-local-client-debug] SecSecurityClientGet new thread!
+2026-10-08 06:55:00.946 A  app[29957:147c5] (RunningBoardServices) didChangeInheritances
+2026-10-08 06:55:00.986 A  app[29957:147c1] (RunningBoardServices) didChangeInheritances
+2026-10-08 06:55:01.000 Df app[29957:147a6] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:1 [21624E19-3530-49E9-AE72-F1BD979DD9EE] (reporting strategy default)>
+2026-10-08 06:55:01.000 Df app[29957:147a6] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:2 [0AA95BB7-577D-437E-B448-3185913FB5EE] (reporting strategy default)>
+2026-10-08 06:55:01.000 Df app[29957:147a6] [com.apple.network:activity] Set activity <nw_activity 50:1 [21624E19-3530-49E9-AE72-F1BD979DD9EE] (reporting strategy default)> as the global parent
+2026-10-08 06:55:01.000 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 1
+2026-10-08 06:55:01.000 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Ending task with identifier 1 and description: <_UIBackgroundTaskInfo: 0x60000170d300>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 1048 (elapsed = 0), _expireHandler: (null)
+2026-10-08 06:55:01.001 Df app[29957:147a6] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002104d20> (used by background task with identifier 1: <_UIBackgroundTaskInfo: 0x60000170d300>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 1048 (elapsed = 0))
+2026-10-08 06:55:01.002 Df app[29957:147a6] [com.apple.UIKit:EventDeferring] [0x600002914e00] Scene target of event deferring environments did update: scene: 0x101704900; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2026-10-08 06:55:01.002 Df app[29957:147a6] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x101704900; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.workmatekr.app-default
+2026-10-08 06:55:01.003 Df app[29957:147a6] [com.apple.UIKit:EventBus] Event Timing Profile for Touch: not found, path="/System/Library/EventTimingProfiles/Sim.Touch.plist"
+2026-10-08 06:55:01.003 Df app[29957:147a6] [com.apple.UIKit:EventBus] Event Timing Profile for Pencil: not found, path="/System/Library/EventTimingProfiles/Sim.Pencil.plist"
+2026-10-08 06:55:01.004 Df app[29957:147a6] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.workmatekr.app-default  persistentID: BD7F6F05-6DD9-4857-8B8D-F3169A044D4E
+2026-10-08 06:55:01.004 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:01.005 Df app[29957:147a6] [com.apple.UIKit:UpdateScheduler] Target list changed: <CADisplay:LCD PurpleMain>
+2026-10-08 06:55:01.006 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension SBUISecureRenderingSettingsExtension on FBSSceneSettings
+2026-10-08 06:55:01.009 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:01.010 Df app[29957:147a6] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x101704900> (BD7F6F05-6DD9-4857-8B8D-F3169A044D4E)
+2026-10-08 06:55:01.010 Df app[29957:147a6] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.workmatekr.app-default  persistentID: BD7F6F05-6DD9-4857-8B8D-F3169A044D4E
+2026-10-08 06:55:01.011 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4128 -> 32; animating application lifecycle event: 1
+2026-10-08 06:55:01.011 Df app[29957:147a6] [com.apple.KeyboardArbiter:Client] Send setDeactivating: N (-DeactivationReason:SuspendedEventsOnly)
+2026-10-08 06:55:01.011 Df app[29957:147a6] [com.apple.UIKit:Application] Deactivation reason removed: 5; deactivation reasons: 32 -> 0; animating application lifecycle event: 0
+2026-10-08 06:55:01.026 Df app[29957:147a6] [com.apple.KeyboardArbiter:Client] startConnection
+2026-10-08 06:55:01.027 Df app[29957:147a6] [com.apple.KeyboardArbiter:Client] handleKeyboardChange: set currentKeyboard:N (wasKeyboard:N)
+2026-10-08 06:55:01.031 Df app[29957:147a6] [com.apple.UIKit:KeyboardArbiterClientLog] isWritingToolsHandlingKeyboardTracking:Y (WT ready:Y, Arbiter ready:Y)
+2026-10-08 06:55:01.074 Df app[29957:147a6] [com.apple.network:activity] <nw_activity 50:1 [21624E19-3530-49E9-AE72-F1BD979DD9EE] (global parent) (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 2231ms
+2026-10-08 06:55:01.074 Df app[29957:147a6] [com.apple.network:activity] <nw_activity 50:2 [0AA95BB7-577D-437E-B448-3185913FB5EE] (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 2231ms
+2026-10-08 06:55:01.074 Df app[29957:147a6] [com.apple.network:activity] Unsetting the global parent activity <nw_activity 50:1 [21624E19-3530-49E9-AE72-F1BD979DD9EE] (global parent) (reporting strategy default) complete (reason success)>
+2026-10-08 06:55:01.074 Df app[29957:147a6] [com.apple.network:activity] Unset the global parent activity
+2026-10-08 06:55:01.076 Df app[29957:147bc] [com.apple.network:path] nw_path_evaluator_start [72E7C51B-F356-4FA2-9DBA-D9A60A5BC5FA <NULL> generic, attribution: developer]
+	path: satisfied (Path is satisfied), interface: en0
+2026-10-08 06:55:01.088 A  app[29957:147c2] (RunningBoardServices) didChangeInheritances
+2026-10-08 06:55:01.090 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x60000173b3c0>
+2026-10-08 06:55:01.090 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Reusing background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.090 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.090 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x60000173b440>: taskID = 3, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0).
+2026-10-08 06:55:01.091 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 3
+2026-10-08 06:55:01.091 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x60000173f200>
+2026-10-08 06:55:01.092 Df app[29957:147c1] [com.apple.xpc:connection] [0x101823270] activating connection: mach=true listener=false peer=false name=com.apple.fontservicesd
+2026-10-08 06:55:01.092 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Ending task with identifier 3 and description: <_UIBackgroundTaskInfo: 0x60000173b440>: taskID = 3, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x60000173b480>
+2026-10-08 06:55:01.093 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Reusing background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.093 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.096 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x6000017065c0>: taskID = 4, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0).
+2026-10-08 06:55:01.096 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002104d20> (used by background task with identifier 3: <_UIBackgroundTaskInfo: 0x60000173b440>: taskID = 3, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0))
+2026-10-08 06:55:01.098 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 4
+2026-10-08 06:55:01.098 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x60000173f080>
+2026-10-08 06:55:01.098 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Reusing background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.098 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.098 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x60000173fac0>: taskID = 5, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0).
+2026-10-08 06:55:01.098 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Ending task with identifier 4 and description: <_UIBackgroundTaskInfo: 0x6000017065c0>: taskID = 4, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x600001706e00>
+2026-10-08 06:55:01.098 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002104d20> (used by background task with identifier 4: <_UIBackgroundTaskInfo: 0x6000017065c0>: taskID = 4, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0))
+2026-10-08 06:55:01.100 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 5
+2026-10-08 06:55:01.100 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x600001736f80>
+2026-10-08 06:55:01.100 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Ending task with identifier 5 and description: <_UIBackgroundTaskInfo: 0x60000173fac0>: taskID = 5, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x60000173fb00>
+2026-10-08 06:55:01.100 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002104d20> (used by background task with identifier 5: <_UIBackgroundTaskInfo: 0x60000173fac0>: taskID = 5, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0))
+2026-10-08 06:55:01.100 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Reusing background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.100 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002104d20>
+2026-10-08 06:55:01.100 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x600001735440>: taskID = 6, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0).
+2026-10-08 06:55:01.101 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 6
+2026-10-08 06:55:01.102 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Ending task with identifier 6 and description: <_UIBackgroundTaskInfo: 0x600001735440>: taskID = 6, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x600001735900>
+2026-10-08 06:55:01.104 Df app[29957:147bc] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002104d20> (used by background task with identifier 6: <_UIBackgroundTaskInfo: 0x600001735440>: taskID = 6, taskName = GDTCCTUploader-upload, creationTime = 1048 (elapsed = 0))
+2026-10-08 06:55:01.146 Df app[29957:147c2] [com.apple.FileURL:default] kExcludedFromBackupXattrName set on path: /Users/runner/Library/Developer/CoreSimulator/Devices/48B2DA2E-AF18-4E36-BB25-B25969A4EBCF/data/Containers/Data/Application/DACE263B-EF2F-47E2-BFE2-9B1F0799C8C1/Library/Application Support/com.workmatekr.app/RCTAsyncLocalStorage_V1
+2026-10-08 06:55:01.186 E  app[29957:147bc] [com.apple.coreui:framework] CoreUI: CUIThemeStore: No theme registered with id=0
+2026-10-08 06:55:01.187 F  app[29957:147bc] [com.apple.coreui:framework] CoreUI: CUIThemeStore: No theme registered with id=0
+2026-10-08 06:55:01.187 A  app[29957:147bc] (libsystem_trace.dylib) Activity for state dumps
+2026-10-08 06:55:01.257 Df app[29957:147a6] [com.apple.Accessibility:AXCommon] Read Per-App on Init: Smart invert = (null)
+2026-10-08 06:55:01.282 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 2
+2026-10-08 06:55:01.282 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Ending task with identifier 2 and description: <_UIBackgroundTaskInfo: 0x600001715480>: taskID = 2, taskName = Persistent SceneSession Map Update, creationTime = 1048 (elapsed = 0), _expireHandler: <__NSGlobalBlock__: 0x1e61729e0>
+2026-10-08 06:55:01.282 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002104d20> (used by background task with identifier 2: <_UIBackgroundTaskInfo: 0x600001715480>: taskID = 2, taskName = Persistent SceneSession Map Update, creationTime = 1048 (elapsed = 0))
+2026-10-08 06:55:01.282 Df app[29957:147c6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x600002104d20> for task identifier: 2
+2026-10-08 06:55:01.802 A  app[29957:147c2] (RunningBoardServices) didChangeInheritances
+2026-10-08 06:55:03.707 E  app[29957:147a6] [com.apple.UIKit:UIFocus] RCTScrollViewComponentView implements focusItemsInRect: - caching for linear focus movement is limited as long as this view is on screen.
+2026-10-08 06:55:06.272 Df app[29957:147a6] Preloading CNContactViewController
+2026-10-08 06:55:06.278 Df app[29957:147a6] [com.apple.xpc:connection] [0x10172a9a0] activating connection: mach=true listener=false peer=false name=com.apple.distributed_notifications@1v3
+2026-10-08 06:55:06.332 E  app[29957:147a6] [com.apple.UIKit:Graphics] UIColor created with component values far outside the expected range. Set a breakpoint on UIColorBreakForOutOfRangeColorComponents to debug. This message will only be logged once.
+2026-10-08 06:55:06.335 Df app[29957:147a6] [com.apple.extensionkit:NSExtension] Class EXGetExtensionClass(void) returning EXConcreteExtension
+2026-10-08 06:55:06.335 Df app[29957:147a6] [com.apple.xpc:connection] [0x101731400] activating connection: mach=true listener=false peer=false name=com.apple.pluginkit.pkd
+2026-10-08 06:55:06.335 A  app[29957:147a6] (PlugInKit) discovery
+2026-10-08 06:55:06.335 Df app[29957:147a6] [com.apple.PlugInKit:discovery] [d C0112713-81B3-40FC-BED1-92C0CD994A18] <PKHost:0x60000175fd80> Beginning discovery for flags: 1024, point: (null)
+2026-10-08 06:55:06.341 Df app[29957:147a6] [com.apple.PlugInKit:discovery] [d C0112713-81B3-40FC-BED1-92C0CD994A18] <PKHost:0x60000175fd80> Completed discovery. Final # of matches: 1
+2026-10-08 06:55:06.342 A  app[29957:147c2] (ExtensionFoundation) begin using plugin
+2026-10-08 06:55:06.345 Df app[29957:147c2] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] Ready plugins sent as euid = 501, uid = 501, (persona not available)
+2026-10-08 06:55:06.517 Df app[29957:147c2] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] got pid from ready request: 30076
+2026-10-08 06:55:06.527 Df app[29957:147c2] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] acquired startup assertion
+2026-10-08 06:55:06.528 Df app[29957:147c2] [com.apple.runningboard:connection] Creating side-channel connection to com.apple.runningboard
+2026-10-08 06:55:06.528 Df app[29957:147c2] [com.apple.xpc:connection] [0x10186cfe0] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2026-10-08 06:55:06.530 Df app[29957:147c2] [com.apple.runningboard:process] Hit the server for a process handle 156cdec00000757c that resolved to: [xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}:30076]
+2026-10-08 06:55:06.530 Df app[29957:147c2] [com.apple.xpc:connection] [0x1015a3d00] activating connection: mach=false listener=false peer=false name=com.apple.ContactsUI.ContactViewViewService
+2026-10-08 06:55:06.530 Df app[29957:147c2] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] Prepare using sent as euid = 501, uid = 501, (persona not available)
+2026-10-08 06:55:06.530 Df app[29957:147c2] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5] [com.apple.ContactsUI.ContactViewViewService(1.0)] Sending prepareUsing to managed extension; this should launch it if not already running.
+2026-10-08 06:55:07.968 Df app[29957:147c3] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] Begin using sent as euid = 501, uid = 501, (persona not available)
+2026-10-08 06:55:07.969 Df app[29957:147c7] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] plugin loaded and ready for host
+2026-10-08 06:55:07.972 Df app[29957:147c7] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] invalidating startup assertion
+2026-10-08 06:55:07.972 Df app[29957:147c3] [com.apple.extensionkit:NSExtension] Class EXGetExtensionContextInternalClass(void) returning EXExtensionContextImplementation
+2026-10-08 06:55:07.974 Df app[29957:147c3] [com.apple.xpc:connection] [0x101706d10] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-08 06:55:07.976 Df app[29957:147c3] [com.apple.xpc:connection] [0x10173f480] activating connection: mach=false listener=false peer=false name=com.apple.ContactsUI.ContactViewViewService.apple-extension-service
+2026-10-08 06:55:07.976 Df app[29957:147c3] [com.apple.xpc:connection] [0x101706d10] Connection returned listener port: 0xa303
+2026-10-08 06:55:07.978 Df app[29957:147c7] [com.apple.xpc:connection] [0x101840e10] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0x101706d10.peer[30076].0x101840e10
+2026-10-08 06:55:07.978 Df app[29957:147a6] [com.apple.UIKit:ViewServices] Request completed for extension: <EXConcreteExtension: 0x6000039c80d0> {id = com.apple.ContactsUI.ContactViewViewService}; contextToken: D23EE4BE-79F8-4B18-89D6-F194B03AAA4C, creating remote view controller with host class CNContactViewHostViewController
+2026-10-08 06:55:07.979 Df app[29957:147a6] [com.apple.UIKit:ViewServices] <CNContactViewHostViewController: 0x103155a00>: Requesting remote view controller (unspecified client class) from service com.apple.ContactsUI.ContactViewViewService using <_UIRemoteViewControllerSceneHostingImpl: 0x60000263ae20>
+2026-10-08 06:55:07.980 A  app[29957:147c3] (ExtensionFoundation) begin using plugin
+2026-10-08 06:55:07.982 Df app[29957:147c3] [com.apple.extensionkit:NSExtension] Aquired asertion <BKSProcessAssertion: 0x60000212bc00> for running extension with pid 30076
+2026-10-08 06:55:07.982 Df app[29957:147c7] [com.apple.PlugInKit:lifecycle] [u 25D0197C-FAF8-41A3-8202-68B2BBC7CCE5:m (null)] [com.apple.ContactsUI.ContactViewViewService(1.0)] plugin reference count incremented to 2, and ready for host.
+2026-10-08 06:55:07.984 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] This process will acquire finish-task workspace self-assertions.
+2026-10-08 06:55:07.984 Df app[29957:147c7] [com.apple.FrontBoard:Common] no previous workspace connections state - initializing
+2026-10-08 06:55:07.985 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] Registering Source for 29957 : <FBWorkspaceEventDispatcherSource: 0x600000c61920>
+2026-10-08 06:55:07.985 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] [app<com.workmatekr.app>:29957] Registering event dispatcher at init
+2026-10-08 06:55:07.985 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] Created <FBWorkspace: 0x600003026d00; <FBApplicationProcess: 0x1018c2590; app<com.workmatekr.app>:29957(vE9C3)>>
+2026-10-08 06:55:07.985 Df app[29957:147c3] [com.apple.FrontBoard:Process] Bootstrapping app<com.workmatekr.app>
+2026-10-08 06:55:07.985 Df app[29957:147c3] [com.apple.FrontBoard:Process] [app<com.workmatekr.app>:29957] Bootstrap success!
+2026-10-08 06:55:07.986 Df app[29957:147c3] [com.apple.runningboard:process] Hit the server for a process handle 1079cc0900007505 that resolved to: [app<com.workmatekr.app((null))>:29957]
+2026-10-08 06:55:07.986 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] [app<com.workmatekr.app>:29957] Skipping workspace endpoint injector.
+2026-10-08 06:55:07.986 Df app[29957:147c2] [com.apple.FrontBoard:Process] [app<com.workmatekr.app>:29957] Connection to remote process established!
+2026-10-08 06:55:07.987 Df app[29957:147c3] [com.apple.runningboard:process] Starting death monitoring for handle [app<com.workmatekr.app((null))>:29957]
+2026-10-08 06:55:07.988 Df app[29957:147c3] [com.apple.runningboard:monitor] Updating configuration of monitor M29957-1
+2026-10-08 06:55:07.989 Df app[29957:147c3] [com.apple.FrontBoard:Process] Asked to bootstrap a new process for handle: [xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}:30076]
+2026-10-08 06:55:07.990 Df app[29957:147c3] [com.apple.FrontBoard:Process] Creating process (sync=true) for handle: [xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}:30076]
+2026-10-08 06:55:07.993 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Registering event dispatcher at init
+2026-10-08 06:55:07.993 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] Registering Source for 30076 : <FBWorkspaceEventDispatcherSource: 0x600000c62580>
+2026-10-08 06:55:07.993 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] Created <FBWorkspace: 0x600003026d90; <FBExtensionProcess: 0x10173faa0; xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076(vEAAB); typeID: com.apple.contact-view>>
+2026-10-08 06:55:07.993 Df app[29957:147c3] [com.apple.FrontBoard:Process] Bootstrapping xpcservice<com.apple.ContactsUI.ContactViewViewService>
+2026-10-08 06:55:07.998 Df app[29957:147c3] [com.apple.FrontBoard:Process] xpcservice<com.apple.ContactsUI.ContactViewViewService> has an outgoing endpoint
+2026-10-08 06:55:07.998 Df app[29957:147c3] [com.apple.FrontBoard:Process] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Bootstrap success!
+2026-10-08 06:55:07.999 Df app[29957:147c3] [com.apple.xpc:connection] [0x10180f490] readying connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-08 06:55:07.999 Df app[29957:147c3] [com.apple.BoardServices:Bootstrap] manually activating session for domain FBWorkspace-com.workmatekr.app
+2026-10-08 06:55:07.999 Df app[29957:147c3] [com.apple.xpc:connection] [0x10180f490] activating connection: mach=false listener=true peer=false name=(anonymous)
+2026-10-08 06:55:07.999 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] FBWorkspaceDomain: registering saved endowment 29957:FBWorkspace-com.workmatekr.app
+2026-10-08 06:55:08.002 Df app[29957:147c3] [com.apple.runningboard:process] Starting death monitoring for handle [xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}:30076]
+2026-10-08 06:55:08.003 Df app[29957:147c3] [com.apple.FrontBoard:Process] Adding: <FBExtensionProcess: 0x10173faa0; xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076(vEAAB)>
+2026-10-08 06:55:08.003 Df app[29957:14a03] [com.apple.BoardServices:XPCErrors] [S:3] Alloc 29957:FBWorkspace-com.workmatekr.app
+2026-10-08 06:55:08.003 Df app[29957:147c3] [com.apple.runningboard:monitor] Updating configuration of monitor M29957-1
+2026-10-08 06:55:08.003 Df app[29957:14a03] [com.apple.xpc:connection] [0x10173fc30] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0x10180f490.peer[30076].0x10173fc30
+2026-10-08 06:55:08.004 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Connection established.
+2026-10-08 06:55:08.004 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] created proxy of <BSXPCServiceConnectionProxy<FBSWorkspaceServiceServerInterface>: 0x600002933640>
+2026-10-08 06:55:08.005 Df app[29957:14a03] [com.apple.FrontBoard:Process] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Connection to remote process established!
+2026-10-08 06:55:08.005 A  app[29957:14a05] (RunningBoardServices) observedProcessStatesDidChange
+2026-10-08 06:55:08.005 Df app[29957:14a03] [com.apple.FrontBoard:ProcessWorkspace] received incoming handshake : process=<FBExtensionProcess: 0x10173faa0; xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076(vEAAB); typeID: com.apple.contact-view; taskState: Running; visibility: Unknown> remote=<BSAuditToken: 0x600001700500; AUID: 501; EUID: 501; EGID: 20; RUID: 501; RGID: 20; PID: 30076; ASID: 100012; PIDVersion: 60075> remnants=0
+2026-10-08 06:55:08.007 Df app[29957:14a05] [com.apple.runningboard:monitor] Received state update for 30076 (xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}, running-active-NotVisible
+2026-10-08 06:55:08.009 A  app[29957:147c3] (RunningBoardServices) observedProcessStatesDidChange
+2026-10-08 06:55:08.010 Df app[29957:147c3] [com.apple.runningboard:monitor] Received state update for 30076 (xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}, running-active-NotVisible
+2026-10-08 06:55:08.010 Df app[29957:147a6] [com.apple.FrontBoard:ProcessWorkspace] Registering Target for UISceneHosting-com.workmatekr.app: <FBSceneWorkspace: 0x600002634960; UISceneHosting-com.workmatekr.app; scenes: 0>
+2026-10-08 06:55:08.010 Df app[29957:147a6] [com.apple.BoardServices:XPCErrors] [C:4] Alloc 29957:FBWorkspace-com.workmatekr.app
+2026-10-08 06:55:08.010 Df app[29957:147a6] [com.apple.xpc:connection] [0x10173fd90] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-08 06:55:08.011 Df app[29957:147a6] [com.apple.FrontBoard:Common] FBSWorkspace registering source: 29957:FBWorkspace-com.workmatekr.app
+2026-10-08 06:55:08.011 Df app[29957:147c3] [com.apple.BoardServices:XPCErrors] [S:5] Alloc 29957:FBWorkspace-com.workmatekr.app
+2026-10-08 06:55:08.011 Df app[29957:147a6] [com.apple.FrontBoard:Common] FBSWorkspace connected to endpoint : <BSServiceConnectionEndpoint: 0x60000027dda0; target: 29957:FBWorkspace-com.workmatekr.app; service: com.apple.frontboard.workspace-service>
+2026-10-08 06:55:08.011 Df app[29957:147c3] [com.apple.xpc:connection] [0x1015a0570] activating connection: mach=false listener=false peer=true name=com.apple.xpc.anonymous.0x10180f490.peer[29957].0x1015a0570
+2026-10-08 06:55:08.012 Df app[29957:147a6] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x600003016370 29957:FBWorkspace-com.workmatekr.app> attempting immediate handshake from activate
+2026-10-08 06:55:08.012 Df app[29957:147a6] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x600003016370 29957:FBWorkspace-com.workmatekr.app> sent handshake
+2026-10-08 06:55:08.012 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [app<com.workmatekr.app>:29957] Connection established.
+2026-10-08 06:55:08.012 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [app<com.workmatekr.app>:29957] created proxy of <BSXPCServiceConnectionProxy<FBSWorkspaceServiceServerInterface>: 0x6000029336b0>
+2026-10-08 06:55:08.013 Df app[29957:147c3] [com.apple.FrontBoard:ProcessWorkspace] received incoming handshake : process=<FBApplicationProcess: 0x1018c2590; app<com.workmatekr.app>:29957(vE9C3); taskState: Running; visibility: Unknown> remote=<BSAuditToken: 0x600001708100; AUID: 501; EUID: 501; EGID: 20; RUID: 501; RGID: 20; PID: 29957; ASID: 100012; PIDVersion: 59843> remnants=0
+2026-10-08 06:55:08.013 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIViewServiceSceneSettings> on FBSSceneSettings
+2026-10-08 06:55:08.015 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIViewServiceClientSettings> on FBSSceneClientSettings
+2026-10-08 06:55:08.022 Df app[29957:147a6] [com.apple.UIKit:KBProxyForwarding] <StateMachine:0x60000176a840> Created with presentation environment: <0x600000c65b30:<_UISceneKeyboardProxyLayerForwardingPresentationScene: 0x600000c65b30> Tracking scene: <FBScene: 0x600003e05d00; UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748>>
+2026-10-08 06:55:08.023 Df app[29957:147a6] [com.apple.UIKit:KBProxyForwarding] <ForwardingPresentationScene:0x600000c65b30> Prioritized presenter: <_UIScenePresenter: 0x600002929880; identifier: UISceneHostingView-UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748; sortContext: 0>.
+2026-10-08 06:55:08.049 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneScrollPocketSettings> on FBSSceneSettings
+2026-10-08 06:55:08.049 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneScrollPocketClientSettings> on FBSSceneClientSettings
+2026-10-08 06:55:08.051 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Ingesting properties from UIMutableApplicationSceneSettings...
+2026-10-08 06:55:08.059 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIApplicationSceneSettings[derived]> on FBSSceneSettings
+2026-10-08 06:55:08.060 Df app[29957:147a6] [com.apple.UIKit:ViewServices] <_UIRemoteViewControllerSceneHostingImpl: 0x60000263ae20>: Created scene 29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748
+2026-10-08 06:55:08.060 Df app[29957:147a6] [com.apple.UIKit:ViewServices] No auxiliary connection required for <_UIRemoteViewControllerSceneHostingImpl: 0x60000263ae20; identityToken: 29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748>
+2026-10-08 06:55:08.060 Df app[29957:147a6] [com.apple.UIKit:ViewServices] Activating scene for <_UIRemoteViewControllerSceneHostingImpl: 0x60000263ae20; identityToken: 29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748>
+2026-10-08 06:55:08.061 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneExternalSettingsModifierSettingsExtension on FBSSceneSettings
+2026-10-08 06:55:08.062 Df app[29957:147a6] [com.apple.UIKit:UISceneHostingActivationState] Activation suppressed: <BSSimpleAssertion: 0x600000c63240; querying endpoint for settings modification; identifier: activationSuppressionAssertion::29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748; state: active>
+2026-10-08 06:55:08.062 Df app[29957:147a6] [com.apple.UIKit:SceneHostingExternalSettingsModifiers] <_UISceneExternalSettingsModifierHostComponent: 0x600000c5fed0>: Requesting settings modifiers for 29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748 from endpoint <BSServiceConnectionEndpoint: 0x60000027fec0; target: com.apple.frontboard.systemappservices; service: com.apple.uis.scene-hosting-external-settings-modifier-service>
+2026-10-08 06:55:08.066 Df app[29957:147a6] [com.apple.UIKit:SceneHostingExternalSettingsModifiers] <_UISceneExternalSettingsModifierHostComponent: 0x600000c5fed0>: Using settings modifiers: (null)
+2026-10-08 06:55:08.066 Df app[29957:147a6] [com.apple.UIKit:UISceneHostingActivationState] Activation suppression relinquished: <BSSimpleAssertion: 0x600000c63240; querying endpoint for settings modification; identifier: activationSuppressionAssertion::29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748; state: invalidated>, current count: 0
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.FrontBoard:Process] Asked to bootstrap a new process for handle: [xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}:30076]
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.FrontBoard:Process] A process already exists for this handle: <FBExtensionProcess: 0x10173faa0; xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076(vEAAB)>
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Creating outgoing connection to <BSServiceConnectionEndpoint: 0x60000027a6a0; target: XPCService:29957:com.apple.ContactsUI.ContactViewViewService.viewservice; service: com.apple.frontboard.workspace-service>.
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.BoardServices:XPCErrors] [C:6] Alloc XPCService:29957:com.apple.ContactsUI.ContactViewViewService.viewservice
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.xpc:connection] [0x1015a06d0] activating connection: mach=false listener=false peer=false name=(anonymous)
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Initialized with connection: 0x600000c5e610.
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Registered new scene: <FBUIApplicationWorkspaceScene: 0x600003768540; UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748> (fromRemnant = 0)
+2026-10-08 06:55:08.067 Df app[29957:147a6] [com.apple.FrontBoard:Scene] [UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748][1] Scene activated.
+2026-10-08 06:55:08.067 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Workspace interruption policy did change: disconnect
+2026-10-08 06:55:08.068 Df app[29957:147a6] [com.apple.FrontBoard:Scene] [UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] scene content state changed: preparing
+2026-10-08 06:55:08.068 Df app[29957:14a05] [com.apple.FrontBoard:Process] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Setting process visibility to: Foreground
+2026-10-08 06:55:08.069 Df app[29957:147a6] [com.apple.FrontBoard:Scene] [UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Client process connected: [xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}:30076]
+2026-10-08 06:55:08.069 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] received outgoing handshake : process=<FBExtensionProcess: 0x10173faa0; xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076(vEAAB); typeID: com.apple.contact-view; taskState: Running; visibility: Foreground>
+2026-10-08 06:55:08.069 Df app[29957:14a05] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Scene lifecycle state did change: Foreground
+2026-10-08 06:55:08.069 Df app[29957:14a05] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Scene state did change: FV-Focal[100].
+2026-10-08 06:55:08.072 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Workspace state did change: XX-None[0] --> FV-Focal[100] (assertion acquired).
+2026-10-08 06:55:08.073 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] Updating self-assertion for unified workspace priority: BG-Opportunistic[40]
+2026-10-08 06:55:08.073 A  app[29957:147c3] (RunningBoardServices) observedProcessStatesDidChange
+2026-10-08 06:55:08.073 Df app[29957:147c3] [com.apple.runningboard:monitor] Received state update for 30076 (xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}, running-active-NotVisible
+2026-10-08 06:55:08.074 Df app[29957:14a05] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Sending scene action [Logical Activate][0xc9aa] to process 0x10173faa0 (watchdog: 10.00s)
+2026-10-08 06:55:08.074 Df app[29957:14a05] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Sending scene create.
+2026-10-08 06:55:08.132 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Ingesting properties from UIApplicationSceneClientSettings...
+2026-10-08 06:55:08.135 Df app[29957:147a6] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIApplicationSceneClientSettings[derived]> on FBSSceneClientSettings
+2026-10-08 06:55:08.740 Df app[29957:147c3] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Scene action [Logical Activate][0xc9aa] completed with success: 1
+2026-10-08 06:55:08.741 Df app[29957:147a6] [com.apple.FrontBoard:Scene] [UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] scene content state changed: ready
+2026-10-08 06:55:08.768 Df app[29957:147a6] [com.apple.UIKit:ViewServices] Calling connection handler with ready view controller for <CNContactViewHostViewController: 0x103155a00; service: com.apple.ContactsUI.ContactViewViewService; implementation: scene hosting> {
+    pid: 30076;
+    serviceViewControllerInterface: nil;
+    exportedInterface: nil;
+    implementation: <_UIRemoteViewControllerSceneHostingImpl: 0x60000263ae20; identityToken: 29957->xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}/UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748> {
+        session: <_UIViewServiceHostSession: 0x600002933020; service: com.apple.ContactsUI.ContactViewViewService; invalidated: NO> {
+            pid: 30076;
+            assertion: <RBSAssertion:0x600001768100| state:RBSAssertionStateValid descriptor:<<RBSAssertionDescriptor| "com.apple.viewservice.session.extension" ID:26807-29957-779 target:30076>>;
+            legacyAssertion: <BKSProcessAssertion: 0x60000212b930>;
+            endpoint: <BSServiceConnectionEndpoint: 0x6000002809c0; target: XPCService:29957:com.apple.ContactsUI.ContactViewViewService.viewservice; service: com.apple.uikit.viewservice.session>;
+            synchronizer: <FBSceneSynchronizer:0x600001764b80 FBProcess:[xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076][30076]>;
+        };
+        auxiliaryConnection: <nil>;
+    };
+}
+2026-10-08 06:55:08.769 Df app[29957:147a6] [com.apple.UIKit:ViewServiceHostSession] View service session ended with error 'com.apple.ContactsUI.ContactViewViewService' : Error Domain=_UIViewServiceHostSessionErrorDomain Code=4 "(null)" UserInfo={Message=Invalidation requested}
+2026-10-08 06:55:08.769 Df app[29957:147a6] [com.apple.FrontBoard:Scene] Invalidating scene: UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748
+2026-10-08 06:55:08.769 Df app[29957:147a6] [com.apple.FrontBoard:Scene] [UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] scene content state changed: notReady
+2026-10-08 06:55:08.770 Df app[29957:147a6] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Unregistering scene: <FBUIApplicationWorkspaceScene: 0x600003768540; UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748>
+2026-10-08 06:55:08.770 Df app[29957:147a6] [com.apple.UIKit:KBProxyForwarding] <StateMachine:0x60000176a840> Presentation environment invalidated: <_UISceneKeyboardProxyLayerForwardingPresentationScene: 0x600000c65b30> Tracking scene: <FBScene: 0x600003e05d00; UISceneHosting-com.workmatekr.app((null)):UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748>
+2026-10-08 06:55:08.770 Df app[29957:147a6] [com.apple.UIKit:KBProxyForwarding] <ForwardingPresentationScene:0x600000c65b30> Prioritized presenter: (null).
+2026-10-08 06:55:08.770 Df app[29957:147a6] [com.apple.UIKit:KBProxyForwarding] <StateMachine:0x60000176a840> Dealloc.
+2026-10-08 06:55:08.770 Df app[29957:14a05] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Sending scene destroy.
+2026-10-08 06:55:08.771 Df app[29957:14a05] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Workspace interruption policy did change: default
+2026-10-08 06:55:08.772 Df app[29957:14a05] [com.apple.FrontBoard:Process] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Setting process visibility to: Unknown
+2026-10-08 06:55:08.782 Df app[29957:147a6] [com.apple.KeyboardArbiter:Client] RX sceneBecameFocused:(null)
+2026-10-08 06:55:08.797 Df app[29957:147c2] [com.apple.FrontBoard:Scene] [UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748][1] Scene invalidated.
+2026-10-08 06:55:08.797 Df app[29957:147c2] [com.apple.FrontBoard:ProcessScene] [0x600003768540:UISceneHosting-com.workmatekr.app:UIHostedScene-com.apple.ContactsUI.ContactViewViewService-7D5500ED-A8C8-47EF-A0B2-F13546291748] Invalidated for connection: 0x600000c5e610.
+2026-10-08 06:55:08.798 Df app[29957:147c2] [com.apple.FrontBoard:ProcessWorkspace] [xpcservice<com.apple.ContactsUI.ContactViewViewService>:30076] Workspace state did change: FV-Focal[100] --> XX-None[0] (assertion dropped).
+2026-10-08 06:55:08.798 Df app[29957:147c2] [com.apple.FrontBoard:ProcessWorkspace] Updating self-assertion for unified workspace priority: XX-None[0]
+2026-10-08 06:55:08.873 A  app[29957:14a05] (RunningBoardServices) observedProcessStatesDidChange
+2026-10-08 06:55:08.873 Df app[29957:14a05] [com.apple.runningboard:monitor] Received state update for 30076 (xpcservice<com.apple.ContactsUI.ContactViewViewService([app<com.workmatekr.app((null))>:29957])>{vt hash: 0}{definition:com.apple.ContactsUI.ContactViewViewService[extension][client]}, running-active-NotVisible
+2026-10-08 06:55:14.429 Df app[29957:147c1] [com.google.firebase:[FirebaseMessaging]] 12.18.0 - [FirebaseMessaging][I-FCM001000] FIRMessaging Remote Notifications proxy enabled, will swizzle remote notification receiver handlers. If you'd prefer to manually integrate Firebase Messaging, add "FirebaseAppDelegateProxyEnabled" to your Info.plist, and set it to NO. Follow the instructions at:
+https://firebase.google.com/docs/cloud-messaging/ios/client#method_swizzling_in_firebase_messaging
+to ensure proper integration.
+2026-10-08 06:55:36.078 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x600001764c40>
+2026-10-08 06:55:36.079 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-10-08 06:55:36.079 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-10-08 06:55:36.080 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x600002129090>
+2026-10-08 06:55:36.091 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600002129090>
+2026-10-08 06:55:36.092 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x600001773280>: taskID = 7, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0).
+2026-10-08 06:55:36.095 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 7
+2026-10-08 06:55:36.096 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Ending task with identifier 7 and description: <_UIBackgroundTaskInfo: 0x600001773280>: taskID = 7, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x600001771200>
+2026-10-08 06:55:36.096 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600002129090> (used by background task with identifier 7: <_UIBackgroundTaskInfo: 0x600001773280>: taskID = 7, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0))
+2026-10-08 06:55:36.096 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x600002129090> for task identifier: 7
+2026-10-08 06:55:36.096 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x600001770ec0>
+2026-10-08 06:55:36.096 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-10-08 06:55:36.096 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-10-08 06:55:36.097 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x60000212e350>
+2026-10-08 06:55:36.099 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x60000212e350>
+2026-10-08 06:55:36.099 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x600001764c40>: taskID = 8, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0).
+2026-10-08 06:55:36.100 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 8
+2026-10-08 06:55:36.100 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Ending task with identifier 8 and description: <_UIBackgroundTaskInfo: 0x600001764c40>: taskID = 8, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x600001764a80>
+2026-10-08 06:55:36.100 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x60000212e350> (used by background task with identifier 8: <_UIBackgroundTaskInfo: 0x600001764c40>: taskID = 8, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0))
+2026-10-08 06:55:36.100 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x60000212e350> for task identifier: 8
+2026-10-08 06:55:36.100 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x600001765240>
+2026-10-08 06:55:36.100 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-10-08 06:55:36.176 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-10-08 06:55:36.177 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x60000212c870>
+2026-10-08 06:55:36.181 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x60000212c870>
+2026-10-08 06:55:36.181 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x6000017654c0>: taskID = 9, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0).
+2026-10-08 06:55:36.183 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 9
+2026-10-08 06:55:36.183 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Ending task with identifier 9 and description: <_UIBackgroundTaskInfo: 0x6000017654c0>: taskID = 9, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x600001765780>
+2026-10-08 06:55:36.183 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x60000212c870> (used by background task with identifier 9: <_UIBackgroundTaskInfo: 0x6000017654c0>: taskID = 9, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0))
+2026-10-08 06:55:36.183 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Will add backgroundTask with taskName: GDTCCTUploader-upload, expirationHandler: <__NSMallocBlock__: 0x600001765100>
+2026-10-08 06:55:36.183 Df app[29957:14a03] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x60000212c870> for task identifier: 9
+2026-10-08 06:55:36.184 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2026-10-08 06:55:36.184 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2026-10-08 06:55:36.186 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x60000212ad00>
+2026-10-08 06:55:36.190 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x60000212ad00>
+2026-10-08 06:55:36.190 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x600001765780>: taskID = 10, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0).
+2026-10-08 06:55:36.191 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 10
+2026-10-08 06:55:36.191 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Ending task with identifier 10 and description: <_UIBackgroundTaskInfo: 0x600001765780>: taskID = 10, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0), _expireHandler: <__NSMallocBlock__: 0x6000017654c0>
+2026-10-08 06:55:36.191 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x60000212ad00> (used by background task with identifier 10: <_UIBackgroundTaskInfo: 0x600001765780>: taskID = 10, taskName = GDTCCTUploader-upload, creationTime = 1083 (elapsed = 0))
+2026-10-08 06:55:36.192 Df app[29957:156bb] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x60000212ad00> for task identifier: 10

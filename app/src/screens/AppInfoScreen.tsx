@@ -11,7 +11,7 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Linking, M
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../components/AppHeader';
-import { withdrawAccount, requestWithdraw, WithdrawMethod } from '../api/profileApi';
+import { withdrawAccount, requestWithdraw, WithdrawMethod, WithdrawChannel } from '../api/profileApi';
 import { getSocialCredential, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
 import { SocialButton } from '../components/AuthUi';
 import { useAuthStore } from '../store/authStore';
@@ -31,24 +31,25 @@ export default function AppInfoScreen() {
   const [withdrawVisible, setWithdrawVisible] = useState(false);
   const [password, setPassword] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
-  // ★ v18.63 — 본인 확인 방법: 비밀번호 / 이메일 인증번호(비밀번호 없는 소셜 가입자) / 소셜 다시 로그인(이메일도 없는 경우)
+  // ★ v18.63 — 본인 확인 방법: 비밀번호 / 문자·이메일 인증번호(비밀번호 없는 소셜 가입자) / 소셜 다시 로그인(둘 다 없는 경우)
   const [wm, setWm] = useState<WithdrawMethod | null>(null);
-  const [codeSent, setCodeSent] = useState(false);
+  const [sentTo, setSentTo] = useState<WithdrawChannel | null>(null); // 인증번호를 보낸 곳
   const [sending, setSending] = useState(false);
+  const codeSent = !!sentTo;
 
   const openWithdraw = () => {
     setPassword('');
-    setCodeSent(false);
+    setSentTo(null);
     setWm(null);
     setWithdrawVisible(true);
-    requestWithdraw(false).then(setWm).catch(() => setWm({ method: 'password', email: null, providers: [], minutes: 3 }));
+    requestWithdraw().then(setWm).catch(() => setWm({ method: 'password', channels: [], providers: [], minutes: 3 }));
   };
 
-  const sendCode = async () => {
+  const sendCode = async (ch: WithdrawChannel) => {
     setSending(true);
     try {
-      setWm(await requestWithdraw(true));
-      setCodeSent(true);
+      setWm(await requestWithdraw(ch.type));
+      setSentTo(ch);
       setPassword('');
     } catch (e: any) {
       Alert.alert('발송 실패', e?.response?.data?.message || '인증번호를 보내지 못했어요.');
@@ -75,10 +76,10 @@ export default function AppInfoScreen() {
 
   const handleWithdraw = async () => {
     if (!password.trim()) {
-      Alert.alert('입력 오류', wm?.method === 'email' ? '인증번호를 입력해주세요.' : '비밀번호를 입력해주세요.');
+      Alert.alert('입력 오류', wm?.method === 'code' ? '인증번호를 입력해주세요.' : '비밀번호를 입력해주세요.');
       return;
     }
-    await finishWithdraw(wm?.method === 'email' ? { code: password.trim() } : { password });
+    await finishWithdraw(wm?.method === 'code' && sentTo ? { channel: sentTo.type, code: password.trim() } : { password });
   };
 
   const handleSocialWithdraw = async (provider: SocialProvider) => {
@@ -158,34 +159,36 @@ export default function AppInfoScreen() {
               탈퇴하면 계정이 삭제되고 모든 팀에서 자동으로 나가게 됩니다.{' '}
               {!wm ? '' : wm.method === 'password'
                 ? '계속하려면 비밀번호를 입력해주세요.'
-                : wm.method === 'email'
-                  ? (codeSent ? `${wm.email}로 보낸 인증번호 6자리를 입력해주세요. (${wm.minutes}분간 유효)` : `본인 확인을 위해 ${wm.email}로 인증번호를 보내드려요.`)
+                : wm.method === 'code'
+                  ? (sentTo ? `${sentTo.target}로 보낸 인증번호 6자리를 입력해주세요. (${wm.minutes}분간 유효)` : '본인 확인을 위해 인증번호를 받을 곳을 골라주세요.')
                   : '본인 확인을 위해 연결된 계정으로 다시 로그인해주세요.'}
             </Text>
 
             {!wm && <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.md }} />}
 
-            {wm?.method === 'email' && !codeSent && (
-              <TouchableOpacity style={styles.modalOutlineBtn} onPress={sendCode} disabled={sending}>
-                {sending ? <ActivityIndicator color={colors.primary} size="small" /> : <Text style={styles.modalOutlineText}>인증번호 받기</Text>}
+            {wm?.method === 'code' && !codeSent && wm.channels.map(ch => (
+              <TouchableOpacity key={ch.type} style={styles.modalOutlineBtn} onPress={() => sendCode(ch)} disabled={sending}>
+                {sending ? <ActivityIndicator color={colors.primary} size="small" /> : (
+                  <Text style={styles.modalOutlineText}>{ch.type === 'phone' ? '문자로 받기' : '이메일로 받기'} · {ch.target}</Text>
+                )}
               </TouchableOpacity>
-            )}
+            ))}
 
-            {(wm?.method === 'password' || (wm?.method === 'email' && codeSent)) && (
+            {(wm?.method === 'password' || (wm?.method === 'code' && codeSent)) && (
               <TextInput
                 style={styles.modalInput}
                 value={password}
                 onChangeText={setPassword}
-                placeholder={wm.method === 'email' ? '인증번호 6자리' : '비밀번호'}
+                placeholder={wm.method === 'code' ? '인증번호 6자리' : '비밀번호'}
                 placeholderTextColor={colors.muted}
                 secureTextEntry={wm.method === 'password'}
-                keyboardType={wm.method === 'email' ? 'number-pad' : 'default'}
-                maxLength={wm.method === 'email' ? 6 : undefined}
+                keyboardType={wm.method === 'code' ? 'number-pad' : 'default'}
+                maxLength={wm.method === 'code' ? 6 : undefined}
                 autoCapitalize="none"
               />
             )}
-            {wm?.method === 'email' && codeSent && (
-              <TouchableOpacity onPress={sendCode} disabled={sending} style={{ alignSelf: 'flex-end' }}>
+            {wm?.method === 'code' && sentTo && (
+              <TouchableOpacity onPress={() => sendCode(sentTo)} disabled={sending} style={{ alignSelf: 'flex-end' }}>
                 <Text style={styles.resendText}>인증번호 다시 받기</Text>
               </TouchableOpacity>
             )}
@@ -198,7 +201,7 @@ export default function AppInfoScreen() {
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setWithdrawVisible(false)} disabled={withdrawing}>
                 <Text style={styles.modalCancelText}>취소</Text>
               </TouchableOpacity>
-              {(wm?.method === 'password' || (wm?.method === 'email' && codeSent)) && (
+              {(wm?.method === 'password' || (wm?.method === 'code' && codeSent)) && (
                 <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleWithdraw} disabled={withdrawing}>
                   {withdrawing ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.modalConfirmText}>탈퇴하기</Text>}
                 </TouchableOpacity>

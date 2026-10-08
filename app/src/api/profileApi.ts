@@ -35,20 +35,21 @@ export async function deleteAvatar(): Promise<any> {
 }
 
 // ★ DESIGN-CANVAS(APP_INFO) 추가 — 회원 탈퇴 (2026-10-02)
-// ★ v18.63 — 탈퇴 본인 확인 방법: password(비밀번호) | email(이메일 인증번호) | social(소셜 다시 로그인)
+// ★ v18.63 — 탈퇴 본인 확인 방법: password(비밀번호) | code(문자·이메일 인증번호) | social(소셜 다시 로그인)
+export type WithdrawChannel = { type: 'phone' | 'email'; target: string }; // target은 가린 값(010-****-1234)
 export type WithdrawMethod = {
-  method: 'password' | 'email' | 'social';
-  email: string | null; // 가린 이메일(chu****@gmail.com)
+  method: 'password' | 'code' | 'social';
+  channels: WithdrawChannel[];
   providers: ('google' | 'kakao' | 'apple')[];
   minutes: number;
 };
 
-/** send=true면 이메일로 인증번호 발송(method=email일 때만) */
-export async function requestWithdraw(send = false): Promise<WithdrawMethod> {
-  const res = await axios.post('/account/withdraw-request', { send });
+/** channel을 주면 그쪽으로 인증번호 발송(method=code일 때만) */
+export async function requestWithdraw(channel?: 'phone' | 'email'): Promise<WithdrawMethod> {
+  const res = await axios.post('/account/withdraw-request', channel ? { send: true, channel } : {});
   return res.data.data;
 }
 
-export async function withdrawAccount(body: { password?: string; code?: string; provider?: string; token?: string }): Promise<void> {
+export async function withdrawAccount(body: { password?: string; channel?: string; code?: string; provider?: string; token?: string }): Promise<void> {
   await axios.delete('/account', { data: body });
 }

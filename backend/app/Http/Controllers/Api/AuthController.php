@@ -197,7 +197,10 @@ class AuthController extends Controller
 
         if (!$user) {
             // 2) 같은 이메일로 가입된 계정이 있으면 소셜 ID만 연동
-            $existing = $profile['email'] ? User::where('email', $profile['email'])->first() : null;
+            // ★ v18.55 — 운영자(웹 관리자 전용) 계정에는 붙이지 않음(같은 이메일이어도 앱 계정으로 따로 가입)
+            $existing = $profile['email']
+                ? User::where('email', $profile['email'])->where('user_type', '!=', 'operator')->first()
+                : null;
 
             if ($existing && !SocialAuthService::attach($existing, $data['provider'], $profile['id'])) {
                 $user = $existing->fresh('role');

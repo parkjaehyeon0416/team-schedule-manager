@@ -1,0 +1,200 @@
+[10:18:46]: ▸ [35m    NSDictionary *headers,[0m
+[10:18:46]: ▸ [35m                 ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTMultipartDataTask.h,line=26,col=65::block pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified)[0m
+[10:18:46]: ▸ [35mRCT_EXTERN void RCTSetCustomMultipartDataTaskRequestInterceptor(RCTMultipartDataTaskRequestInterceptor /*interceptor*/);[0m
+[10:18:46]: ▸ [35m                                                                ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTMultipartDataTask.h,line=30,col=4::pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified)[0m
+[10:18:46]: ▸ [35m- (instancetype)initWithURL:(NSURL *)url[0m
+[10:18:46]: ▸ [35m   ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTMultipartDataTask.h,line=30,col=36::pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified)[0m
+[10:18:46]: ▸ [35m- (instancetype)initWithURL:(NSURL *)url[0m
+[10:18:46]: ▸ [35m                                   ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTMultipartDataTask.h,line=31,col=30::block pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified)[0m
+[10:18:46]: ▸ [35m                partHandler:(RCTMultipartDataTaskCallback)partHandler[0m
+[10:18:46]: ▸ [35m                             ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTMultipartDataTask.h,line=32,col=30::block pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified)[0m
+[10:18:46]: ▸ [35m            progressHandler:(RCTMultipartProgressCallback)progressHandler;[0m
+[10:18:46]: ▸ [35m                             ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTRootViewDelegate.h,line=28,col=41::'RCTRootView' is deprecated: This API will be removed along with the legacy architecture.[0m
+[10:18:46]: ▸ [35m- (void)rootViewDidChangeIntrinsicSize:(RCTRootView *)rootView;[0m
+[10:18:46]: ▸ [35m                                        ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTScrollView.h,line=73,col=50::'RCTScrollView' is deprecated: This API will be removed along with the legacy architecture.[0m
+[10:18:46]: ▸ [35m- (void)reactUpdateResponderOffsetForScrollView:(RCTScrollView *)scrollView;[0m
+[10:18:46]: ▸ [35m                                                 ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTShadowView+Internal.h,line=16,col=40::'RCTRootShadowView' is deprecated: This API will be removed along with the legacy architecture.[0m
+[10:18:46]: ▸ [35m@property (nonatomic, weak, readwrite) RCTRootShadowView *rootView;[0m
+[10:18:46]: ▸ [35m                                       ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTSurfaceDelegate.h,line=24,col=18::'RCTSurface' is deprecated: This API will be removed along with the legacy architecture.[0m
+[10:18:46]: ▸ [35m- (void)surface:(RCTSurface *)surface didChangeStage:(RCTSurfaceStage)stage;[0m
+[10:18:46]: ▸ [35m                 ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTSurfaceDelegate.h,line=30,col=18::'RCTSurface' is deprecated: This API will be removed along with the legacy architecture.[0m
+[10:18:46]: ▸ [35m- (void)surface:(RCTSurface *)surface didChangeIntrinsicSize:(CGSize)intrinsicSize;[0m
+[10:18:46]: ▸ [35m                 ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Headers/Public/React-Core/React/RCTWebSocketModule.h,line=23,col=21::pointer is missing a nullability type specifier (_Nonnull, _Nullable, or _Null_unspecified)[0m
+[10:18:46]: ▸ [35mtypedef SRWebSocket * (^SRWebSocketProvider)(NSURLRequest *request);[0m
+[10:18:46]: ▸ [35m                    ^[0m
+[10:18:46]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/XCFrameworkIntermediates/React-Core-prebuilt/React.framework/Headers/React_RCTAppDelegate/RCTUIConfiguratorProtocol.h,line=40,col=28::'RCTRootView' is deprecated: This API will be removed along with the legacy architecture.[0m
+[10:18:46]: ▸ [35m- (void)customizeRootView:(RCTRootView *)rootView;[0m
+[10:18:46]: ▸ [35m                           ^[0m
+[10:18:46]: ▸ [35m[[36mapp[0m] [1mCompiling[0m GeneratedAssetSymbols.swift[0m
+[10:18:46]: ▸ [35m[36;1mnote: [0mEmplaced /Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/InstallationBuildProductsLocation/Applications/app.app/AppIcon76x76@2x~ipad.png (in target 'app' from project 'app')[0m
+[10:18:46]: ▸ [35m[36;1mnote: [0mEmplaced /Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/InstallationBuildProductsLocation/Applications/app.app/AppIcon60x60@2x.png (in target 'app' from project 'app')[0m
+[10:18:46]: ▸ [35m[36;1mnote: [0mEmplaced /Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/InstallationBuildProductsLocation/Applications/app.app/Assets.car (in target 'app' from project 'app')[0m
+[10:18:46]: ▸ [35m[[36mapp[0m] [1mCompiling[0m AppDelegate.swift[0m
+[10:18:47]: ▸ [35m[[36mapp[0m] [1mProcessing[0m Info.plist[0m
+[10:18:47]: ▸ [35m[[36mapp[0m] [1mCopy[0m arm64-apple-ios.swiftmodule -> app.swiftmodule[0m
+[10:18:47]: ▸ [35m[[36mapp[0m] [1mCopy[0m arm64-apple-ios.swiftdoc -> app.swiftdoc[0m
+[10:18:47]: ▸ [35m[[36mapp[0m] [1mCopy[0m arm64-apple-ios.abi.json -> app.abi.json[0m
+[10:18:47]: ▸ [35m[[36mapp[0m] [1mCompiling[0m app_vers.c[0m
+[10:18:47]: ▸ [35m[[36mapp[0m] [1mLinking[0m app[0m
+[10:18:48]: ▸ [35m::warning ::ld: search path '/var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.3.7003.10.vBPk0Y/Metal.xctoolchain/usr/lib/swift/iphoneos' not found[0m
+[10:18:48]: ▸ [35m[[36mapp[0m] [1mRunning script[0m Bundle React Native code and images[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=10921,col=7::the variable "setTimeout" was not declared in function "logUncaughtError"[0m
+[10:19:18]: ▸ [35m      setTimeout(function () {[0m
+[10:19:18]: ▸ [35m      ^~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=13699,col=31::the variable "nativeFabricUIManager" was not declared in anonymous function[0m
+[10:19:18]: ▸ [35m  var _nativeFabricUIManage = nativeFabricUIManager,[0m
+[10:19:18]: ▸ [35m                              ^~~~~~~~~~~~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=13763,col=21::the variable "clearTimeout" was not declared in anonymous function[0m
+[10:19:18]: ▸ [35m    cancelTimeout = clearTimeout;[0m
+[10:19:18]: ▸ [35m                    ^~~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=17942,col=5::the variable "setImmediate" was not declared in function "handleResolved"[0m
+[10:19:18]: ▸ [35m    setImmediate(function () {[0m
+[10:19:18]: ▸ [35m    ^~~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=20059,col=29::the variable "performance" was not declared in anonymous arrow function[0m
+[10:19:18]: ▸ [35m          this._startTime = performance.now();[0m
+[10:19:18]: ▸ [35m                            ^~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=21561,col=15::the variable "Blob" was not declared in anonymous function[0m
+[10:19:18]: ▸ [35m          new Blob();[0m
+[10:19:18]: ▸ [35m              ^~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=21700,col=24::the variable "FileReader" was not declared in function "readBlobAsArrayBuffer"[0m
+[10:19:18]: ▸ [35m      var reader = new FileReader();[0m
+[10:19:18]: ▸ [35m                       ^~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=21753,col=40::the variable "FormData" was not declared in anonymous function[0m
+[10:19:18]: ▸ [35m        } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {[0m
+[10:19:18]: ▸ [35m                                       ^~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=21755,col=44::the variable "URLSearchParams" was not declared in anonymous function[0m
+[10:19:18]: ▸ [35m...e if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body...[0m
+[10:19:18]: ▸ [35m                                 ^~~~~~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=22008,col=23::the variable "XMLHttpRequest" was not declared in anonymous function[0m
+[10:19:18]: ▸ [35m        var xhr = new XMLHttpRequest();[0m
+[10:19:18]: ▸ [35m                      ^~~~~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=67036,col=9::the variable "REACT_NAVIGATION_DEVTOOLS" was not declared in anonymous arrow function[0m
+[10:19:18]: ▸ [35m        REACT_NAVIGATION_DEVTOOLS.set(refContainer.current, {[0m
+[10:19:18]: ▸ [35m        ^~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=106115,col=16::the variable "requestIdleCallback" was not declared in anonymous arrow function[0m
+[10:19:18]: ▸ [35m      var id = requestIdleCallback(() => {[0m
+[10:19:18]: ▸ [35m               ^~~~~~~~~~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=106118,col=20::the variable "cancelIdleCallback" was not declared in anonymous arrow function[0m
+[10:19:25]: ▸ [35m      return () => cancelIdleCallback(id);[0m
+[10:19:25]: ▸ [35m                   ^~~~~~~~~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=154800,col=125::the variable "location" was not declared in function "registerSensor"[0m
+[10:19:25]: ▸ [35m...IRE(_dependencyMap[7]).IS_WEB && location.protocol !== 'https:' ? ' Make s...[0m
+[10:19:25]: ▸ [35m                                    ^~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=174391,col=24::the variable "MutationObserver" was not declared in function "addHTMLMutationObserver"[0m
+[10:19:25]: ▸ [35m    var observer = new MutationObserver(mutationsList => {[0m
+[10:19:25]: ▸ [35m                       ^~~~~~~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=176644,col=41::the variable "getComputedStyle" was not declared in function "fixElementPosition"[0m
+[10:19:25]: ▸ [35m...entBorderTopValue = parseInt(getComputedStyle(parent).borderTopWidth);[0m
+[10:19:25]: ▸ [35m                                ^~~~~~~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=177076,col=26::the variable "structuredClone" was not declared in function "createAnimationWithInitialValues"[0m
+[10:19:25]: ▸ [35m    var animationStyle = structuredClone(_$$_REQUIRE(_dependencyMap[5]).Anima...[0m
+[10:19:25]: ▸ [35m                         ^~~~~~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=179579,col=25::the variable "setInterval" was not declared in anonymous function[0m
+[10:19:25]: ▸ [35m      this.intervalId = setInterval(this.syncPropsBackToReact.bind(this), FLU...[0m
+[10:19:25]: ▸ [35m                        ^~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=179583,col=9::the variable "clearInterval" was not declared in anonymous function[0m
+[10:19:25]: ▸ [35m        clearInterval(this.intervalId);[0m
+[10:19:25]: ▸ [35m        ^~~~~~~~~~~~~[0m
+[10:19:25]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=182885,col=5::the variable "jest" was not declared in anonymous arrow function[0m
+[10:19:25]: ▸ [35m    jest.useFakeTimers();[0m
+[10:19:25]: ▸ [35m    ^~~~[0m
+[10:19:25]: ▸ [35m[[36mapp[0m] [1mGenerating[0m app.app.dSYM[0m
+[10:19:25]: ▸ [35m[[36mapp[0m] [1mRunning script[0m [CP] Embed Pods Frameworks[0m
+[10:19:25]: ▸ [35m[[36mapp[0m] [1mRunning script[0m [CP] Copy Pods Resources[0m
+[10:19:30]: ▸ [35m[[36mapp[0m] [1mRunning script[0m [CP-User] [RNFB] Core Configuration[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m-> RNFB build script started[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m1) Locating firebase.json file:[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m     (1 of 2) Searching in '/Users/runner/work/team-schedule-manager/team-schedule-manager/app' for a firebase.json file.[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m     (2 of 2) Searching in '/Users/runner/work/team-schedule-manager/team-schedule-manager' for a firebase.json file.[0m
+[10:19:30]: ▸ [35m::warning ::  A firebase.json file was not found, whilst this file is optional it is recommended to include it to configure firebase services in React Native Firebase.[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m2) Injecting Info.plist entries: [0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m     setting plist entry 'firebase_json_raw' of type 'string' in file '/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/app.app/Info.plist'[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m     setting plist entry 'firebase_json_raw' of type 'string' in file '/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/app.app.dSYM/Contents/Info.plist'[0m
+[10:19:30]: ▸ [35m[36;1mnote: [0m<- RNFB build script finished[0m
+[10:19:30]: ▸ [35m[[36mapp[0m] [1mExtract App Intents Metadata[0m
+[10:19:31]: ▸ [35m[1mSigning[0m app.app (in target 'app' from project 'app')[0m
+[10:19:31]: ▸ [35m[[36mapp[0m] [1mRegisterExecutionPolicyException[0m app.app[0m
+[10:19:31]: ▸ [35m[[36mapp[0m] [1mValidate[0m app.app[0m
+[10:19:31]: ▸ [35m[[36mapp[0m] [1mTouching[0m app.app[0m
+[10:19:31]: ▸ [35m::warning ::Run script build phase '[CP-User] [Hermes] Replace Hermes for the right configuration, if needed' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'hermes-engine' from project 'Pods')[0m
+[10:19:31]: ▸ [35m[36;1mnote: [0mRun script build phase '[CP-User] [RNDeps] Replace React Native Dependencies for the right configuration, if needed' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ReactNativeDependencies' from project 'Pods')[0m
+[10:19:31]: ▸ [35m[36;1mnote: [0mRun script build phase '[CP-User] [RN]Check FBReactNativeSpec' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'React-RCTFBReactNativeSpec' from project 'Pods')[0m
+[10:19:31]: ▸ [35m[36;1mnote: [0mRun script build phase '[CP-User] [RNCore] Replace React Native Core for the right configuration, if needed' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'React-Core-prebuilt' from project 'Pods')[0m
+[10:19:31]: ▸ [35m::warning ::Run script build phase 'Bundle React Native code and images' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'app' from project 'app')[0m
+[10:19:31]: ▸ [35m::warning ::Run script build phase '[CP-User] [RNFB] Core Configuration' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'app' from project 'app')[0m
+[10:19:31]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Pods.xcodeproj::The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'react-native-image-picker-RNImagePickerPrivacyInfo' from project 'Pods')[0m
+[10:19:31]: ▸ [35m/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Pods.xcodeproj: warning: The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'react-native-cameraroll-RNCameraRollPrivacyInfo' from project 'Pods')[0m
+[10:19:31]: ▸ [35mwarning: Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'ReactCodegen' from project 'Pods')[0m
+[10:19:31]: ▸ [35m::warning ::Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'RNWorklets' from project 'Pods')[0m
+[10:19:31]: ▸ [35m::warning ::Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'RNReanimated' from project 'Pods')[0m
+[10:19:31]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Pods.xcodeproj::The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'PromisesSwift-Promises_Privacy' from project 'Pods')[0m
+[10:19:31]: ▸ [35m/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Pods.xcodeproj: warning: The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'PromisesObjC-FBLPromises_Privacy' from project 'Pods')[0m
+[10:19:31]: ▸ [35m/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Pods.xcodeproj: warning: The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'GTMSessionFetcher-GTMSessionFetcher_Core_Privacy' from project 'Pods')[0m
+[10:19:32]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/Pods.xcodeproj::The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 10.0, but the range of supported deployment target versions is 12.0 to 26.2.99. (in target 'Alamofire-Alamofire' from project 'Pods')[0m
+[10:19:32]: ▸ [35m** ARCHIVE SUCCEEDED **[0m
+[10:19:32]: [33mGenerated plist file with the following values:[0m
+[10:19:32]: ▸ [35m-----------------------------------------[0m
+[10:19:32]: ▸ [35m{[0m
+[10:19:32]: ▸ [35m  "provisioningProfiles": {[0m
+[10:19:32]: ▸ [35m    "com.workmatekr.app": "com.workmatekr.app AppStore 1791454336"[0m
+[10:19:32]: ▸ [35m  },[0m
+[10:19:32]: ▸ [35m  "method": "app-store",[0m
+[10:19:32]: ▸ [35m  "signingStyle": "manual"[0m
+[10:19:32]: ▸ [35m}[0m
+[10:19:32]: ▸ [35m-----------------------------------------[0m
+[10:19:32]: [36m$ /usr/bin/xcrun /Users/runner/hostedtoolcache/Ruby/3.3.12/arm64/lib/ruby/gems/3.3.0/gems/fastlane-2.240.1/gym/lib/assets/wrap_xcodebuild/xcbuild-safe.sh -exportArchive -exportOptionsPlist '/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/gym_config20261008-8525-hf1oo8.plist' -archivePath /Users/runner/Library/Developer/Xcode/Archives/2026-10-08/app\ 2026-10-08\ 10.12.37.xcarchive -exportPath '/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/gym_output20261008-8525-9x9lnc' CURRENT_PROJECT_VERSION=7 [0m
+[10:19:39]: Compressing 1 dSYM(s)
+[10:19:39]: [36m$ cd '/Users/runner/Library/Developer/Xcode/Archives/2026-10-08/app 2026-10-08 10.12.37.xcarchive/dSYMs' && zip -r '/Users/runner/work/_temp/export/app.app.dSYM.zip' *.dSYM[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/ (stored 0%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/ (stored 0%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Resources/ (stored 0%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Resources/Relocations/ (stored 0%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Resources/Relocations/aarch64/ (stored 0%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Resources/Relocations/aarch64/app.yml (deflated 90%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Resources/DWARF/ (stored 0%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Resources/DWARF/app (deflated 72%)[0m
+[10:19:42]: ▸ [35m  adding: app.app.dSYM/Contents/Info.plist (deflated 52%)[0m
+
+[10:19:42]: [32mSuccessfully exported and compressed dSYM file[0m
+[10:19:42]: [32mSuccessfully exported and signed the ipa file:[0m
+[10:19:42]: /Users/runner/work/_temp/export/app.ipa
+[10:19:42]: [32m----------------------------------[0m
+[10:19:42]: [32m--- Step: upload_to_testflight ---[0m
+[10:19:42]: [32m----------------------------------[0m
+[10:19:42]: Creating authorization token for App Store Connect API
+[10:19:42]: [32mReady to upload new build to TestFlight (App: 6820405297)...[0m
+[10:19:42]: Going to upload updated app to App Store Connect
+[10:19:42]: [32mThis might take a few minutes. Please don't interrupt the script.[0m
+[10:20:40]: [32m--------------------------------------------------------------------[0m
+[10:20:40]: [32mSuccessfully uploaded package to App Store Connect. It might take a few minutes until it's visible online.[0m
+[10:20:40]: [32m--------------------------------------------------------------------[0m
+[10:20:40]: [32mSuccessfully uploaded the new binary to App Store Connect[0m
+[10:20:40]: [33m`skip_waiting_for_build_processing` used and no `changelog` supplied - skipping waiting for build processing[0m
+
++---------------------------------------------------+
+|                 [32mfastlane summary[0m                  |
++------+------------------------------+-------------+
+| Step | Action                       | Time (in s) |
++------+------------------------------+-------------+
+| 1    | default_platform             | 0           |
+| 2    | setup_ci                     | 0           |
+| 3    | app_store_connect_api_key    | 0           |
+| 4    | get_certificates             | 2           |
+| 5    | get_provisioning_profile     | 2           |
+| 6    | update_code_signing_settings | 0           |
+| 7    | build_app                    | 445         |
+| 8    | upload_to_testflight         | 57          |
++------+------------------------------+-------------+
+
+[10:20:40]: [32mfastlane.tools just saved you 8 minutes! 🎉[0m

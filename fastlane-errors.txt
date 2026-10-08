@@ -1,0 +1,40 @@
+[10:12:12]: 예전 배포 인증서 삭제: WV4HQ9Y29Z (만료 2027-10-08T07:19:16.000+00:00)
+[10:12:13]: [32mSuccessfully generated 5Y596UQA9F which was imported to the local machine.[0m
+[10:12:15]: [32mSuccessfully installed certificate 5Y596UQA9F[0m
+[10:12:17]: [32mSuccessfully downloaded provisioning profile...[0m
+[10:12:17]: [32mSuccessfully updated project settings to use Code Sign Style = 'Manual'[0m
+[10:13:10]: ▸ [35m[[36mPromisesObjC[0m] [1mCopying[0m FBLPromiseError.h[0m
+[10:13:10]: ▸ [35m[[36mGoogleSignIn[0m] [1mCopying[0m GIDAppCheckError.h[0m
+[10:13:18]: ▸ [35m[[36mPromisesObjC[0m] [1mCompiling[0m FBLPromiseError.m[0m
+[10:13:21]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/node_modules/@invertase/react-native-apple-authentication/ios/RNAppleAuthentication/RNAppleAuthUtils.m,line=38,col=11::unused variable 'errorCode' [-Wunused-variable][0m
+[10:13:21]: ▸ [35m   38 |       int errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &random);[0m
+[10:13:22]: ▸ [35m[[36mFirebaseInstallations[0m] [1mCopying[0m FIRInstallationsErrors.h[0m
+[10:14:19]: ▸ [35m  557 |             [provider loadFileRepresentationForTypeIdentifier:(NSString *)kUTTypeMovie completionHandler:^(NSURL * _Nullable url, NSError * _Nullable error) {[0m
+[10:14:20]: ▸ [35m  258 |     BOOL success = [contactStore enumerateContactsWithFetchRequest:request error:&contactError usingBlock:^(CNContact * __nonnull contact, BOOL * __nonnull stop){[0m
+[10:14:20]: ▸ [35m  314 |     BOOL success = [contactStore enumerateContactsWithFetchRequest:request error:&contactError usingBlock:^(CNContact * __nonnull contact, BOOL * __nonnull stop){[0m
+[10:15:33]: ▸ [35m   21 |   RCTMessageThread(NSRunLoop *runLoop, RCTJavaScriptCompleteBlock errorBlock);[0m
+[10:15:33]: ▸ [35m   34 |   RCTJavaScriptCompleteBlock m_errorBlock;[0m
+[10:15:33]: ▸ [35m   21 |   RCTMessageThread(NSRunLoop *runLoop, RCTJavaScriptCompleteBlock errorBlock);[0m
+[10:15:33]: ▸ [35m   34 |   RCTJavaScriptCompleteBlock m_errorBlock;[0m
+[10:15:33]: ▸ [35m   15 |   RCTJavaScriptCompleteBlock m_errorBlock;[0m
+[10:17:47]: ▸ [35m[[36mAppCheckCore[0m] [1mCopying[0m _GACAppCheckErrorUtil.h[0m
+[10:17:47]: ▸ [35m[[36mAppCheckCore[0m] [1mCopying[0m GACAppCheckErrors.h[0m
+[10:17:47]: ▸ [35m[[36mAppAuth[0m] [1mCopying[0m OIDErrorUtilities.h[0m
+[10:17:47]: ▸ [35m[[36mAppAuth[0m] [1mCopying[0m OIDError.h[0m
+[10:17:47]: ▸ [35m[[36mAppAuth[0m] [1mCopying[0m OIDAuthStateErrorDelegate.h[0m
+[10:17:50]: ▸ [35m[[36mAppCheckCore[0m] [1mCompiling[0m GACAppCheckHTTPError.m[0m
+[10:17:50]: ▸ [35m[[36mAppCheckCore[0m] [1mCompiling[0m GACAppCheckErrors.m[0m
+[10:17:50]: ▸ [35m[[36mAppCheckCore[0m] [1mCompiling[0m GACAppCheckErrorUtil.m[0m
+[10:17:50]: ▸ [35m[[36mAppCheckCore[0m] [1mCompiling[0m GACAppAttestRejectionError.m[0m
+[10:17:58]: ▸ [35m[[36mFirebaseMessaging[0m] [1mCompiling[0m NSError+FIRMessaging.m[0m
+[10:18:00]: ▸ [35m[[36mGoogleSignIn[0m] [1mCompiling[0m GIDEMMErrorHandler.m[0m
+[10:18:01]: ▸ [35m[[36mFirebaseInstallations[0m] [1mCompiling[0m FIRInstallationsHTTPError.m[0m
+[10:18:01]: ▸ [35m[[36mFirebaseInstallations[0m] [1mCompiling[0m FIRInstallationsErrorUtil.m[0m
+[10:18:03]: ▸ [35m[[36mAppAuth[0m] [1mCompiling[0m OIDErrorUtilities.m[0m
+[10:18:03]: ▸ [35m[[36mAppAuth[0m] [1mCompiling[0m OIDError.m[0m
+[10:18:24]: ▸ [35m::warning file=/Users/runner/work/team-schedule-manager/team-schedule-manager/app/ios/Pods/KakaoSDKCommon/Sources/KakaoSDKCommon/common/common/SdkError.swift,line=73,col=9::switch must be exhaustive[0m
+[10:19:18]: ▸ [35m::warning file=/Users/runner/Library/Developer/Xcode/DerivedData/app-fhmvzqmbewwnhsfsvwfcwirizuyo/Build/Intermediates.noindex/ArchiveIntermediates/app/BuildProductsPath/Release-iphoneos/main.jsbundle,line=10921,col=7::the variable "setTimeout" was not declared in function "logUncaughtError"[0m
+[10:19:42]: [32mSuccessfully exported and compressed dSYM file[0m
+[10:19:42]: [32mSuccessfully exported and signed the ipa file:[0m
+[10:20:40]: [32mSuccessfully uploaded package to App Store Connect. It might take a few minutes until it's visible online.[0m
+[10:20:40]: [32mSuccessfully uploaded the new binary to App Store Connect[0m

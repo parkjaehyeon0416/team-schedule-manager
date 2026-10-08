@@ -1,0 +1,120 @@
+# ★ v18.59 — 맥 없이 아이폰 앱 출시: GitHub 맥 서버에서 서명된 앱(IPA)을 만들어 TestFlight에 바로 올림.
+#   실행: Actions 탭 → "iOS TestFlight" → Run workflow, 또는 ios-release 브랜치에 push.
+#   필요한 비밀값(Settings → Secrets → Actions): APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, GOOGLE_SERVICE_INFO_PLIST
+#   서명은 App Store Connect API 키로 Xcode 자동 서명(인증서·프로필을 애플 쪽에서 만들고 관리).
+#   빌드 번호 = 이 워크플로 실행 번호(올릴 때마다 커져야 해서). 버전(1.0)은 project.pbxproj MARKETING_VERSION.
+name: iOS TestFlight
+
+on:
+  push:
+    branches: [ios-release]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: app
+
+      - name: Install JS packages
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/ios-release"
+          npm ci --legacy-peer-deps > "$GITHUB_WORKSPACE/ios-release/npm.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-release/npm.log"; exit 1; }
+
+      - name: Firebase config and App Store Connect key from secrets
+        env:
+          GSI: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          printf '%s' "$GSI" > ios/app/GoogleService-Info.plist
+          plutil -lint ios/app/GoogleService-Info.plist
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$P8" > "$RUNNER_TEMP/keys/AuthKey_${KEY_ID}.p8"
+          head -1 "$RUNNER_TEMP/keys/AuthKey_${KEY_ID}.p8" | grep -q 'BEGIN PRIVATE KEY' || { echo 'ASC_KEY_P8 형식 오류'; exit 1; }
+
+      - name: Install pods
+        run: cd ios && (bundle exec pod install > "$GITHUB_WORKSPACE/ios-release/pod.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-release/pod.log"; exit 1; })
+
+      - name: Archive (signed)
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/app.xcworkspace -scheme app -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/app.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${KEY_ID}.p8" \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            archive > archive.log 2>&1 || { grep -E "error:|fatal" archive.log | head -60; tail -80 archive.log; exit 1; }
+          tail -3 archive.log
+
+      - name: Export and upload to TestFlight
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+          set -o pipefail
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/app.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${KEY_ID}.p8" \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            > export.log 2>&1 || { grep -iE "error|fail" export.log | head -60; tail -80 export.log; exit 1; }
+          tail -5 export.log
+          echo "업로드 완료 — 빌드 번호 ${{ github.run_number }}"
+
+      # 결과·로그를 ios-release-results 브랜치에 남김(비밀값·키 파일은 넣지 않음)
+      - name: Publish logs
+        if: always()
+        working-directory: .
+        run: |
+          mkdir -p ios-release
+          rm -f app/ios/app/GoogleService-Info.plist
+          for f in archive export; do [ -f app/$f.log ] && { grep -E "error:|warning: .*signing|Provisioning|Signing" app/$f.log | head -100 > ios-release/$f-signing.txt || true; tail -150 app/$f.log > ios-release/$f-tail.txt; }; done
+          [ -f ios-release/npm.log ] && tail -60 ios-release/npm.log > ios-release/npm-tail.txt && rm ios-release/npm.log
+          [ -f ios-release/pod.log ] && tail -80 ios-release/pod.log > ios-release/pod-tail.txt && rm ios-release/pod.log
+          echo "${{ github.sha }} ${{ job.status }} build=${{ github.run_number }} $(date -u)" > ios-release/RUN.txt
+          cd ios-release
+          git init -q && git checkout -q -b ios-release-results
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "iOS TestFlight results for ${{ github.sha }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ios-release-results

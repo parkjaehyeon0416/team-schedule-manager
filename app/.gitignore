@@ -77,3 +77,6 @@ yarn-error.log
 
 # ★ v18.38 — Firebase 설정(API 키 포함) — 깃에 올리지 않음
 android/app/google-services.json
+
+# ★ v18.59 — Firebase iOS 설정(빌드 때 GitHub 비밀값 GOOGLE_SERVICE_INFO_PLIST로 생성)
+ios/app/GoogleService-Info.plist

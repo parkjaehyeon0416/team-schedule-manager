@@ -39,6 +39,12 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/ios-results"
           npm ci --legacy-peer-deps > "$GITHUB_WORKSPACE/ios-results/npm.log" 2>&1 || { tail -80 "$GITHUB_WORKSPACE/ios-results/npm.log"; exit 1; }
 
+      # ★ v18.59 — 프로젝트에 GoogleService-Info.plist가 리소스로 들어가 있어 빌드 전에 비밀값으로 만들어 둠
+      - name: Firebase config from secret
+        env:
+          GSI: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: printf '%s' "$GSI" > ios/app/GoogleService-Info.plist && plutil -lint ios/app/GoogleService-Info.plist
+
       - name: Tool versions
         run: (xcodebuild -version && node -v && npm -v && xcrun simctl list runtimes) | tee "$GITHUB_WORKSPACE/ios-results/versions.txt"
 

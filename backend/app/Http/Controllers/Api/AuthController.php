@@ -150,6 +150,9 @@ class AuthController extends Controller
             return $fail;
         }
 
+        // ★ v18.56 — 마지막 접속(운영자 관리 목록에 표시)
+        $user->forceFill(['last_login_at' => now()])->saveQuietly();
+
         // 5. Sanctum 토큰 발급
         $token = $user->createToken('auth-token')->plainTextToken;
 

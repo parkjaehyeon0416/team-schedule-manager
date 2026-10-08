@@ -4,10 +4,8 @@ import Icon from "../components/Icon";
 import { PageHeader } from "../components/ui";
 import gear from "../assets/icons/gear.png";
 
+// ★ v18.56 — 통계·고객 문의·문자 발송은 v18.43에서 구현돼 목록에서 뺌(남은 건 결제뿐)
 const MENUS = {
-  stats: { label: "통계", desc: "가입 · 활동 추이", icon: "stats" },
-  inquiries: { label: "고객 문의", desc: "문의 접수 · 답변", icon: "inquiry" },
-  sms: { label: "문자 발송", desc: "회원 대상 문자 발송", icon: "sms" },
   payments: { label: "결제", desc: "결제 내역 · 환불", icon: "payment" },
 } as const;
 

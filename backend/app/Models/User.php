@@ -38,13 +38,15 @@ class User extends Authenticatable
         'plan',
         'plan_expires_at',
     ];
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'operator_phone'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'suspended_at' => 'datetime', // ★ v18.41 회원 관리 — 계정 정지
         'google_linked_at' => 'datetime', // ★ v18.51 로그인 연결 관리
         'kakao_linked_at' => 'datetime',
+        'password_set_at' => 'datetime', // ★ v18.56 운영자 관리
+        'last_login_at' => 'datetime',
         'plan_expires_at' => 'datetime',
         'password' => 'hashed',
     ];

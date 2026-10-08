@@ -31,6 +31,7 @@ class OperatorPasswordController extends Controller
         }
 
         $user->password = Hash::make($data['password']);
+        $user->password_set_at = now(); // ★ v18.56 운영자 관리 — "초대 중" → "활성"
         $user->save();
         $user->tokens()->delete(); // 기존 로그인 세션 정리
 

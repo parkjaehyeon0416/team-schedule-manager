@@ -77,7 +77,10 @@ export default function Dashboard() {
         <section className="adm-card adm-span2" style={{ gridColumn: "span 2" }}>
           <div className="adm-card-title">
             <span>최근 가입 회원</span>
-            <Link to="/members" className="adm-card-sub" style={{ textDecoration: "none" }}>최근 5명 · 전체 보기</Link>
+            {/* 실제로 보여주는 인원 수(최대 5명) — 회원이 없으면 '전체 보기'만 */}
+            <Link to="/members" className="adm-card-sub" style={{ textDecoration: "none" }}>
+              {data && data.recent_members.length > 0 ? `최근 ${data.recent_members.length}명 · 전체 보기` : "전체 보기"}
+            </Link>
           </div>
           <div className="adm-table-wrap" style={{ border: "1px solid #E3ECF6", borderRadius: 12 }}>
             <table className="adm-table">

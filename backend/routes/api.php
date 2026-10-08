@@ -73,6 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // ★ v18.40 — 웹 관리자(운영자 전용) 공지·이벤트 관리
     Route::middleware('operator')->prefix('admin')->group(function () {
         Route::get('/dashboard',       [\App\Http\Controllers\Api\Admin\AdminDashboardController::class, 'index']);
+        // ★ v18.56 운영자 관리
+        Route::get('/operators',               [\App\Http\Controllers\Api\Admin\AdminOperatorController::class, 'index']);
+        Route::post('/operators',              [\App\Http\Controllers\Api\Admin\AdminOperatorController::class, 'store'])->middleware('throttle:10,1');
+        Route::post('/operators/{id}/resend',  [\App\Http\Controllers\Api\Admin\AdminOperatorController::class, 'resend'])->middleware('throttle:10,1');
+        Route::delete('/operators/{id}',       [\App\Http\Controllers\Api\Admin\AdminOperatorController::class, 'destroy']);
         Route::get('/notices',         [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'index']);
         Route::get('/notices/{id}',    [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'show']);
         Route::patch('/notices/{id}/pin', [\App\Http\Controllers\Api\Admin\AdminNoticeController::class, 'togglePin']);

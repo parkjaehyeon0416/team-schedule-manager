@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Team;
 use App\Services\SocialAuthService;
 use App\Services\VerificationCode;
+use App\Services\Reauth;
 use App\Support\PasswordPolicy;
 use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
@@ -520,84 +521,41 @@ class AuthController extends Controller
     // ★ v18.63 — 탈퇴 본인 확인 방법 안내 + 인증번호 발송
     // POST /api/account/withdraw-request  {send?: bool, channel?: phone|email}
     //   - 비밀번호 있음 → method=password (앱이 비밀번호 입력칸)
-    //   - 비밀번호 없음(소셜 가입) → method=code: 전화번호(문자) 또는 이메일 중 골라 6자리 인증번호
-    //     (3분 유효, 5번 틀리면 5분 잠금). 둘 다 있으면 앱에서 선택
-    //   - 전화번호도 진짜 이메일도 없음 → method=social, 연결된 소셜로 다시 로그인해서 확인
+    //   - 비밀번호 없음(소셜 가입) → method=code(문자·이메일 인증번호 중 선택) 또는 social(둘 다 없으면 소셜 재로그인)
+    //   본인 확인 처리는 App\Services\Reauth(처음 비밀번호 설정과 공용)
     // ────────────────────────────────────
     public function withdrawRequest(Request $request)
     {
         $user = $request->user();
-        $method = $this->withdrawMethod($user);
-        $channels = $this->withdrawChannels($user);
-
-        // send=true일 때만 발송(탈퇴 창을 열기만 해선 안 보냄)
-        if ($method === 'code' && $request->boolean('send')) {
-            $channel = $request->validate(['channel' => 'required|in:' . implode(',', array_keys($channels))])['channel'];
-            $target = $channel === 'phone' ? $user->phone : $user->email;
-            if ($locked = VerificationCode::lockedResponse('withdraw', $target)) {
-                return $locked;
-            }
-            $code = VerificationCode::issue('withdraw', $target);
-            try {
-                if ($channel === 'phone') {
-                    $this->sms->send($target, "[현장메이트] 회원 탈퇴 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
-                } else {
-                    \Illuminate\Support\Facades\Mail::to($target)
-                        ->send(new \App\Mail\VerificationCodeMail($code, '회원 탈퇴 확인', VerificationCode::TTL_MINUTES));
-                }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('탈퇴 인증번호 발송 실패', ['user_id' => $user->id, 'channel' => $channel, 'error' => $e->getMessage()]);
-                return ApiResponse::error('인증번호를 보내지 못했어요. 다른 방법을 고르거나 잠시 후 다시 시도해주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 503);
-            }
+        if ($user->password) {
+            return ApiResponse::success(['method' => 'password', 'channels' => [], 'providers' => [], 'minutes' => VerificationCode::TTL_MINUTES]);
         }
 
-        return ApiResponse::success([
-            'method'    => $method,
-            'channels'  => array_map(fn($type, $target) => ['type' => $type, 'target' => $target], array_keys($channels), $channels),
-            'providers' => $method === 'social'
-                ? array_values(array_filter(SocialAuthService::PROVIDERS, fn($p) => !empty($user->{SocialAuthService::column($p)})))
-                : [],
-            'minutes'   => VerificationCode::TTL_MINUTES,
-        ], $method === 'code' && $request->boolean('send') ? '인증번호를 보냈어요.' : '본인 확인 방법을 알려드려요.');
+        // send=true일 때만 발송(탈퇴 창을 열기만 해선 안 보냄)
+        if ($request->boolean('send')) {
+            $channel = (string) $request->input('channel');
+            if ($fail = Reauth::send('withdraw', '회원 탈퇴', $channel, $user, $this->sms)) {
+                return $fail;
+            }
+            return ApiResponse::success(Reauth::info($user), '인증번호를 보냈어요.');
+        }
+
+        return ApiResponse::success(Reauth::info($user), '본인 확인 방법을 알려드려요.');
     }
 
     public function withdraw(Request $request)
     {
         $user = $request->user();
-        $method = $this->withdrawMethod($user);
-        $channels = $this->withdrawChannels($user);
 
-        // ★ v18.63 — 비밀번호 없는 소셜 가입자는 전화번호(문자) 또는 이메일 인증번호로 본인 확인
+        // ★ v18.63 — 비밀번호 없는 소셜 가입자는 전화번호(문자) 또는 이메일 인증번호로 본인 확인(둘 다 없으면 소셜 재로그인)
         //   (예전 v18.61까진 비밀번호가 없으면 탈퇴 자체가 불가능했음 — 애플 심사 5.1.1(v) 앱 안 계정 삭제 필수)
-        $data = $request->validate([
-            'password' => [$method === 'password' ? 'required' : 'nullable', 'string'],
-            'channel'  => [$method === 'code' ? 'required' : 'nullable', 'in:phone,email'],
-            'code'     => [$method === 'code' ? 'required' : 'nullable', 'string', 'size:6'],
-            'provider' => [$method === 'social' ? 'required' : 'nullable', 'in:' . implode(',', SocialAuthService::PROVIDERS)],
-            'token'    => [$method === 'social' ? 'required' : 'nullable', 'string'],
-        ]);
-
-        if ($method === 'password' && !Hash::check($data['password'], $user->password)) {
-            return ApiResponse::error('비밀번호가 일치하지 않습니다.', 'ERR_AUTH_001', 422);
-        }
-        if ($method === 'code') {
-            if (!isset($channels[$data['channel']])) {
-                return ApiResponse::error('선택할 수 없는 인증 방법입니다.', ErrorCode::AUTH_REAUTH_REQUIRED, 422);
+        if ($user->password) {
+            $data = $request->validate(['password' => 'required|string']);
+            if (!Hash::check($data['password'], $user->password)) {
+                return ApiResponse::error('비밀번호가 일치하지 않습니다.', 'ERR_AUTH_001', 422);
             }
-            $target = $data['channel'] === 'phone' ? $user->phone : $user->email;
-            if ($locked = VerificationCode::lockedResponse('withdraw', $target)) {
-                return $locked;
-            }
-            if (VerificationCode::consume('withdraw', $target, $data['code']) === null) {
-                return VerificationCode::lockedResponse('withdraw', $target)
-                    ?? ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
-            }
-        }
-        if ($method === 'social') {
-            $profile = SocialAuthService::verify($data['provider'], $data['token']);
-            if (!$profile || $user->{SocialAuthService::column($data['provider'])} !== $profile['id']) {
-                return ApiResponse::error('이 계정에 연결된 소셜 계정으로 다시 로그인해주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 422);
-            }
+        } elseif ($fail = Reauth::check('withdraw', $user, $request->only('channel', 'code', 'provider', 'token'))) {
+            return $fail;
         }
 
         DB::table('team_members')
@@ -625,35 +583,5 @@ class AuthController extends Controller
         $user->delete(); // SoftDeletes
 
         return ApiResponse::success(null, '회원 탈퇴가 완료되었습니다.');
-    }
-
-    /** 탈퇴 본인 확인 방법: password | code(문자·이메일 인증번호) | social */
-    private function withdrawMethod(User $user): string
-    {
-        if ($user->password) {
-            return 'password';
-        }
-        return $this->withdrawChannels($user) ? 'code' : 'social';
-    }
-
-    /** 인증번호를 받을 수 있는 곳 [phone => 가린 번호, email => 가린 이메일] */
-    private function withdrawChannels(User $user): array
-    {
-        $ch = [];
-        if ($user->phone) {
-            $p = preg_replace('/\D/', '', $user->phone);
-            $ch['phone'] = substr($p, 0, 3) . '-****-' . substr($p, -4);
-        }
-        if (!str_ends_with($user->email, '@social.local')) {
-            $ch['email'] = $this->maskEmail($user->email);
-        }
-        return $ch;
-    }
-
-    /** chulsoo@gmail.com → chu****@gmail.com */
-    private function maskEmail(string $email): string
-    {
-        [$local, $domain] = array_pad(explode('@', $email, 2), 2, '');
-        return mb_substr($local, 0, 3) . str_repeat('*', max(2, mb_strlen($local) - 3)) . '@' . $domain;
     }
 }

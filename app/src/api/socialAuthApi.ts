@@ -122,8 +122,19 @@ export async function setPassword(body: {
   current_password?: string;
   password: string;
   password_confirmation: string;
+  // ★ v18.63 처음 설정 때 본인 확인(문자·이메일 인증번호 또는 소셜 재로그인)
+  channel?: 'phone' | 'email';
+  code?: string;
+  provider?: SocialProvider;
+  token?: string;
 }): Promise<LoginLinks> {
   const res = await axiosInstance.put('/me/password', body);
+  return res.data.data;
+}
+
+/** ★ v18.63 — 처음 비밀번호 설정 전 본인 확인 방법(channel 주면 그쪽으로 인증번호 발송) */
+export async function verifyPasswordSetup(channel?: 'phone' | 'email'): Promise<import('./profileApi').WithdrawMethod> {
+  const res = await axiosInstance.post('/me/password/verify', channel ? { send: true, channel } : {});
   return res.data.data;
 }
 

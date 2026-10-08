@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/me/login-links',              [\App\Http\Controllers\Api\LoginLinkController::class, 'link']);
     Route::delete('/me/login-links/{provider}', [\App\Http\Controllers\Api\LoginLinkController::class, 'unlink']);
     Route::put('/me/password',                  [\App\Http\Controllers\Api\LoginLinkController::class, 'setPassword'])->middleware('throttle:10,1'); // ★ v18.52
+    Route::post('/me/password/verify',          [\App\Http\Controllers\Api\LoginLinkController::class, 'verifyRequest'])->middleware('throttle:5,1'); // ★ v18.63 처음 설정 전 본인 확인
 
     // ★ v18.40 — 웹 관리자(운영자 전용) 공지·이벤트 관리
     Route::middleware('operator')->prefix('admin')->group(function () {

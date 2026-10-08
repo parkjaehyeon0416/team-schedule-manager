@@ -89,6 +89,12 @@ class LoginLinkController extends Controller
         if ($user->password && !\Illuminate\Support\Facades\Hash::check($data['current_password'] ?? '', $user->password)) {
             return ApiResponse::error('현재 비밀번호가 맞지 않아요.', ErrorCode::AUTH_LOGIN_FAILED, 422);
         }
+        // ★ v18.63 — 처음 설정(비밀번호 없던 소셜 가입자)도 본인 확인: 문자·이메일 인증번호(없으면 소셜 재로그인).
+        //   예전엔 로그인만 돼 있으면 바로 설정돼서, 남이 잠깐 폰을 쓰는 사이 비밀번호를 만들어 둘 수 있었음.
+        if (!$user->password
+            && ($fail = \App\Services\Reauth::check('set_password', $user, $request->only('channel', 'code', 'provider', 'token')))) {
+            return $fail;
+        }
 
         $wasSet = (bool) $user->password;
         $user->forceFill(array_filter([
@@ -102,6 +108,25 @@ class LoginLinkController extends Controller
         }
 
         return ApiResponse::success($this->summary($user->fresh()), $wasSet ? '비밀번호를 변경했어요.' : '이메일 로그인을 설정했어요.');
+    }
+
+    // ★ v18.63 — 처음 비밀번호 설정 전 본인 확인 방법 안내 + 인증번호 발송
+    // POST /me/password/verify  {send?: bool, channel?: phone|email}
+    public function verifyRequest(Request $request)
+    {
+        $user = $request->user();
+        if ($user->password) {
+            return ApiResponse::success(['method' => 'password', 'channels' => [], 'providers' => [], 'minutes' => \App\Services\VerificationCode::TTL_MINUTES]);
+        }
+        if ($request->boolean('send')) {
+            $fail = \App\Services\Reauth::send('set_password', '이메일 로그인 설정', (string) $request->input('channel'), $user,
+                app(\App\Services\Sms\SmsServiceInterface::class));
+            if ($fail) {
+                return $fail;
+            }
+            return ApiResponse::success(\App\Services\Reauth::info($user), '인증번호를 보냈어요.');
+        }
+        return ApiResponse::success(\App\Services\Reauth::info($user), '본인 확인 방법을 알려드려요.');
     }
 
     private function needsEmail(User $user): bool

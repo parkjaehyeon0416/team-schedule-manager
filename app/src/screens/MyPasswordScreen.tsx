@@ -1,11 +1,14 @@
+// ★ v18.63 — 처음 설정(SET)에 "본인 확인" 칸 추가(문자·이메일 인증번호 / 소셜 재로그인)
 // ★ v18.52 — 디자인 MY_PASSWORD_SET(A 이메일 있음 / B 이메일 없음) · MY_PASSWORD_CHANGE
 //   로그인 연결 관리의 이메일·비밀번호 [설정]/[변경]. 완료하면 연결 관리로 돌아가 토스트.
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { setPassword } from '../api/socialAuthApi';
+import { setPassword, verifyPasswordSetup, getSocialCredential, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
+import type { WithdrawMethod, WithdrawChannel } from '../api/profileApi';
+import { SocialButton } from '../components/AuthUi';
 import GradientButton from '../components/GradientButton';
 import { passwordError, PASSWORD_HINT, PASSWORD_PLACEHOLDER } from '../utils/passwordPolicy';
 
@@ -63,11 +66,48 @@ export default function MyPasswordScreen() {
   const [wrong, setWrong] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // ★ v18.63 — 처음 설정은 본인 확인 필요: 문자·이메일 인증번호(없으면 연결된 소셜로 다시 로그인)
+  const [vm, setVm] = useState<WithdrawMethod | null>(null);
+  const [sentTo, setSentTo] = useState<WithdrawChannel | null>(null);
+  const [code, setCode] = useState('');
+  const [codeErr, setCodeErr] = useState('');
+  const [sending, setSending] = useState(false);
+  const [social, setSocial] = useState<{ provider: SocialProvider; token: string } | null>(null);
+
+  useEffect(() => {
+    if (!isChange) verifyPasswordSetup().then(setVm).catch(() => setVm(null));
+  }, [isChange]);
+
+  const sendCode = async (ch: WithdrawChannel) => {
+    setSending(true);
+    setCodeErr('');
+    try {
+      await verifyPasswordSetup(ch.type);
+      setSentTo(ch);
+      setCode('');
+    } catch (e: any) {
+      setCodeErr(e?.response?.data?.message ?? '인증번호를 보내지 못했어요.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const socialReauth = async (provider: SocialProvider) => {
+    try {
+      const { token } = await getSocialCredential(provider);
+      setSocial({ provider, token });
+      setCodeErr('');
+    } catch (e: any) {
+      if (!isSocialCancel(e)) setCodeErr('다시 로그인하지 못했어요.');
+    }
+  };
+
+  const verified = isChange || (vm?.method === 'code' ? !!sentTo && code.length === 6 : !!social);
 
   const short = pw.length > 0 && !!passwordError(pw); // ★ v18.62 영문+특수문자 8~16자
   const mismatch = pw2.length > 0 && pw2 !== pw;
   const emOk = !!email || /.+@.+\..+/.test(em.trim());
-  const ok = emOk && !emDup && (!isChange || (cur.length > 0 && !wrong)) && !passwordError(pw) && pw2 === pw;
+  const ok = emOk && !emDup && (!isChange || (cur.length > 0 && !wrong)) && !passwordError(pw) && pw2 === pw && verified;
 
   const submit = async () => {
     setSaving(true);
@@ -76,6 +116,8 @@ export default function MyPasswordScreen() {
       await setPassword({
         ...(email ? {} : { email: em.trim() }),
         ...(isChange ? { current_password: cur } : {}),
+        ...(!isChange && sentTo ? { channel: sentTo.type, code } : {}),
+        ...(!isChange && social ? { provider: social.provider, token: social.token } : {}),
         password: pw,
         password_confirmation: pw2,
       });
@@ -83,6 +125,10 @@ export default function MyPasswordScreen() {
     } catch (e: any) {
       const body = e?.response?.data;
       if (body?.error_code === 'ERR_AUTH_001') setWrong(true);
+      else if (['ERR_AUTH_017', 'ERR_AUTH_018'].includes(body?.error_code) || body?.error_code === 'ERR_AUTH_005' || /인증번호|다시 로그인/.test(body?.message ?? '')) {
+        setCodeErr(body?.message ?? '본인 확인에 실패했어요.');
+        setSocial(null);
+      }
       else if (body?.errors?.email) setEmDup(body.errors.email[0]);
       else setError(body?.errors ? String(Object.values(body.errors)[0]) : body?.message ?? '저장하지 못했어요. 다시 시도해주세요.');
     } finally {
@@ -136,6 +182,59 @@ export default function MyPasswordScreen() {
             </>
           )}
         </View>
+
+        {!isChange && (
+          <View style={s.field}>
+            <Text style={s.label}>본인 확인</Text>
+            {!vm ? (
+              <ActivityIndicator color="#0A6CE0" style={{ alignSelf: 'flex-start' }} />
+            ) : vm.method === 'code' ? (
+              <>
+                {!sentTo ? vm.channels.map(ch => (
+                  <Pressable key={ch.type} onPress={() => sendCode(ch)} disabled={sending} style={s.chBtn} accessibilityRole="button">
+                    <Icon name={ch.type === 'phone' ? 'cellphone-message' : 'email-fast-outline'} size={18} color="#0A6CE0" />
+                    <Text style={s.chText}>{ch.type === 'phone' ? '문자로 받기' : '이메일로 받기'} · {ch.target}</Text>
+                    {sending && <ActivityIndicator color="#0A6CE0" size="small" />}
+                  </Pressable>
+                )) : (
+                  <>
+                    <View style={[s.input, { borderColor: border(!!codeErr, code), paddingRight: 14 }]}>
+                      <Icon name="shield-check-outline" size={18} color="#8FA3BF" />
+                      <TextInput
+                        accessibilityLabel="인증번호"
+                        style={s.inputText}
+                        value={code}
+                        onChangeText={v => { setCode(v.replace(/\D/g, '')); setCodeErr(''); }}
+                        placeholder="인증번호 6자리"
+                        placeholderTextColor="#9AACC4"
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        autoComplete="one-time-code"
+                      />
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={s.help}>{sentTo.target}로 보냈어요 · {vm.minutes}분간 유효</Text>
+                      <Pressable onPress={() => sendCode(sentTo)} disabled={sending} hitSlop={6}>
+                        <Text style={s.link}>다시 받기</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                )}
+              </>
+            ) : social ? (
+              <View style={s.readonly}>
+                <Icon name="check-circle" size={18} color="#0B8574" />
+                <Text style={[s.readonlyText, { color: '#0B8574' }]}>본인 확인됐어요</Text>
+              </View>
+            ) : (
+              vm.providers.map(p => <SocialButton key={p} provider={p} onPress={() => socialReauth(p)} />)
+            )}
+            {!!codeErr && <ErrorText>{codeErr}</ErrorText>}
+            {vm && !sentTo && !social && (
+              <Text style={s.help}>{vm.method === 'code' ? '인증번호를 받을 곳을 골라주세요' : '연결된 계정으로 다시 로그인해 본인을 확인해요'}</Text>
+            )}
+          </View>
+        )}
 
         {isChange && (
           <View style={s.field}>
@@ -201,4 +300,9 @@ const s = StyleSheet.create({
   errText: { fontSize: 12, fontWeight: '600', color: '#E5484D' },
   btnOff: { height: 52, borderRadius: 12, backgroundColor: '#B9D6F7', alignItems: 'center', justifyContent: 'center' },
   btnOffText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  chBtn: {
+    height: 50, borderRadius: 10, borderWidth: 1, borderColor: '#BFDBFB', backgroundColor: '#F3F9FF',
+    flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14,
+  },
+  chText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#0A6CE0' },
 });

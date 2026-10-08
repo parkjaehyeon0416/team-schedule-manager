@@ -96,7 +96,7 @@ export default function ForgotPasswordScreen() {
           <Text style={styles.subtitle}>
             {step === 1
               ? '가입 시 등록한 이메일, 이름, 전화번호를 입력해주세요.'
-              : `${phone}로 발송된 인증번호(10분간 유효)와 새 비밀번호를 입력해주세요.`}
+              : `${phone}로 발송된 인증번호(3분간 유효)와 새 비밀번호를 입력해주세요.`}
           </Text>
         </View>
 

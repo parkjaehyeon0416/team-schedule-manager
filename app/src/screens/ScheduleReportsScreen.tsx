@@ -9,7 +9,7 @@ import { Text, Button, TextInput, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { getReports, createReport, deleteReport, getPublicReportUrl } from '../api/reportApi';
+import { getReports, createReport, deleteReport, getPublicReportUrl, shareReport } from '../api/reportApi';
 import type { SiteReport } from '../types/api';
 import AppHeader from '../components/AppHeader';
 import { isPlanLocked } from '../utils/planLock';
@@ -70,15 +70,23 @@ export default function ScheduleReportsScreen({ route }: any) {
     }
   };
 
-  const handleShare = (r: SiteReport) => {
-    const url = getPublicReportUrl(r.share_token);
-    Share.share({ message: `${r.title}\n${url}` }).catch(() => {});
+  // ★ v18.63 — 공유 링크는 3일만 열림. 공유·열기 전에 서버에서 살아 있는 링크를 받아 옴
+  const handleShare = async (r: SiteReport) => {
+    try {
+      const { share_token } = await shareReport(r.id);
+      Share.share({ message: `${r.title}\n${getPublicReportUrl(share_token)}\n(링크는 3일 동안 열려요)` }).catch(() => {});
+    } catch (e: any) {
+      Alert.alert('공유 실패', e?.response?.data?.message || '잠시 후 다시 시도해주세요.');
+    }
   };
 
-  const handleOpen = (r: SiteReport) => {
-    Linking.openURL(getPublicReportUrl(r.share_token)).catch(() => {
+  const handleOpen = async (r: SiteReport) => {
+    try {
+      const { share_token } = await shareReport(r.id);
+      await Linking.openURL(getPublicReportUrl(share_token));
+    } catch {
       Alert.alert('열기 실패', 'PDF를 열 수 없습니다.');
-    });
+    }
   };
 
   const handleDelete = (r: SiteReport) => {

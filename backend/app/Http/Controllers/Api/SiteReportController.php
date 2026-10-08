@@ -25,6 +25,33 @@ use Illuminate\Support\Str;
  */
 class SiteReportController extends Controller
 {
+    /** ★ v18.63 — 공유 링크 유효 기간(일). 공유할 때마다 그때부터 3일 */
+    public const SHARE_DAYS = 3;
+
+    /**
+     * ★ v18.63 — 공유하기(앱의 [공유]·[열기]). 링크가 살아 있으면 그대로 두고 기한만 지금부터 3일로,
+     *   이미 만료됐으면 새 주소로 바꿔서(옛 링크는 계속 막힘) 돌려줌.
+     * POST /api/reports/{id}/share
+     */
+    public function share(Request $request, string $id)
+    {
+        $report = $this->findReportForUser($request, $id);
+        if (!$report) {
+            return ApiResponse::error('존재하지 않는 보고서입니다.', ErrorCode::REPORT_NOT_FOUND, 404);
+        }
+
+        if (!$report->share_expires_at || $report->share_expires_at->isPast()) {
+            $report->share_token = $this->generateShareToken();
+        }
+        $report->share_expires_at = now()->addDays(self::SHARE_DAYS);
+        $report->save();
+
+        return ApiResponse::success([
+            'share_token'      => $report->share_token,
+            'share_expires_at' => $report->share_expires_at->toIso8601String(),
+        ], '공유 링크는 3일 동안 열려요.');
+    }
+
     /**
      * 일정에 연결된 보고서 목록 조회
      * GET /api/schedules/{scheduleId}/reports
@@ -89,6 +116,7 @@ class SiteReportController extends Controller
             'greeting_message'  => $data['greeting_message'] ?? null,
             'template_id'       => 'basic',
             'share_token'       => $this->generateShareToken(),
+            'share_expires_at'  => now()->addDays(self::SHARE_DAYS),
         ]);
 
         try {
@@ -129,12 +157,12 @@ class SiteReportController extends Controller
     public function download(Request $request, string $id)
     {
         $report = $this->findReportForUser($request, $id);
-        if (!$report || !$report->pdf_path || !Storage::disk('public')->exists($report->pdf_path)) {
+        if (!$report || !$report->pdf_path || !Storage::disk('local')->exists($report->pdf_path)) {
             return ApiResponse::error('존재하지 않는 보고서입니다.', ErrorCode::REPORT_NOT_FOUND, 404);
         }
 
         return response()->download(
-            Storage::disk('public')->path($report->pdf_path),
+            Storage::disk('local')->path($report->pdf_path),
             $report->title . '.pdf'
         );
     }
@@ -150,12 +178,16 @@ class SiteReportController extends Controller
     {
         $report = SiteReport::where('share_token', $token)->first();
 
-        if (!$report || !$report->pdf_path || !Storage::disk('public')->exists($report->pdf_path)) {
+        if (!$report || !$report->pdf_path || !Storage::disk('local')->exists($report->pdf_path)) {
             // ★ 주의 — 이 프로젝트의 전역 예외 핸들러(bootstrap/app.php)는
             //   api/* 경로의 모든 Throwable을 500 + ERR_SERVER_001로 뭉개버린다.
             //   abort(404, ...)를 쓰면 실제로는 500이 나가므로, 다른 컨트롤러들처럼
             //   ApiResponse::error()를 직접 return해서 올바른 상태코드를 보장한다.
             return ApiResponse::error('존재하지 않거나 만료된 보고서 링크입니다.', ErrorCode::REPORT_NOT_FOUND, 404);
+        }
+        // ★ v18.63 — 공유 링크는 공유한 때부터 3일만 열림
+        if (!$report->share_expires_at || $report->share_expires_at->isPast()) {
+            return response(view('errors.link-expired', ['what' => '보고서']), 410);
         }
 
         // 열람 추적 — 조회수 +1, 마지막 열람 시각 갱신
@@ -164,7 +196,7 @@ class SiteReportController extends Controller
         $report->save();
 
         return response()->file(
-            Storage::disk('public')->path($report->pdf_path),
+            Storage::disk('local')->path($report->pdf_path),
             ['Content-Disposition' => 'inline; filename="' . $report->title . '.pdf"']
         );
     }
@@ -179,9 +211,13 @@ class SiteReportController extends Controller
         if (!$report) {
             return ApiResponse::error('존재하지 않는 보고서입니다.', ErrorCode::REPORT_NOT_FOUND, 404);
         }
+        // ★ v18.62 보안 — 만든 사람 본인 또는 팀장·부팀장만 삭제
+        if ((int) $report->user_id !== (int) $request->user()->id && !$report->schedule?->canEditBy($request->user())) {
+            return ApiResponse::error('본인이 만든 보고서만 삭제할 수 있어요.', 'ERR_AUTH_002', 403);
+        }
 
         if ($report->pdf_path) {
-            Storage::disk('public')->delete($report->pdf_path);
+            Storage::disk('local')->delete($report->pdf_path);
         }
         $report->delete();
 
@@ -255,7 +291,8 @@ class SiteReportController extends Controller
         ]);
 
         $relativePath = 'reports/' . $report->share_token . '.pdf';
-        Storage::disk('public')->put($relativePath, $pdf->output());
+        // ★ v18.63 비공개 폴더에 저장(공유 링크·다운로드로만 열림, /storage 주소로 바로 못 엶)
+        Storage::disk('local')->put($relativePath, $pdf->output());
 
         return $relativePath;
     }

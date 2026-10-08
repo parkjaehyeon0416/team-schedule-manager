@@ -28,6 +28,8 @@ class ErrorCode
     public const AUTH_SOCIAL_TAKEN          = 'ERR_AUTH_014'; // v18.51 — 이미 다른 계정에 연결된 소셜 계정(또는 같은 종류 다른 계정이 이미 연결됨)
     public const AUTH_SOCIAL_NO_ACCOUNT     = 'ERR_AUTH_015'; // v18.51 — "쓰던 계정으로 로그인"에서 고른 소셜 계정에 연결된 현장메이트 계정 없음
     public const AUTH_LOGIN_LINK_LAST       = 'ERR_AUTH_016'; // v18.51 — 마지막 남은 로그인 방법은 해제 불가
+    public const AUTH_CODE_LOCKED           = 'ERR_AUTH_017'; // v18.63 — 인증번호 5번 틀려서 5분간 요청·확인 막힘
+    public const AUTH_REAUTH_REQUIRED       = 'ERR_AUTH_018'; // v18.63 — 탈퇴 등 중요한 작업 전 본인 확인 필요(인증번호·소셜 재로그인)
 
     // ═══════════════════════════════════════════════
     // 입력 검증 (v6)

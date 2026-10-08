@@ -8,6 +8,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
 use App\Services\SocialAuthService;
+use App\Services\VerificationCode;
 use App\Support\PasswordPolicy;
 use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
@@ -341,29 +342,12 @@ class AuthController extends Controller
     // ════════════════════════════════════════════════════════
 
     /**
-     * verification_codes에 6자리 코드를 upsert하고 SMS로 발송(지금은 log 드라이버).
+     * 6자리 인증번호 발급 + 문자 발송. ★ v18.63 유효 3분, 5번 틀리면 5분 잠금(App\Services\VerificationCode)
      */
     private function issueVerificationCode(string $phone, string $purpose, ?string $payload = null): void
     {
-        $code = (string) random_int(100000, 999999);
-        Cache::forget("vcode_fail:{$purpose}:{$phone}"); // 새 번호는 틀린 횟수 0부터
-
-        DB::table('verification_codes')->updateOrInsert(
-            ['phone' => $phone, 'purpose' => $purpose],
-            [
-                'code'       => $code,
-                'payload'    => $payload,
-                'expires_at' => now()->addMinutes(10),
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]
-        );
-
-        // ★ 실제 발송은 config('sms.driver')로 결정됨 — 지금은 'log'라 실제 문자
-        //   대신 storage/logs/laravel.log에 코드가 찍힘. 나중에 다이렉트샌드 등
-        //   실제 SMS 서비스를 붙일 땐 SmsServiceInterface 구현체 하나 추가하고
-        //   .env의 SMS_DRIVER만 바꾸면 되고, 여기(AuthController)는 손댈 필요 없음.
-        $this->sms->send($phone, "[현장메이트] 인증번호는 {$code} 입니다. (10분간 유효)");
+        $code = VerificationCode::issue($purpose, $phone, $payload);
+        $this->sms->send($phone, "[현장메이트] 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
     }
 
     /**
@@ -371,35 +355,7 @@ class AuthController extends Controller
      */
     private function consumeVerificationCode(string $phone, string $purpose, string $code): ?string
     {
-        $record = DB::table('verification_codes')
-            ->where('phone', $phone)
-            ->where('purpose', $purpose)
-            ->first();
-
-        if (!$record || now()->greaterThan($record->expires_at)) {
-            return null;
-        }
-
-        // ★ v18.62 — 인증번호 맞히기 공격 차단: 한 번 발급한 번호는 5번 틀리면 폐기(새로 받아야 함).
-        //   IP별 제한(throttle:5,1)만으로는 여러 IP로 나눠 시도하면 6자리를 맞힐 수 있어서 번호 자체에 횟수 제한.
-        if (!hash_equals((string) $record->code, $code)) {
-            $key = "vcode_fail:{$purpose}:{$phone}";
-            Cache::add($key, 0, now()->addMinutes(10)); // DB 캐시는 없는 키를 increment 못 해서 먼저 0으로 만듦
-            $tries = (int) Cache::increment($key);
-            if ($tries >= 5) {
-                DB::table('verification_codes')->where('phone', $phone)->where('purpose', $purpose)->delete();
-                Cache::forget("vcode_fail:{$purpose}:{$phone}");
-            }
-            return null;
-        }
-        Cache::forget("vcode_fail:{$purpose}:{$phone}");
-
-        DB::table('verification_codes')
-            ->where('phone', $phone)
-            ->where('purpose', $purpose)
-            ->delete();
-
-        return $record->payload ?? '';
+        return VerificationCode::consume($purpose, $phone, $code);
     }
 
     // ────────────────────────────────────
@@ -423,6 +379,9 @@ class AuthController extends Controller
             );
         }
 
+        if ($locked = VerificationCode::lockedResponse('find_email', $data['phone'])) {
+            return $locked;
+        }
         $this->issueVerificationCode($data['phone'], 'find_email');
 
         return ApiResponse::success(null, '입력하신 전화번호로 인증번호를 발송했습니다.');
@@ -440,7 +399,13 @@ class AuthController extends Controller
             'code'  => 'required|string|size:6',
         ]);
 
+        if ($locked = VerificationCode::lockedResponse('find_email', $data['phone'])) {
+            return $locked;
+        }
         if ($this->consumeVerificationCode($data['phone'], 'find_email', $data['code']) === null) {
+            if ($locked = VerificationCode::lockedResponse('find_email', $data['phone'])) {
+                return $locked;
+            }
             return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
 
@@ -472,6 +437,9 @@ class AuthController extends Controller
 
         // 계정 존재/일치 여부를 노출하지 않기 위해, 없어도 항상 같은 성공 응답을 줌
         // (실제 코드 발급/발송은 셋 다 일치할 때만)
+        if ($locked = VerificationCode::lockedResponse('reset_password', $data['phone'])) {
+            return $locked;
+        }
         if ($user) {
             $this->issueVerificationCode($data['phone'], 'reset_password', $user->email);
         }
@@ -491,8 +459,14 @@ class AuthController extends Controller
             'password' => PasswordPolicy::rules(),
         ], PasswordPolicy::messages());
 
+        if ($locked = VerificationCode::lockedResponse('reset_password', $data['phone'])) {
+            return $locked;
+        }
         $email = $this->consumeVerificationCode($data['phone'], 'reset_password', $data['code']);
         if (!$email) {
+            if ($locked = VerificationCode::lockedResponse('reset_password', $data['phone'])) {
+                return $locked;
+            }
             return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
 
@@ -542,23 +516,74 @@ class AuthController extends Controller
     //   그대로 남겨둠(팀원이었던 다른 사람들의 "팀" 필터 조회에 영향을 주지 않기 위함 —
     //   TeamController::destroy()의 탈퇴 정책과 동일한 원칙).
     // ────────────────────────────────────
+    // ────────────────────────────────────
+    // ★ v18.63 — 탈퇴 본인 확인 방법 안내 + (이메일이면) 인증번호 발송
+    // POST /api/account/withdraw-request
+    //   - 비밀번호 있음 → method=password (앱이 비밀번호 입력칸)
+    //   - 비밀번호 없음 + 진짜 이메일 → method=email, 그 이메일로 6자리 번호(3분, 5번 틀리면 5분 잠금)
+    //   - 비밀번호 없음 + 이메일 없음(@social.local) → method=social, 연결된 소셜로 다시 로그인해서 확인
+    // ────────────────────────────────────
+    public function withdrawRequest(Request $request)
+    {
+        $user = $request->user();
+        $method = $this->withdrawMethod($user);
+
+        // send=true일 때만 메일 발송(탈퇴 창을 열기만 해선 안 보냄)
+        if ($method === 'email' && $request->boolean('send')) {
+            if ($locked = VerificationCode::lockedResponse('withdraw', $user->email)) {
+                return $locked;
+            }
+            $code = VerificationCode::issue('withdraw', $user->email);
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)
+                    ->send(new \App\Mail\VerificationCodeMail($code, '회원 탈퇴 확인', VerificationCode::TTL_MINUTES));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('탈퇴 인증 메일 발송 실패', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+                return ApiResponse::error('인증 메일을 보내지 못했어요. 잠시 후 다시 시도하거나 고객 문의로 알려주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 503);
+            }
+        }
+
+        return ApiResponse::success([
+            'method'    => $method,
+            'email'     => $method === 'email' ? $this->maskEmail($user->email) : null,
+            'providers' => $method === 'social'
+                ? array_values(array_filter(SocialAuthService::PROVIDERS, fn($p) => !empty($user->{SocialAuthService::column($p)})))
+                : [],
+            'minutes'   => VerificationCode::TTL_MINUTES,
+        ], $method === 'email' && $request->boolean('send') ? '이메일로 인증번호를 보냈어요.' : '본인 확인 방법을 알려드려요.');
+    }
+
     public function withdraw(Request $request)
     {
         $user = $request->user();
+        $method = $this->withdrawMethod($user);
 
-        // ★ v18.62 — 소셜(카카오·구글·Apple)로만 가입해 비밀번호가 없는 사람은 비밀번호 대신 "탈퇴" 입력으로 확인.
-        //   예전엔 비밀번호가 없으면 탈퇴 자체가 불가능했음(애플 심사 5.1.1(v) 앱 안 계정 삭제 필수).
+        // ★ v18.63 — 비밀번호 없는 소셜 가입자는 "탈퇴" 입력 대신 이메일 인증번호 또는 소셜 재로그인으로 본인 확인
+        //   (예전 v18.61까진 비밀번호가 없으면 탈퇴 자체가 불가능했음 — 애플 심사 5.1.1(v) 앱 안 계정 삭제 필수)
         $data = $request->validate([
-            'password' => [$user->password ? 'required' : 'nullable', 'string'],
-            'confirm'  => [$user->password ? 'nullable' : 'required', 'string'],
+            'password' => [$method === 'password' ? 'required' : 'nullable', 'string'],
+            'code'     => [$method === 'email' ? 'required' : 'nullable', 'string', 'size:6'],
+            'provider' => [$method === 'social' ? 'required' : 'nullable', 'in:' . implode(',', SocialAuthService::PROVIDERS)],
+            'token'    => [$method === 'social' ? 'required' : 'nullable', 'string'],
         ]);
 
-        if ($user->password ? !Hash::check($data['password'], $user->password) : trim($data['confirm']) !== '탈퇴') {
-            return ApiResponse::error(
-                $user->password ? '비밀번호가 일치하지 않습니다.' : "확인을 위해 '탈퇴'를 정확히 입력해주세요.",
-                'ERR_AUTH_001',
-                422
-            );
+        if ($method === 'password' && !Hash::check($data['password'], $user->password)) {
+            return ApiResponse::error('비밀번호가 일치하지 않습니다.', 'ERR_AUTH_001', 422);
+        }
+        if ($method === 'email') {
+            if ($locked = VerificationCode::lockedResponse('withdraw', $user->email)) {
+                return $locked;
+            }
+            if (VerificationCode::consume('withdraw', $user->email, $data['code']) === null) {
+                return VerificationCode::lockedResponse('withdraw', $user->email)
+                    ?? ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
+            }
+        }
+        if ($method === 'social') {
+            $profile = SocialAuthService::verify($data['provider'], $data['token']);
+            if (!$profile || $user->{SocialAuthService::column($data['provider'])} !== $profile['id']) {
+                return ApiResponse::error('이 계정에 연결된 소셜 계정으로 다시 로그인해주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 422);
+            }
         }
 
         DB::table('team_members')
@@ -586,5 +611,21 @@ class AuthController extends Controller
         $user->delete(); // SoftDeletes
 
         return ApiResponse::success(null, '회원 탈퇴가 완료되었습니다.');
+    }
+
+    /** 탈퇴 본인 확인 방법: password | email | social */
+    private function withdrawMethod(User $user): string
+    {
+        if ($user->password) {
+            return 'password';
+        }
+        return str_ends_with($user->email, '@social.local') ? 'social' : 'email';
+    }
+
+    /** chulsoo@gmail.com → chu****@gmail.com */
+    private function maskEmail(string $email): string
+    {
+        [$local, $domain] = array_pad(explode('@', $email, 2), 2, '');
+        return mb_substr($local, 0, 3) . str_repeat('*', max(2, mb_strlen($local) - 3)) . '@' . $domain;
     }
 }

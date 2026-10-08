@@ -29,6 +29,12 @@ export async function createReport(
   return res.data.data;
 }
 
+/** ★ v18.63 — 공유 링크 받기(3일 유효). 만료됐으면 서버가 새 주소로 바꿔 줌 */
+export async function shareReport(id: number): Promise<{ share_token: string; share_expires_at: string }> {
+  const res = await axios.post<ApiResponse<{ share_token: string; share_expires_at: string }>>(`/reports/${id}/share`);
+  return res.data.data;
+}
+
 export async function deleteReport(id: number): Promise<void> {
   await axios.delete(`/reports/${id}`);
 }

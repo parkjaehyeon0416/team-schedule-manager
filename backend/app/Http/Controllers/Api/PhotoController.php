@@ -209,6 +209,11 @@ class PhotoController extends Controller
                 ErrorCode::PHOTO_NOT_FOUND, 404);
         }
 
+        // ★ v18.62 보안 — 팀 일정의 사진은 올린 사람 본인 또는 팀장·부팀장만 수정·삭제(예전엔 팀원 누구나 남의 사진을 지울 수 있었음)
+        if ((int) $photo->uploaded_by !== (int) $user->id && !$schedule->canEditBy($user)) {
+            return ApiResponse::error('본인이 올린 사진만 수정·삭제할 수 있어요.', 'ERR_AUTH_002', 403);
+        }
+
         // ④ 수정 대상은 시공 후 사진이어야만 함
         //    (시공 전 사진의 paired_with_id를 바꾸려는 시도 차단)
         if ($photo->photo_category !== 'after') {
@@ -300,6 +305,11 @@ class PhotoController extends Controller
         if (!$photo) {
             return ApiResponse::error('사진을 찾을 수 없습니다.',
                 ErrorCode::PHOTO_NOT_FOUND, 404);
+        }
+
+        // ★ v18.62 보안 — 팀 일정의 사진은 올린 사람 본인 또는 팀장·부팀장만 수정·삭제(예전엔 팀원 누구나 남의 사진을 지울 수 있었음)
+        if ((int) $photo->uploaded_by !== (int) $user->id && !$schedule->canEditBy($user)) {
+            return ApiResponse::error('본인이 올린 사진만 수정·삭제할 수 있어요.', 'ERR_AUTH_002', 403);
         }
 
         // ★ v11.1 — 시공 전 사진 삭제 시, 그것을 가리키던 시공 후 사진의 paired_with_id 해제

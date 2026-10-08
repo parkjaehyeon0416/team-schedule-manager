@@ -63,7 +63,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── 내 정보 + 로그아웃 ──
     Route::get('/me',           [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-    Route::delete('/account',   [AuthController::class, 'withdraw']); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
+    Route::delete('/account',   [AuthController::class, 'withdraw'])->middleware('throttle:10,1'); // ★ DESIGN-CANVAS(APP_INFO) 회원 탈퇴
+    Route::post('/account/withdraw-request', [AuthController::class, 'withdrawRequest'])->middleware('throttle:5,1'); // ★ v18.63 탈퇴 본인 확인(이메일 인증번호·소셜 재로그인)
     // ★ v18.51 — 로그인 연결 관리(카카오·구글 연결/해제)
     Route::get('/me/login-links',               [\App\Http\Controllers\Api\LoginLinkController::class, 'index']);
     Route::post('/me/login-links',              [\App\Http\Controllers\Api\LoginLinkController::class, 'link']);
@@ -193,6 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('schedules/{scheduleId}/reports',  [SiteReportController::class, 'store']);
     Route::get('reports/{id}',                     [SiteReportController::class, 'show']);
     Route::get('reports/{id}/download',            [SiteReportController::class, 'download']);
+    Route::post('reports/{id}/share',              [SiteReportController::class, 'share']); // ★ v18.63 공유 링크 3일
     Route::delete('reports/{id}',                  [SiteReportController::class, 'destroy']);
 
     // ═══════════════════════════════════════════════════════════

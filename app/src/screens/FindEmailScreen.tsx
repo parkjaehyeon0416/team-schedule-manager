@@ -83,7 +83,7 @@ export default function FindEmailScreen() {
             <Text style={styles.subtitle}>
               {step === 1
                 ? '가입 시 입력한 이름과 전화번호를 입력해주세요.'
-                : `${phone}로 발송된 인증번호(10분간 유효)를 입력해주세요.`}
+                : `${phone}로 발송된 인증번호(3분간 유효)를 입력해주세요.`}
             </Text>
           </View>
         ) : null}

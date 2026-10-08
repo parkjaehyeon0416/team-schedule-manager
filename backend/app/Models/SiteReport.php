@@ -18,6 +18,7 @@ class SiteReport extends Model
         'greeting_message',
         'template_id',
         'share_token',
+        'share_expires_at', // ★ v18.63 공유 링크 3일 만료
         'view_count',
         'last_viewed_at',
         'pdf_path',
@@ -26,6 +27,7 @@ class SiteReport extends Model
     protected $casts = [
         'view_count'     => 'integer',
         'last_viewed_at' => 'datetime',
+        'share_expires_at' => 'datetime',
     ];
 
     public function schedule()

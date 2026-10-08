@@ -26,7 +26,7 @@ class LoginLinkController extends Controller
     public function link(Request $request)
     {
         $data = $request->validate([
-            'provider' => 'required|in:google,kakao',
+            'provider' => 'required|in:google,kakao,apple',
             'token'    => 'required|string',
         ]);
         $user = $request->user();
@@ -38,7 +38,7 @@ class LoginLinkController extends Controller
 
         $why = SocialAuthService::attach($user, $data['provider'], $profile['id']);
         if ($why) {
-            $name = $data['provider'] === 'google' ? '구글' : '카카오';
+            $name = SocialAuthService::NAMES[$data['provider']];
             return ApiResponse::error(
                 $why === 'taken'
                     ? "이미 다른 WorkMate 계정에 연결된 {$name} 계정이에요."
@@ -108,7 +108,7 @@ class LoginLinkController extends Controller
 
     private function methodCount(User $user): int
     {
-        return ($user->google_id ? 1 : 0) + ($user->kakao_id ? 1 : 0) + ($user->password ? 1 : 0);
+        return ($user->google_id ? 1 : 0) + ($user->kakao_id ? 1 : 0) + ($user->apple_id ? 1 : 0) + ($user->password ? 1 : 0);
     }
 
     private function summary(User $user): array
@@ -120,6 +120,7 @@ class LoginLinkController extends Controller
         return [
             'kakao' => $row('kakao'),
             'google' => $row('google'),
+            'apple' => $row('apple'), // ★ v18.60
             'email' => [
                 'set'   => (bool) $user->password,
                 'email' => $this->needsEmail($user) ? null : $user->email,

@@ -175,7 +175,8 @@ class AuthController extends Controller
     public function socialLogin(Request $request)
     {
         $data = $request->validate([
-            'provider'    => 'required|in:google,kakao',
+            'provider'    => 'required|in:google,kakao,apple',
+            'name'        => 'nullable|string|max:100', // ★ v18.60 Apple은 이름을 토큰에 안 줘서 앱이 첫 로그인 때 받은 이름을 보냄
             'token'       => 'required|string', // 구글: id_token, 카카오: access_token
             'platform'    => 'required|in:web,mobile',
             'flow'        => 'nullable|in:v2',
@@ -183,6 +184,10 @@ class AuthController extends Controller
         ]);
 
         $profile = SocialAuthService::verify($data['provider'], $data['token']);
+        // ★ v18.60 — Apple은 이름을 토큰에 안 넣어 줌 → 앱이 첫 로그인 때 받은 이름 사용
+        if ($profile && empty($profile['name']) && !empty($data['name'])) {
+            $profile['name'] = $data['name'];
+        }
 
         if (!$profile) {
             return ApiResponse::error(
@@ -313,7 +318,7 @@ class AuthController extends Controller
         }
         $why = SocialAuthService::attach($user, $ticket['p'], $ticket['id']);
         if ($why) {
-            $name = $ticket['p'] === 'google' ? '구글' : '카카오';
+            $name = SocialAuthService::NAMES[$ticket['p']] ?? $ticket['p'];
             return ApiResponse::error(
                 $why === 'taken'
                     ? "이미 다른 WorkMate 계정에 연결된 {$name} 계정이에요."

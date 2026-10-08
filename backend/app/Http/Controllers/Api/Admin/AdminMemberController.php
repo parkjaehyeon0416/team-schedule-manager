@@ -35,7 +35,7 @@ class AdminMemberController extends Controller
             ->when($request->query('status') === 'active', fn($w) => $w->whereNull('users.suspended_at'))
             ->orderByDesc('users.created_at')
             ->select([
-                'users.id', 'users.name', 'users.email', 'users.phone', 'users.google_id', 'users.kakao_id',
+                'users.id', 'users.name', 'users.email', 'users.phone', 'users.google_id', 'users.kakao_id', 'users.apple_id',
                 'users.created_at', 'users.suspended_at',
                 'business_cards.specialty', 'business_cards.service_area',
             ]);
@@ -157,6 +157,6 @@ class AdminMemberController extends Controller
 
     private static function signupMethod($u): string
     {
-        return $u->kakao_id ? '카카오' : ($u->google_id ? '구글' : '이메일');
+        return $u->kakao_id ? '카카오' : ($u->google_id ? '구글' : ($u->apple_id ? '애플' : '이메일'));
     }
 }

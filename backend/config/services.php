@@ -47,4 +47,9 @@ return [
         'client_ids' => array_filter(array_map('trim', explode(',', env('GOOGLE_CLIENT_IDS', '')))),
     ],
 
+    // ★ v18.60 — Apple로 로그인: identity token의 aud(앱 번들 ID). 쉼표로 여러 개 가능
+    'apple' => [
+        'client_ids' => array_filter(array_map('trim', explode(',', env('APPLE_CLIENT_IDS', 'com.workmatekr.app')))),
+    ],
+
 ];

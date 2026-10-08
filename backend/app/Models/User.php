@@ -45,6 +45,7 @@ class User extends Authenticatable
         'suspended_at' => 'datetime', // ★ v18.41 회원 관리 — 계정 정지
         'google_linked_at' => 'datetime', // ★ v18.51 로그인 연결 관리
         'kakao_linked_at' => 'datetime',
+        'apple_linked_at' => 'datetime', // ★ v18.60
         'password_set_at' => 'datetime', // ★ v18.56 운영자 관리
         'last_login_at' => 'datetime',
         'plan_expires_at' => 'datetime',

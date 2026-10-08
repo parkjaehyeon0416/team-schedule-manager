@@ -40,7 +40,7 @@ class AdminDashboardController extends Controller
             ->orderByDesc('users.created_at')
             ->limit(5)
             ->get([
-                'users.id', 'users.name', 'users.email', 'users.google_id', 'users.kakao_id', 'users.created_at',
+                'users.id', 'users.name', 'users.email', 'users.google_id', 'users.kakao_id', 'users.apple_id', 'users.created_at',
                 'business_cards.specialty', 'business_cards.service_area',
             ])
             ->map(fn($u) => [
@@ -49,7 +49,7 @@ class AdminDashboardController extends Controller
                 'email_masked'  => self::maskEmail($u->email),
                 'specialty'     => $u->specialty,
                 'service_area'  => $u->service_area,
-                'signup_method' => $u->kakao_id ? '카카오' : ($u->google_id ? '구글' : '이메일'),
+                'signup_method' => $u->kakao_id ? '카카오' : ($u->google_id ? '구글' : ($u->apple_id ? '애플' : '이메일')),
                 'created_at'    => \Carbon\Carbon::parse($u->created_at)->toIso8601String(),
             ]);
 

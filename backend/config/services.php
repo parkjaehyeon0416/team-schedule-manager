@@ -48,6 +48,11 @@ return [
     ],
 
     // ★ v18.60 — Apple로 로그인: identity token의 aud(앱 번들 ID). 쉼표로 여러 개 가능
+    // ★ v18.62 — 카카오 토큰이 우리 앱 것인지 확인(카카오 개발자 콘솔 › 앱 › 앱 ID). 비어 있으면 검사 생략
+    'kakao' => [
+        'app_id' => env('KAKAO_APP_ID'),
+    ],
+
     'apple' => [
         'client_ids' => array_filter(array_map('trim', explode(',', env('APPLE_CLIENT_IDS', 'com.workmatekr.app')))),
     ],

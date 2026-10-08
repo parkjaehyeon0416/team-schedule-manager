@@ -152,8 +152,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // index/show는 컨트롤러 내부에서 본인 team_id로 스코프 처리, superadmin만 전체 조회)
     Route::get('/teams',           [TeamController::class, 'index']);
     Route::get('/teams/{id}',      [TeamController::class, 'show']);
-    Route::post('/teams/join',     [TeamController::class, 'join']);
-    Route::post('/teams/preview',  [TeamController::class, 'preview']); // ★ DESIGN-CANVAS(TEAM_JOIN) 추가
+    Route::post('/teams/join',     [TeamController::class, 'join'])->middleware('throttle:10,1'); // ★ v18.62 초대코드 맞히기 방지
+    Route::post('/teams/preview',  [TeamController::class, 'preview'])->middleware('throttle:10,1'); // ★ DESIGN-CANVAS(TEAM_JOIN) 추가
     Route::get('/teams/{id}/invite', [TeamController::class, 'invite']); // ★ v18.43 초대 코드·링크(7일 만료, 만료 시 재발급)
     Route::post('/teams',          [TeamController::class, 'store']);
     Route::post('/teams/leave',    [TeamController::class, 'leave']);

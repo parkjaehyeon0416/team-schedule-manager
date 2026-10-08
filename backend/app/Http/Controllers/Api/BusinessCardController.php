@@ -55,7 +55,10 @@ class BusinessCardController extends Controller
 
         $card = BusinessCard::where('user_id', $user->id)->first();
 
-        $showcaseIds = $data['showcase_photo_ids'] ?? $this->autoSelectShowcasePhotos($user);
+        // ★ v18.62 보안 — 공개 명함에는 내가 올린 사진만(예전엔 아무 사진 번호나 넣어 남의 현장 사진을 공개할 수 있었음)
+        $showcaseIds = isset($data['showcase_photo_ids'])
+            ? SiteFile::where('uploaded_by', $user->id)->whereIn('id', $data['showcase_photo_ids'])->pluck('id')->all()
+            : $this->autoSelectShowcasePhotos($user);
         unset($data['showcase_photo_ids']);
 
         if (!$card) {

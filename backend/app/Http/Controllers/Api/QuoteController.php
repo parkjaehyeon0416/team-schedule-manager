@@ -72,6 +72,10 @@ class QuoteController extends Controller
             'lines.*.unit'       => 'nullable|string|max:20',
             'lines.*.unit_price' => 'required|numeric|min:0',
         ]);
+        // ★ v18.62 보안 — 내가 볼 수 있는 현장만 연결(예전엔 아무 현장 번호나 넣어 남의 현장 주소를 견적서로 볼 수 있었음)
+        if (!empty($data['site_id']) && !Site::forUser($request->user())->whereKey($data['site_id'])->exists()) {
+            return ApiResponse::error('선택할 수 없는 현장입니다.', ErrorCode::QUOTE_NOT_FOUND, 422);
+        }
 
         // ★ v18.47 — 무료는 월 3건(지운 견적도 셈 — 지우고 다시 만드는 걸 막기 위해). 개인 프로는 무제한
         $quoteLimit = \App\Services\PlanService::limit($user, 'quotes_per_month', 'quote_unlimited');
@@ -177,6 +181,10 @@ class QuoteController extends Controller
             'lines.*.unit'       => 'nullable|string|max:20',
             'lines.*.unit_price' => 'required|numeric|min:0',
         ]);
+        // ★ v18.62 보안 — 내가 볼 수 있는 현장만 연결(예전엔 아무 현장 번호나 넣어 남의 현장 주소를 견적서로 볼 수 있었음)
+        if (!empty($data['site_id']) && !Site::forUser($request->user())->whereKey($data['site_id'])->exists()) {
+            return ApiResponse::error('선택할 수 없는 현장입니다.', ErrorCode::QUOTE_NOT_FOUND, 422);
+        }
 
         DB::transaction(function () use ($quote, $data, $request) {
             $subtotal = 0;
@@ -276,14 +284,23 @@ class QuoteController extends Controller
             return ApiResponse::error('희망 시공일을 먼저 입력해주세요.', ErrorCode::QUOTE_MISSING_DATE, 422);
         }
 
-        $schedule = DB::transaction(function () use ($quote, $user) {
+        // ★ v18.62 보안 — 팀 일정으로 만드는 건 그 팀 팀장·부팀장만(예전엔 팀원도 승인으로 팀 일정을 만들 수 있었음). 아니면 개인 일정.
+        $teamId  = $user->canAssignIn($user->team_id) ? $user->team_id : null;
+        $ownerId = $teamId ? null : $user->id;
+        if ($quote->site_id && !Site::forUser($user)->whereKey($quote->site_id)->exists()) {
+            $quote->site_id = null;
+        }
+
+        $schedule = DB::transaction(function () use ($quote, $user, $teamId, $ownerId) {
             $siteId = $quote->site_id;
 
             // 연결된 현장이 없고 주소만 있으면 현장을 새로 만들어 연결
             if (!$siteId && $quote->address) {
                 $site = Site::create([
-                    'address' => $quote->address,
-                    'team_id' => $user->team_id,
+                    'address'    => $quote->address,
+                    'team_id'    => $teamId,
+                    'owner_id'   => $ownerId,
+                    'created_by' => $user->id,
                 ]);
                 $siteId = $site->id;
             }
@@ -291,7 +308,9 @@ class QuoteController extends Controller
             $schedule = Schedule::create([
                 'date'          => $quote->desired_date,
                 'site_id'       => $siteId,
-                'team_id'       => $user->team_id,
+                'team_id'       => $teamId,
+                'owner_id'      => $ownerId,
+                'created_by'    => $user->id,
                 'work_type_id'  => $quote->work_type_id,
                 'daily_wage'    => $quote->total_amount,
                 'work_units'    => 1,

@@ -17,6 +17,7 @@ import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 import AppHeader from '../components/AppHeader';
 import { colors, radius, spacing } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
+import { passwordError, PASSWORD_PLACEHOLDER } from '../utils/passwordPolicy';
 
 // ★ v18.15 — 서버 validation 에러(errors 객체)의 필드명+영문 메시지를
 //   한국어로 번역해서 "어느 항목이 왜 문제인지" 바로 보이게 함.
@@ -56,6 +57,10 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     if (!name || !email || !phone || !password || !passwordConfirm) {
       Alert.alert('오류', '모든 항목을 입력해주세요.');
+      return;
+    }
+    if (passwordError(password)) {
+      Alert.alert('비밀번호 확인', passwordError(password)!);
       return;
     }
     if (password !== passwordConfirm) {
@@ -147,7 +152,7 @@ export default function RegisterScreen() {
           <Icon name="lock-outline" size={18} color={colors.muted} />
           <TextInput
             style={styles.input}
-            placeholder="비밀번호 (6자 이상)"
+            placeholder={`비밀번호 (${PASSWORD_PLACEHOLDER})`}
             placeholderTextColor={colors.muted}
             value={password}
             onChangeText={setPassword}

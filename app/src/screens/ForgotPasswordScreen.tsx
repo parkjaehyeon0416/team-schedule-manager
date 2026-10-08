@@ -16,6 +16,7 @@ import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 import AppHeader from '../components/AppHeader';
 import { colors, radius, spacing } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
+import { passwordError, PASSWORD_PLACEHOLDER } from '../utils/passwordPolicy';
 
 // 2단계: ① 이메일+이름+전화번호 일치 확인 후 인증번호 발송 → ② 인증번호+새 비밀번호 입력
 export default function ForgotPasswordScreen() {
@@ -55,6 +56,10 @@ export default function ForgotPasswordScreen() {
   const handleReset = async () => {
     if (!code || !password || !passwordConfirm) {
       Alert.alert('오류', '모든 항목을 입력해주세요.');
+      return;
+    }
+    if (passwordError(password)) { // ★ v18.62
+      Alert.alert('비밀번호 확인', passwordError(password)!);
       return;
     }
     if (password !== passwordConfirm) {
@@ -151,7 +156,7 @@ export default function ForgotPasswordScreen() {
               <Icon name="lock-outline" size={18} color={colors.muted} />
               <TextInput
                 style={styles.input}
-                placeholder="새 비밀번호 (6자 이상)"
+                placeholder={`새 비밀번호 (${PASSWORD_PLACEHOLDER})`}
                 placeholderTextColor={colors.muted}
                 value={password}
                 onChangeText={setPassword}

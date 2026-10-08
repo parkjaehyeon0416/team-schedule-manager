@@ -81,12 +81,10 @@ class LoginLinkController extends Controller
         $data = $request->validate([
             'email'            => [$needsEmail ? 'required' : 'prohibited', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)],
             'current_password' => [$user->password ? 'required' : 'nullable', 'string'],
-            'password'         => 'required|string|min:6|confirmed',
+            'password'         => \App\Support\PasswordPolicy::rules(), // ★ v18.62
         ], [
             'email.unique'       => '이미 다른 계정에서 쓰는 이메일이에요.',
-            'password.min'       => '비밀번호는 6자 이상이어야 해요.',
-            'password.confirmed' => '비밀번호 확인이 일치하지 않아요.',
-        ]);
+        ] + \App\Support\PasswordPolicy::messages());
 
         if ($user->password && !\Illuminate\Support\Facades\Hash::check($data['current_password'] ?? '', $user->password)) {
             return ApiResponse::error('현재 비밀번호가 맞지 않아요.', ErrorCode::AUTH_LOGIN_FAILED, 422);
@@ -97,6 +95,11 @@ class LoginLinkController extends Controller
             'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
             'email'    => $needsEmail ? $data['email'] : null,
         ]))->save();
+
+        // ★ v18.62 — 비밀번호를 바꾸면 지금 이 기기만 남기고 다른 기기 로그인은 끊음(비밀번호가 새어 바꾼 경우 대비)
+        if ($wasSet) {
+            $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
+        }
 
         return ApiResponse::success($this->summary($user->fresh()), $wasSet ? '비밀번호를 변경했어요.' : '이메일 로그인을 설정했어요.');
     }

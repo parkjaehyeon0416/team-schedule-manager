@@ -102,6 +102,10 @@ class ScheduleController extends Controller
         $data['owner_id']   = $wantsPersonal ? $user->id : null;
         $data['created_by'] = $user->id;
 
+        if ($fail = $this->checkRefs($user, $data, $data['team_id'], $data['owner_id'])) {
+            return $fail;
+        }
+
         // ★ v18.16 — 현장+날짜+공정이 완전히 같은 일정 중복 등록 방지(더블탭 방지 목적).
         //   같은 현장에 같은 날 다른 공정(전기팀/설비팀 등)을 각각 등록하는 건 정상 케이스라
         //   막지 않고, site_id+date+work_type_id가 전부 일치할 때만 차단함.
@@ -278,10 +282,21 @@ class ScheduleController extends Controller
         }
         unset($data['is_personal']);
 
+        $oldUserIds = $schedule->users()->pluck('users.id')->all();
+        if ($fail = $this->checkRefs(
+            $user,
+            $data,
+            array_key_exists('team_id', $data) ? $data['team_id'] : $schedule->team_id,
+            array_key_exists('owner_id', $data) ? $data['owner_id'] : $schedule->owner_id,
+            $oldUserIds,
+            $schedule->site_id,
+        )) {
+            return $fail;
+        }
+
         // ★ v18.20 — 인원 배정 해제/날짜 이동 시 "떠나간 쪽" 월별 공수 집계가 그대로 남는
         //   버그 수정. Observer는 저장 시점의 "현재" 배정자·날짜만 재계산하므로, 바뀌기
-        //   전의 배정자/월을 미리 기록해뒀다가 그쪽도 따로 재계산해줘야 함.
-        $oldUserIds  = $schedule->users()->pluck('users.id')->all();
+        //   전의 배정자/월을 미리 기록해뒀다가 그쪽도 따로 재계산해줘야 함. ($oldUserIds는 위에서 구함)
         $oldYearMonth = $schedule->date instanceof \Carbon\Carbon
             ? $schedule->date->format('Y-m')
             : substr((string) $schedule->date, 0, 7);
@@ -352,5 +367,41 @@ class ScheduleController extends Controller
         $schedule->delete();
 
         return ApiResponse::success(null, '일정이 삭제되었습니다.');
+    }
+
+    /**
+     * ★ v18.62 보안 — 일정에 남의 현장·남의 사람을 붙이지 못하게.
+     *   예전엔 site_id·user_ids가 "DB에 있는 번호"인지만 봐서, 아무 현장 번호나 내 일정에 붙여
+     *   그 현장 사진을 보고/지우거나, 모르는 사람을 투입 인원에 넣어 그 사람 수입·세무 자료를 망가뜨릴 수 있었음.
+     *   - 현장: 내가 볼 수 있는 현장이어야 하고, 팀 일정이면 같은 팀 현장(또는 팀 없는 내 현장)만
+     *   - 투입 인원: 팀 일정이면 그 팀 팀원만(이미 배정돼 있던 사람은 팀을 나갔어도 유지 가능),
+     *     개인 일정이면 본인만(다른 사람은 조용히 뺌)
+     */
+    private function checkRefs($user, array &$data, ?int $teamId, ?int $ownerId, array $keepUserIds = [], ?int $keepSiteId = null)
+    {
+        $siteId = $data['site_id'] ?? null;
+        if ($siteId && (int) $siteId !== $keepSiteId) {
+            $site = \App\Models\Site::forUser($user)->find($siteId);
+            if (!$site || ($teamId && $site->team_id && (int) $site->team_id !== $teamId)) {
+                return ApiResponse::error('선택할 수 없는 현장입니다.', 'ERR_NOT_FOUND', 422);
+            }
+        }
+
+        if (isset($data['user_ids'])) {
+            $ids = array_values(array_unique(array_map('intval', $data['user_ids'])));
+            if ($teamId) {
+                $members = \Illuminate\Support\Facades\DB::table('team_members')
+                    ->where('team_id', $teamId)->whereNull('deleted_at')
+                    ->whereIn('user_id', $ids)->pluck('user_id')->map(fn($v) => (int) $v)->all();
+                if (array_diff($ids, $members, $keepUserIds)) {
+                    return ApiResponse::error('팀원만 투입 인원으로 배정할 수 있어요.', 'ERR_AUTH_002', 422);
+                }
+            } else {
+                $ids = array_values(array_intersect($ids, array_merge([(int) $ownerId], $keepUserIds)));
+            }
+            $data['user_ids'] = $ids;
+        }
+
+        return null;
     }
 }

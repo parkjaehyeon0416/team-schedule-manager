@@ -19,8 +19,8 @@ class OperatorPasswordController extends Controller
     {
         $data = $request->validate([
             'token'    => 'required|string|size:64',
-            'password' => 'required|string|min:8|max:100|confirmed',
-        ]);
+            'password' => \App\Support\PasswordPolicy::rules(), // ★ v18.62
+        ], \App\Support\PasswordPolicy::messages());
 
         // 1회용: 꺼내면서 바로 삭제
         $userId = Cache::pull("operator_setpw:{$data['token']}");

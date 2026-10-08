@@ -6,6 +6,7 @@ import axiosInstance from "../api/axiosInstance";
 import Icon from "../components/Icon";
 import { errorMessage } from "../components/ui";
 import logo from "../assets/icons/logo.png";
+import { passwordError, PASSWORD_HINT, PASSWORD_PLACEHOLDER } from "../utils/passwordPolicy";
 
 const card: CSSProperties = {
   width: "100%", maxWidth: 420, background: "#FFFFFF", border: "1px solid #E3ECF6", borderRadius: 20, padding: 32,
@@ -32,9 +33,9 @@ export default function SetPassword() {
   const [invalid, setInvalid] = useState(token.length !== 64);
   const [done, setDone] = useState(false);
 
-  const short = pw.length > 0 && pw.length < 8;
+  const short = pw.length > 0 && !!passwordError(pw); // ★ v18.62 영문+특수문자 8~16자
   const diff = pw2.length > 0 && pw !== pw2;
-  const ok = pw.length >= 8 && pw === pw2;
+  const ok = !passwordError(pw) && pw === pw2;
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -94,9 +95,9 @@ export default function SetPassword() {
             <label className="adm-label" htmlFor="pwa">새 비밀번호</label>
             <div className="op-input" style={{ height: 50, borderColor: bd(short, pw) }}>
               <span style={{ color: "#8FA3BF", display: "flex" }}><Icon name="lock" /></span>
-              <input id="pwa" type="password" autoComplete="new-password" placeholder="8자 이상" value={pw} onChange={e => setPw(e.target.value)} />
+              <input id="pwa" type="password" autoComplete="new-password" placeholder={PASSWORD_PLACEHOLDER} value={pw} onChange={e => setPw(e.target.value)} />
             </div>
-            {short && <ErrLine>8자 이상 입력해주세요.</ErrLine>}
+            {short && <ErrLine>{PASSWORD_HINT}</ErrLine>}
           </div>
           <div className="adm-field">
             <label className="adm-label" htmlFor="pwb">비밀번호 확인</label>

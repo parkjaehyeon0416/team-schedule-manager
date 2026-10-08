@@ -8,8 +8,10 @@ use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
 use App\Services\SocialAuthService;
+use App\Support\PasswordPolicy;
 use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -56,12 +58,12 @@ class AuthController extends Controller
             'email'        => 'required|email|unique:users,email',
             // ★ 아이디(이메일) 찾기를 이름+전화번호로 지원하기 위해 필수로 수집
             'phone'        => 'required|string|max:20|unique:users,phone',
-            'password'     => 'required|min:6|confirmed',
+            'password'     => PasswordPolicy::rules(), // ★ v18.62 영문+특수문자 8~16자
             // ★ platform 필드 추가 — 'web' 또는 'mobile'
             'platform'     => 'required|in:web,mobile',
             // ★ 이용약관/개인정보처리방침 동의 — 체크 안 하면 가입 자체가 안 됨
             'agree_terms'  => 'required|accepted',
-        ]);
+        ], PasswordPolicy::messages());
 
         // 2. web으로 가입은 허용하지 않음 (운영자는 콘솔에서 수동 생성)
         if ($validated['platform'] === 'web') {
@@ -206,8 +208,12 @@ class AuthController extends Controller
         if (!$user) {
             // 2) 같은 이메일로 가입된 계정이 있으면 소셜 ID만 연동
             // ★ v18.55 — 운영자(웹 관리자 전용) 계정에는 붙이지 않음(같은 이메일이어도 앱 계정으로 따로 가입)
-            $existing = $profile['email']
-                ? User::where('email', $profile['email'])->where('user_type', '!=', 'operator')->first()
+            // ★ v18.62 보안 — 자동 연결은 ① 소셜 쪽에서 인증된 이메일이고 ② 기존 계정이 비밀번호 없는 소셜 가입 계정일 때만.
+            //   이메일 가입은 이메일 인증을 안 해서, 남이 내 이메일로 먼저 가입해 두면 내가 구글로 로그인할 때
+            //   그 사람 계정에 붙어 버리는 "선점 탈취"가 가능했음. 이메일 가입 계정이면 "이미 계정이 있어요"로
+            //   비밀번호 로그인을 거쳐 연결(needs_signup 화면).
+            $existing = ($profile['email'] && !empty($profile['email_verified']))
+                ? User::where('email', $profile['email'])->where('user_type', '!=', 'operator')->whereNull('password')->first()
                 : null;
 
             if ($existing && !SocialAuthService::attach($existing, $data['provider'], $profile['id'])) {
@@ -340,6 +346,7 @@ class AuthController extends Controller
     private function issueVerificationCode(string $phone, string $purpose, ?string $payload = null): void
     {
         $code = (string) random_int(100000, 999999);
+        Cache::forget("vcode_fail:{$purpose}:{$phone}"); // 새 번호는 틀린 횟수 0부터
 
         DB::table('verification_codes')->updateOrInsert(
             ['phone' => $phone, 'purpose' => $purpose],
@@ -369,9 +376,23 @@ class AuthController extends Controller
             ->where('purpose', $purpose)
             ->first();
 
-        if (!$record || $record->code !== $code || now()->greaterThan($record->expires_at)) {
+        if (!$record || now()->greaterThan($record->expires_at)) {
             return null;
         }
+
+        // ★ v18.62 — 인증번호 맞히기 공격 차단: 한 번 발급한 번호는 5번 틀리면 폐기(새로 받아야 함).
+        //   IP별 제한(throttle:5,1)만으로는 여러 IP로 나눠 시도하면 6자리를 맞힐 수 있어서 번호 자체에 횟수 제한.
+        if (!hash_equals((string) $record->code, $code)) {
+            $key = "vcode_fail:{$purpose}:{$phone}";
+            Cache::add($key, 0, now()->addMinutes(10)); // DB 캐시는 없는 키를 increment 못 해서 먼저 0으로 만듦
+            $tries = (int) Cache::increment($key);
+            if ($tries >= 5) {
+                DB::table('verification_codes')->where('phone', $phone)->where('purpose', $purpose)->delete();
+                Cache::forget("vcode_fail:{$purpose}:{$phone}");
+            }
+            return null;
+        }
+        Cache::forget("vcode_fail:{$purpose}:{$phone}");
 
         DB::table('verification_codes')
             ->where('phone', $phone)
@@ -467,8 +488,8 @@ class AuthController extends Controller
         $data = $request->validate([
             'phone'    => 'required|string|max:20',
             'code'     => 'required|string|size:6',
-            'password' => 'required|min:6|confirmed',
-        ]);
+            'password' => PasswordPolicy::rules(),
+        ], PasswordPolicy::messages());
 
         $email = $this->consumeVerificationCode($data['phone'], 'reset_password', $data['code']);
         if (!$email) {
@@ -525,12 +546,19 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
+        // ★ v18.62 — 소셜(카카오·구글·Apple)로만 가입해 비밀번호가 없는 사람은 비밀번호 대신 "탈퇴" 입력으로 확인.
+        //   예전엔 비밀번호가 없으면 탈퇴 자체가 불가능했음(애플 심사 5.1.1(v) 앱 안 계정 삭제 필수).
         $data = $request->validate([
-            'password' => 'required|string',
+            'password' => [$user->password ? 'required' : 'nullable', 'string'],
+            'confirm'  => [$user->password ? 'nullable' : 'required', 'string'],
         ]);
 
-        if (!Hash::check($data['password'], $user->password)) {
-            return ApiResponse::error('비밀번호가 일치하지 않습니다.', 'ERR_AUTH_001', 422);
+        if ($user->password ? !Hash::check($data['password'], $user->password) : trim($data['confirm']) !== '탈퇴') {
+            return ApiResponse::error(
+                $user->password ? '비밀번호가 일치하지 않습니다.' : "확인을 위해 '탈퇴'를 정확히 입력해주세요.",
+                'ERR_AUTH_001',
+                422
+            );
         }
 
         DB::table('team_members')
@@ -539,7 +567,22 @@ class AuthController extends Controller
             ->update(['deleted_at' => now()]);
 
         $user->tokens()->delete();
-        $user->update(['email' => $user->email.'.withdrawn.'.time()]); // 재가입 시 이메일 중복 방지
+        DB::table('device_tokens')->where('user_id', $user->id)->delete(); // ★ v18.62 탈퇴 후 푸시 안 가게
+
+        // ★ v18.62 — 탈퇴한 계정에 남아 있던 연락처·소셜 연결 지움. 남겨 두면
+        //   ① 같은 전화번호·같은 소셜 계정으로 다시 가입이 막히고(고유값 충돌) ② 필요 없는 개인정보를 계속 보관하게 됨.
+        //   이름은 팀원들의 과거 일정·정산 기록에 표시돼야 해서 남김.
+        $user->forceFill([
+            'email'           => $user->email.'.withdrawn.'.time(), // 재가입 시 이메일 중복 방지
+            'phone'           => null,
+            'kakao_talk_id'   => null,
+            'google_id'       => null,
+            'kakao_id'        => null,
+            'apple_id'        => null,
+            'google_linked_at' => null,
+            'kakao_linked_at'  => null,
+            'apple_linked_at'  => null,
+        ])->save();
         $user->delete(); // SoftDeletes
 
         return ApiResponse::success(null, '회원 탈퇴가 완료되었습니다.');

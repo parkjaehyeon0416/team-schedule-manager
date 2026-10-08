@@ -27,8 +27,8 @@ class CreateOperator extends Command
             $this->error('이메일 형식이 올바르지 않습니다.');
             return self::FAILURE;
         }
-        if (mb_strlen($password) < 8) {
-            $this->error('비밀번호는 8자 이상으로 --password= 에 넣어주세요.');
+        if (!\App\Support\PasswordPolicy::passes($password)) { // ★ v18.62
+            $this->error('비밀번호는 ' . \App\Support\PasswordPolicy::HINT . ' (--password=)');
             return self::FAILURE;
         }
 

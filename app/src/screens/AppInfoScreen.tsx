@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../components/AppHeader';
 import { withdrawAccount } from '../api/profileApi';
+import { getLoginLinks } from '../api/socialAuthApi';
 import { useAuthStore } from '../store/authStore';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
@@ -29,22 +30,30 @@ export default function AppInfoScreen() {
   const [withdrawVisible, setWithdrawVisible] = useState(false);
   const [password, setPassword] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
+  // ★ v18.62 — 소셜로만 가입해 비밀번호가 없으면 비밀번호 대신 '탈퇴' 입력으로 확인(예전엔 탈퇴 불가)
+  const [hasPassword, setHasPassword] = useState(true);
+
+  const openWithdraw = () => {
+    setPassword('');
+    setWithdrawVisible(true);
+    getLoginLinks().then(l => setHasPassword(l.email.set)).catch(() => setHasPassword(true));
+  };
 
   // ★ v18.43 — 이메일·전화 대신 앱 안 고객 문의로
   const handleContact = () => navigation.navigate('InquiryList');
 
   const handleWithdraw = async () => {
     if (!password.trim()) {
-      Alert.alert('입력 오류', '비밀번호를 입력해주세요.');
+      Alert.alert('입력 오류', hasPassword ? '비밀번호를 입력해주세요.' : "'탈퇴'를 입력해주세요.");
       return;
     }
     setWithdrawing(true);
     try {
-      await withdrawAccount(password);
+      await withdrawAccount(hasPassword ? { password } : { confirm: password });
       setWithdrawVisible(false);
       await logout();
     } catch (e: any) {
-      Alert.alert('탈퇴 실패', e?.response?.data?.message || '비밀번호를 확인해주세요.');
+      Alert.alert('탈퇴 실패', e?.response?.data?.message || (hasPassword ? '비밀번호를 확인해주세요.' : "'탈퇴'를 정확히 입력해주세요."));
     } finally {
       setWithdrawing(false);
     }
@@ -103,7 +112,7 @@ export default function AppInfoScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.withdrawBtn} onPress={() => setWithdrawVisible(true)}>
+        <TouchableOpacity style={styles.withdrawBtn} onPress={openWithdraw}>
           <Text style={styles.withdrawText}>회원 탈퇴</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -113,15 +122,16 @@ export default function AppInfoScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>회원 탈퇴</Text>
             <Text style={styles.modalDesc}>
-              탈퇴하면 계정이 삭제되고 모든 팀에서 자동으로 나가게 됩니다. 계속하려면 비밀번호를 입력해주세요.
+              탈퇴하면 계정이 삭제되고 모든 팀에서 자동으로 나가게 됩니다. {hasPassword ? '계속하려면 비밀번호를 입력해주세요.' : "계속하려면 아래 칸에 '탈퇴'를 입력해주세요."}
             </Text>
             <TextInput
               style={styles.modalInput}
               value={password}
               onChangeText={setPassword}
-              placeholder="비밀번호"
+              placeholder={hasPassword ? '비밀번호' : '탈퇴'}
               placeholderTextColor={colors.muted}
-              secureTextEntry
+              secureTextEntry={hasPassword}
+              autoCapitalize="none"
             />
             <View style={styles.modalBtnRow}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setWithdrawVisible(false)} disabled={withdrawing}>

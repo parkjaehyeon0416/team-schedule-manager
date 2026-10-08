@@ -109,18 +109,39 @@ class SocialAuthService
         if (!empty($allowedClientIds) && !in_array($payload['aud'] ?? null, $allowedClientIds, true)) {
             return null;
         }
-        return ['id' => (string) $payload['sub'], 'email' => $payload['email'] ?? null, 'name' => $payload['name'] ?? null];
+        return [
+            'id'    => (string) $payload['sub'],
+            'email' => $payload['email'] ?? null,
+            'name'  => $payload['name'] ?? null,
+            // ★ v18.62 tokeninfo는 "true"/"false" 문자열
+            'email_verified' => in_array($payload['email_verified'] ?? null, [true, 'true'], true),
+        ];
     }
 
     private static function verifyKakao(string $accessToken): ?array
     {
+        // ★ v18.62 보안 — 우리 카카오 앱에서 발급한 토큰인지 확인. 안 하면 다른 카카오 앱이 받은 토큰으로도
+        //   그 사용자로 로그인할 수 있음. KAKAO_APP_ID(카카오 개발자 콘솔 › 앱 › 앱 ID 숫자)가 없으면 검사 생략.
+        $appId = config('services.kakao.app_id');
+        if ($appId) {
+            $info = Http::withToken($accessToken)->get('https://kapi.kakao.com/v1/user/access_token_info');
+            if (!$info->successful() || (string) $info->json('app_id') !== (string) $appId) {
+                return null;
+            }
+        }
+
         $response = Http::withToken($accessToken)->get('https://kapi.kakao.com/v2/user/me');
         if (!$response->successful()) {
             return null;
         }
         $payload = $response->json();
         $account = $payload['kakao_account'] ?? [];
-        return ['id' => (string) $payload['id'], 'email' => $account['email'] ?? null, 'name' => $account['profile']['nickname'] ?? null];
+        return [
+            'id'    => (string) $payload['id'],
+            'email' => $account['email'] ?? null,
+            'name'  => $account['profile']['nickname'] ?? null,
+            'email_verified' => !empty($account['is_email_verified']) && !empty($account['is_email_valid']),
+        ];
     }
 
     /**
@@ -153,7 +174,12 @@ class SocialAuthService
             return null;
         }
 
-        return ['id' => (string) $claims['sub'], 'email' => $claims['email'] ?? null, 'name' => null];
+        return [
+            'id'    => (string) $claims['sub'],
+            'email' => $claims['email'] ?? null,
+            'name'  => null,
+            'email_verified' => in_array($claims['email_verified'] ?? null, [true, 'true'], true),
+        ];
     }
 
     private static function appleKey(string $kid): ?array

@@ -35,6 +35,7 @@ export async function deleteAvatar(): Promise<any> {
 }
 
 // ★ DESIGN-CANVAS(APP_INFO) 추가 — 회원 탈퇴 (2026-10-02)
-export async function withdrawAccount(password: string): Promise<void> {
-  await axios.delete('/account', { data: { password } });
+// ★ v18.62 — 비밀번호 없는 소셜 가입자는 password 대신 confirm('탈퇴')
+export async function withdrawAccount(body: { password?: string; confirm?: string }): Promise<void> {
+  await axios.delete('/account', { data: body });
 }

@@ -34,6 +34,7 @@ class BusinessCardPageController extends Controller
         $showcasePhotos = collect();
         if (!empty($card->showcase_photo_ids)) {
             $showcasePhotos = SiteFile::whereIn('id', $card->showcase_photo_ids)
+                ->where('uploaded_by', $card->user_id) // ★ v18.62 명함 주인이 올린 사진만 공개
                 ->get()
                 ->map(fn($p) => Storage::disk('public')->url($p->file_path));
         }

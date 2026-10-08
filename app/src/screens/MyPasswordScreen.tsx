@@ -7,6 +7,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { setPassword } from '../api/socialAuthApi';
 import GradientButton from '../components/GradientButton';
+import { passwordError, PASSWORD_HINT, PASSWORD_PLACEHOLDER } from '../utils/passwordPolicy';
 
 type Params = { mode: 'set' | 'change'; email: string | null };
 
@@ -63,10 +64,10 @@ export default function MyPasswordScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const short = pw.length > 0 && pw.length < 6;
+  const short = pw.length > 0 && !!passwordError(pw); // ★ v18.62 영문+특수문자 8~16자
   const mismatch = pw2.length > 0 && pw2 !== pw;
   const emOk = !!email || /.+@.+\..+/.test(em.trim());
-  const ok = emOk && !emDup && (!isChange || (cur.length > 0 && !wrong)) && pw.length >= 6 && pw2 === pw;
+  const ok = emOk && !emDup && (!isChange || (cur.length > 0 && !wrong)) && !passwordError(pw) && pw2 === pw;
 
   const submit = async () => {
     setSaving(true);
@@ -149,8 +150,8 @@ export default function MyPasswordScreen() {
 
         <View style={s.field}>
           <Text style={s.label}>{isChange ? '새 비밀번호' : '비밀번호'}</Text>
-          <PwField id="pnew" label={isChange ? '새 비밀번호' : '비밀번호'} value={pw} onChange={setPw} placeholder="6자 이상 입력" err={short} />
-          {short && <ErrorText>비밀번호는 6자 이상이어야 해요.</ErrorText>}
+          <PwField id="pnew" label={isChange ? '새 비밀번호' : '비밀번호'} value={pw} onChange={setPw} placeholder={PASSWORD_PLACEHOLDER} err={short} />
+          {short && <ErrorText>{PASSWORD_HINT}</ErrorText>}
         </View>
 
         <View style={s.field}>

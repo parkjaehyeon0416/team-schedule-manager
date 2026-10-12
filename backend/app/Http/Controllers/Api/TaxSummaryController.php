@@ -221,14 +221,15 @@ class TaxSummaryController extends Controller
         $header = ['연월'];
         if (in_array('wage', $items)) { $header[] = '공수'; $header[] = '작업일수'; }
         if (in_array('income', $items)) { $header[] = '총수입'; $header[] = '경비'; }
-        if (in_array('tax', $items)) { $header[] = '예상원천세'; $header[] = '실수령액'; }
+        // ★ v18.66 — 예상원천세 옆에 소득세·지방소득세(10%) 내역 열 추가
+        if (in_array('tax', $items)) { $header[] = '예상원천세'; $header[] = '소득세'; $header[] = '지방소득세'; $header[] = '실수령액'; }
 
         $summary = [$header];
         foreach ($rows as $row) {
             $line = [$row['year_month']];
             if (in_array('wage', $items)) { $line[] = $row['total_work_units']; $line[] = $row['work_days']; }
             if (in_array('income', $items)) { $line[] = $row['total_income']; $line[] = $row['total_expenses']; }
-            if (in_array('tax', $items)) { $line[] = $row['estimated_tax']; $line[] = $row['net_income']; }
+            if (in_array('tax', $items)) { $line[] = $row['estimated_tax']; $line[] = $row['income_tax']; $line[] = $row['local_tax']; $line[] = $row['net_income']; }
             $summary[] = $line;
         }
 
@@ -241,12 +242,26 @@ class TaxSummaryController extends Controller
                 ->where('schedule_users.user_id', $userId)
                 ->whereBetween('schedules.date', ["{$data['from']}-01", "{$data['to']}-31"])
                 ->orderBy('schedules.date')
-                ->select('schedules.date', 'schedules.memo', 'schedules.daily_wage')
+                ->select('schedules.date', 'schedules.memo', 'schedules.daily_wage', 'schedules.work_units', 'schedules.employment_type')
                 ->get();
 
-            $schedules = [['날짜', '메모', '금액']];
+            // ★ v18.66 — 일정(1회 지급분)별 공수·구분·소득세·지방소득세도 함께 (월별 예상원천세의 근거)
+            $schedules = [['날짜', '메모', '금액', '공수', '구분', '소득세', '지방소득세']];
             foreach ($list as $s) {
-                $schedules[] = [substr((string) $s->date, 0, 10), (string) $s->memo, $s->daily_wage];
+                $t = MonthlySummaryService::taxBreakdown(
+                    (float) ($s->daily_wage ?? 0),
+                    (float) ($s->work_units ?? 0),
+                    $s->employment_type ?? 'daily',
+                );
+                $schedules[] = [
+                    substr((string) $s->date, 0, 10),
+                    (string) $s->memo,
+                    $s->daily_wage,
+                    $s->work_units,
+                    $s->employment_type === 'freelance' ? '프리랜서(3.3%)' : '일용근로',
+                    $t['income_tax'],
+                    $t['local_tax'],
+                ];
             }
         }
 
@@ -274,6 +289,9 @@ class TaxSummaryController extends Controller
             ->distinct()
             ->pluck('ym');
 
+        // ★ v18.66 — 예상원천세의 소득세/지방소득세 내역(월별 합계에는 총액만 저장돼 있어 일정에서 계산)
+        $taxSplit = MonthlySummaryService::yearlyTaxBreakdown($userId, $year);
+
         $result = [];
         for ($m = 1; $m <= 12; $m++) {
             $yearMonth = sprintf('%04d-%02d', $year, $m);
@@ -291,6 +309,8 @@ class TaxSummaryController extends Controller
                 'total_income'     => (float) ($summary->total_income ?? 0),
                 'total_expenses'   => (float) ($summary->total_expenses ?? 0),
                 'estimated_tax'    => (float) ($summary->estimated_tax ?? 0),
+                'income_tax'       => (int) ($taxSplit[$yearMonth]['income_tax'] ?? 0), // ★ v18.66
+                'local_tax'        => (int) ($taxSplit[$yearMonth]['local_tax'] ?? 0),  // ★ v18.66
                 'net_income'       => (float) ($summary->net_income ?? 0),
                 'work_days'        => (int) ($summary->work_days ?? 0),
             ];
@@ -306,6 +326,8 @@ class TaxSummaryController extends Controller
             'total_income'     => round(array_sum(array_column($months, 'total_income')), 2),
             'total_expenses'   => round(array_sum(array_column($months, 'total_expenses')), 2),
             'estimated_tax'    => round(array_sum(array_column($months, 'estimated_tax')), 2),
+            'income_tax'       => array_sum(array_column($months, 'income_tax')), // ★ v18.66
+            'local_tax'        => array_sum(array_column($months, 'local_tax')),  // ★ v18.66
             'net_income'       => round(array_sum(array_column($months, 'net_income')), 2),
             'work_days'        => array_sum(array_column($months, 'work_days')),
         ];

@@ -51,7 +51,7 @@ export default function QuotePreviewScreen() {
     ]);
   };
 
-  // ★ v18.38 — 실제 발송: 견적서 PDF 링크(30일 유효)를 카톡·문자 공유창으로 고객에게 전달하고 발송 상태로 표시
+  // ★ v18.38 — 실제 발송: 견적서 PDF 링크(3일 유효)를 카톡·문자 공유창으로 고객에게 전달하고 발송 상태로 표시
   const handleSend = async () => {
     if (!quote) return;
     setSending(true);
@@ -60,7 +60,7 @@ export default function QuotePreviewScreen() {
       const message = [
         `[견적서] ${quote.client_name ? `${quote.client_name}님, ` : ''}요청하신 견적서를 보내드립니다.`,
         `총 견적가: ${formatMoney(quote.total_amount)}원${quote.tax_type === 'exempt' ? ' (면세)' : ' (부가세 포함)'}`,
-        `견적서 보기(PDF): ${url}`,
+        `견적서 보기(PDF, 3일간 열려요): ${url}`,
         user?.name ? `- ${user.name}${user.phone ? ` (${user.phone})` : ''} 드림` : '',
       ].filter(Boolean).join('\n');
 
@@ -69,7 +69,7 @@ export default function QuotePreviewScreen() {
       if (quote.status !== 'draft') return;
 
       // 안드로이드는 공유창을 그냥 닫아도 "공유함"으로 돌아와서, 실제로 보냈는지 한 번 확인
-      Alert.alert('발송 확인', '고객에게 견적서를 보내셨나요?\n발송 상태로 표시할게요. (링크는 30일 동안 열 수 있어요)', [
+      Alert.alert('발송 확인', '고객에게 견적서를 보내셨나요?\n발송 상태로 표시할게요. (링크는 3일 동안 열 수 있어요)', [
         { text: '아니요', style: 'cancel' },
         {
           text: '네, 보냈어요',

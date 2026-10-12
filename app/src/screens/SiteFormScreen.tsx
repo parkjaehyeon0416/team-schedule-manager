@@ -5,13 +5,16 @@
  * ★ 새로 등록하는 현장은 아직 site_id가 없어 사진을 바로 업로드할 수 없으므로, 선택한
  *   사진을 로컬에 담아뒀다가 현장이 만들어진 직후 순서대로 업로드함.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert, ActivityIndicator, Image, Platform, FlatList, Modal } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { pickImage } from '../utils/pickImage';
+import { pickImages, toPhotoFile } from '../utils/pickImage';
+import type { PhotoFile } from '../utils/pickImage';
+import { uploadSequentially, showUploadSummary, uploadSummary } from '../utils/uploadPhotos';
+import type { UploadBatchResult } from '../utils/uploadPhotos';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
 import AddressSearchModal, { DaumAddressResult } from '../components/AddressSearchModal';
@@ -20,7 +23,6 @@ import { getMyTeams } from '../api/teamApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import type { Site, Team, SiteFile as SitePhoto } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
-import { isPlanLocked } from '../utils/planLock';
 
 function parseDongHo(input: string): { dong: string | null; ho: string | null } {
   const trimmed = input.trim();
@@ -36,7 +38,11 @@ function parseDongHo(input: string): { dong: string | null; ho: string | null } 
   return { dong: trimmed, ho: null };
 }
 
-interface QueuedPhoto { uri: string; name: string; type: string }
+type QueuedPhoto = PhotoFile;
+type SitePhotoCategory = 'before' | 'after';
+
+// ★ v18.66 — 시공 전·후 각각 올릴 수 있는 최대 사진 수(갤러리에서 남은 칸만큼 한 번에 고름)
+const PHOTO_MAX = 10;
 
 export default function SiteFormScreen() {
   const navigation = useNavigation<any>();
@@ -69,6 +75,10 @@ export default function SiteFormScreen() {
   const [afterPhotos, setAfterPhotos] = useState<SitePhoto[]>([]);
   const [queuedBefore, setQueuedBefore] = useState<QueuedPhoto[]>([]);
   const [queuedAfter, setQueuedAfter] = useState<QueuedPhoto[]>([]);
+  // ★ v18.66 — 여러 장 올리는 중 진행 상황(수정: 분류별 추가 버튼에 2/5, 등록: 등록 버튼에 표시)
+  const [uploading, setUploading] = useState<{ category: SitePhotoCategory; current: number; total: number } | null>(null);
+  const [submitProgress, setSubmitProgress] = useState<{ current: number; total: number } | null>(null);
+  const busyRef = useRef(false);
 
   // ★ v18.44 — 팀 현장은 그 팀의 팀장만 등록할 수 있어 내가 팀장인 팀만 고를 수 있게
   const [memberOnly, setMemberOnly] = useState(false);
@@ -81,9 +91,9 @@ export default function SiteFormScreen() {
       .catch(() => {});
   }, []);
 
-  const loadPhotos = React.useCallback(() => {
+  const loadPhotos = React.useCallback(async () => {
     if (!editing) return;
-    getSitePhotos(editing.id).then(res => {
+    await getSitePhotos(editing.id).then(res => {
       setBeforePhotos(res.before);
       setAfterPhotos(res.after);
     }).catch(() => {});
@@ -97,21 +107,42 @@ export default function SiteFormScreen() {
     setAddressSearchVisible(false);
   };
 
-  const pickPhoto = async (category: 'before' | 'after') => {
-    const asset = await pickImage();
-    if (!asset?.uri) return;
-    const photo: QueuedPhoto = { uri: asset.uri, name: asset.fileName ?? 'photo.jpg', type: asset.type ?? 'image/jpeg' };
+  // ★ v18.66 — 갤러리에서 남은 칸(최대 10장 - 이미 있는 장수)만큼 한 번에 고름.
+  //   수정 중이면 한 장씩 차례로 올리고 끝난 뒤 한 번만 새로고침, 새 현장이면 등록할 때 올리도록 담아둠.
+  const pickPhoto = async (category: SitePhotoCategory) => {
+    if (busyRef.current) return;
+    const used = category === 'before'
+      ? beforePhotos.length + queuedBefore.length
+      : afterPhotos.length + queuedAfter.length;
+    const remaining = PHOTO_MAX - used;
+    if (remaining <= 0) return;
+    busyRef.current = true;
+    try {
+      const assets = await pickImages(remaining);
+      const files = assets.map(a => toPhotoFile(a)).filter((f): f is QueuedPhoto => f !== null);
+      if (files.length === 0) return;
 
-    if (isEdit && editing) {
-      try {
-        await uploadSitePhoto(editing.id, photo, category);
-        loadPhotos();
-      } catch (e: any) {
-        if (!isPlanLocked(e)) Alert.alert('업로드 실패', e?.response?.data?.message || '사진 업로드에 실패했습니다.');
+      if (isEdit && editing) {
+        setUploading({ category, current: 0, total: files.length });
+        try {
+          const result = await uploadSequentially(
+            files,
+            f => uploadSitePhoto(editing.id, f, category),
+            (current, total) => setUploading({ category, current, total }),
+          );
+          // 새 장수를 받아 온 뒤에 버튼을 풀어야 바로 또 눌렀을 때 10장 제한이 맞게 계산됨
+          if (result.done > 0) await loadPhotos();
+          showUploadSummary(result);
+        } finally {
+          setUploading(null);
+        }
+      } else {
+        const append = (prev: QueuedPhoto[]) => [...prev, ...files].slice(0, PHOTO_MAX);
+        if (category === 'before') setQueuedBefore(append);
+        else setQueuedAfter(append);
       }
-    } else {
-      if (category === 'before') setQueuedBefore(prev => [...prev, photo]);
-      else setQueuedAfter(prev => [...prev, photo]);
+    } finally {
+      busyRef.current = false;
     }
   };
 
@@ -153,18 +184,29 @@ export default function SiteFormScreen() {
         navigation.goBack();
       } else {
         const created = await createSite(payload);
-        for (const p of queuedBefore) {
-          await uploadSitePhoto(created.id, p, 'before').catch(() => {});
-        }
-        for (const p of queuedAfter) {
-          await uploadSitePhoto(created.id, p, 'after').catch(() => {});
+        // ★ v18.66 — 담아둔 사진을 시공 전 → 후 순서로 한 장씩 올림(진행 2/5 표시, 요금제 한도면 거기서 멈춤)
+        const queued = [
+          ...queuedBefore.map(photo => ({ photo, category: 'before' as const })),
+          ...queuedAfter.map(photo => ({ photo, category: 'after' as const })),
+        ];
+        let result: UploadBatchResult | null = null;
+        if (queued.length > 0) {
+          setSubmitProgress({ current: 0, total: queued.length });
+          result = await uploadSequentially(
+            queued,
+            q => uploadSitePhoto(created.id, q.photo, q.category),
+            (current, total) => setSubmitProgress({ current, total }),
+          );
         }
         navigation.replace('SiteDetail', { siteId: created.id });
+        const summary = result && uploadSummary(result);
+        if (summary) Alert.alert(summary.title, `현장은 등록했어요.\n${summary.message}`);
       }
     } catch (e: any) {
       Alert.alert('저장 실패', e?.response?.data?.message || '현장 저장에 실패했습니다.');
     } finally {
       setSaving(false);
+      setSubmitProgress(null);
     }
   };
 
@@ -175,9 +217,10 @@ export default function SiteFormScreen() {
     tone: { bg: string; fg: string },
     uploaded: SitePhoto[],
     queued: QueuedPhoto[],
-    category: 'before' | 'after',
+    category: SitePhotoCategory,
   ) => {
     const count = uploaded.length + queued.length;
+    const progress = uploading?.category === category ? uploading : null;
     return (
       <View style={styles.photoBox}>
         <View style={styles.photoBoxHeader}>
@@ -195,10 +238,20 @@ export default function SiteFormScreen() {
               <Image source={{ uri: p.uri }} style={styles.photoThumb} />
             </View>
           ))}
-          {count < 10 && (
-            <Pressable style={styles.photoAddBtn} onPress={() => pickPhoto(category)}>
-              <Icon name="camera-plus-outline" size={20} color={colors.primaryDark} />
-              <Text style={styles.photoAddBtnText}>{count}/10</Text>
+          {/* ★ v18.66 — 올리는 중엔 "올리는 중 2/5" 표시, 다른 분류 추가도 잠시 막음 */}
+          {(count < PHOTO_MAX || progress) && (
+            <Pressable style={[styles.photoAddBtn, !!uploading && !progress && styles.photoAddBtnDisabled]} onPress={() => pickPhoto(category)} disabled={!!uploading}>
+              {progress ? (
+                <>
+                  <ActivityIndicator size="small" color={colors.primaryDark} />
+                  <Text style={[styles.photoAddBtnText, styles.textCenter]}>올리는 중{'\n'}{progress.current}/{progress.total}</Text>
+                </>
+              ) : (
+                <>
+                  <Icon name="camera-plus-outline" size={20} color={colors.primaryDark} />
+                  <Text style={styles.photoAddBtnText}>{count}/{PHOTO_MAX}</Text>
+                </>
+              )}
             </Pressable>
           )}
         </ScrollView>
@@ -343,7 +396,14 @@ export default function SiteFormScreen() {
 
         <Pressable onPress={handleSubmit} disabled={saving} style={{ marginTop: 4 }}>
           <LinearGradient colors={[colors.primaryLight, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.submitBtn, saving && { opacity: 0.7 }]}>
-            {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitBtnText}>{isEdit ? '저장하기' : '현장 등록'}</Text>}
+            {saving ? (
+              submitProgress ? (
+                <View style={styles.submitProgressRow}>
+                  <ActivityIndicator color="#FFFFFF" />
+                  <Text style={styles.submitBtnText}>사진 올리는 중 {submitProgress.current}/{submitProgress.total}</Text>
+                </View>
+              ) : <ActivityIndicator color="#FFFFFF" />
+            ) : <Text style={styles.submitBtnText}>{isEdit ? '저장하기' : '현장 등록'}</Text>}
           </LinearGradient>
         </Pressable>
       </ScrollView>
@@ -382,6 +442,8 @@ const styles = StyleSheet.create({
   photoThumb: { width: '100%', height: '100%' },
   photoAddBtn: { width: 72, height: 72, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#9CC9FA', backgroundColor: '#F3F9FF', alignItems: 'center', justifyContent: 'center', gap: 2 },
   photoAddBtnText: { fontSize: 11, color: colors.primaryDark },
+  photoAddBtnDisabled: { opacity: 0.5 }, // ★ v18.66 — 다른 분류 사진을 올리는 중
+  textCenter: { textAlign: 'center' },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(16,42,86,0.4)' },
   modalSheet: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.lg, maxHeight: '60%' },
@@ -391,4 +453,5 @@ const styles = StyleSheet.create({
 
   submitBtn: { height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  submitProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

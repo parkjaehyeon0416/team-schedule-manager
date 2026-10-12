@@ -333,6 +333,23 @@ export interface SiteReport {
   view_count: number;
   last_viewed_at: string | null;
   created_at: string;
+  // ★ v18.63~66
+  share_expires_at?: string | null;
+  is_mine?: boolean;
+  can_delete?: boolean;
+  author_name?: string | null;
+}
+
+// ★ v18.66 디자인 SCHEDULE_REPORTS — 화면 위쪽 "보고서에 들어갈 내용" + 이번 달 사용량
+export interface ReportContext {
+  has_site: boolean;
+  site_name: string | null;
+  address: string | null;
+  date: string;
+  work_type: string | null;
+  area_m2: number | null;
+  photo_counts: { before: number; during: number; after: number; other: number; total: number };
+  usage: { used: number; limit: number | null };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -365,6 +382,9 @@ export interface TaxMonthRow {
   total_income: number;
   total_expenses: number;
   estimated_tax: number;
+  /** ★ v18.66 — 예상 원천세 내역: 소득세 / 지방소득세(소득세의 10%) */
+  income_tax?: number;
+  local_tax?: number;
   net_income: number;
   work_days: number;
 }

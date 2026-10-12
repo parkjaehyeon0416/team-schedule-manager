@@ -35,6 +35,8 @@
     .compare-cell { width: 50%; text-align: center; vertical-align: top; padding: 0; }
     .compare-cell img { width: 100%; height: 160px; object-fit: cover; border-radius: 4px; }
     .compare-label { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+    /* ★ v18.66 — 제목이 페이지 맨 아래에 혼자 남고 사진은 다음 장으로 넘어가던 것: 제목 + 첫 줄을 한 묶음으로 */
+    .keep { page-break-inside: avoid; }
     .footer { margin-top: 24px; text-align: center; color: #999; font-size: 10px; }
 </style>
 </head>
@@ -65,7 +67,8 @@
         <td class="label">공정</td><td>{{ $schedule->workTypeRelation?->name ?? $schedule->work_type ?? '-' }}</td>
     </tr>
     <tr>
-        <td class="label">면적</td><td>{{ $schedule->area_m2 ? $schedule->area_m2.'㎡' : '-' }}</td>
+        {{-- ★ v18.66 — PDF 폰트에 ㎡ 글자가 없어서 단위가 사라지던 것 → m², 105.60 → 105.6 --}}
+        <td class="label">면적</td><td>{{ $schedule->area_m2 ? rtrim(rtrim(number_format((float) $schedule->area_m2, 2, '.', ''), '0'), '.').'m²' : '-' }}</td>
         <td class="label">공수</td><td>{{ $schedule->work_units ?? '-' }}</td>
     </tr>
 </table>
@@ -75,8 +78,8 @@
 @endif
 
 @if($pairs->count() > 0)
-<h2>시공 전 · 후 비교</h2>
-@foreach($pairs as $pair)
+@foreach($pairs as $pi => $pair)
+@if($pi === 0)<div class="keep"><h2>시공 전 · 후 비교</h2>@endif
 {{-- ★ v18.36 — inline-block이면 dompdf에서 라벨이 h2 제목 줄로 끌려 올라가서 표로 배치 --}}
 <table class="compare-pair">
     <tr>
@@ -88,14 +91,16 @@
         <td class="compare-cell"><img src="{{ $pair['after']->absolute_path }}"></td>
     </tr>
 </table>
+@if($pi === 0)</div>@endif
 @endforeach
 @endif
 
 @foreach(['before' => '시공 전', 'during' => '시공 중', 'after' => '시공 후', 'other' => '기타'] as $cat => $label)
     @if(($photosByCategory[$cat] ?? collect())->count() > 0)
-    <h2>{{ $label }} 사진 ({{ $photosByCategory[$cat]->count() }}장)</h2>
+    @foreach($photosByCategory[$cat]->chunk(3) as $ci => $row)
+    @if($ci === 0)<div class="keep"><h2>{{ $label }} 사진 ({{ $photosByCategory[$cat]->count() }}장)</h2>@endif
     <div class="photo-section">
-        @foreach($photosByCategory[$cat] as $photo)
+        @foreach($row as $photo)
         <div class="photo-cell">
             <img src="{{ $photo->absolute_path }}">
             @if($photo->description)
@@ -104,6 +109,8 @@
         </div>
         @endforeach
     </div>
+    @if($ci === 0)</div>@endif
+    @endforeach
     @endif
 @endforeach
 

@@ -13,6 +13,7 @@ import { getSchedules } from '../api/schedulesApi';
 import AppHeader from '../components/AppHeader';
 import type { Schedule, TaxMonthRow } from '../types/api';
 import { formatMoney } from '../utils/format';
+import { TAX_NOTE } from '../utils/tax';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { scheduleLocationLabel } from '../utils/scheduleLocation';
 
@@ -79,10 +80,20 @@ export default function TaxMonthDetailScreen() {
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}><Text style={styles.infoLabel}>총 경비</Text><Text style={styles.infoValue}>{formatMoney(row?.total_expenses ?? 0)}원</Text></View>
-          <View style={styles.infoRow}><Text style={styles.infoLabel}>예상 원천세</Text><Text style={styles.infoValue}>{formatMoney(row?.estimated_tax ?? 0)}원 (참고)</Text></View>
+          {/* ★ v18.66 — 소득세 + 지방소득세 내역(서버가 내려줄 때만) */}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>예상 원천세</Text>
+            <View style={styles.taxValueCol}>
+              <Text style={styles.infoValue}>{formatMoney(row?.estimated_tax ?? 0)}원 (참고)</Text>
+              {row?.income_tax !== undefined && row?.local_tax !== undefined && (
+                <Text style={styles.taxSub}>소득세 {formatMoney(row.income_tax)}원 + 지방소득세 {formatMoney(row.local_tax)}원</Text>
+              )}
+            </View>
+          </View>
           <View style={styles.infoRow}><Text style={styles.infoLabel}>실수령액</Text><Text style={styles.infoValue}>{formatMoney(row?.net_income ?? 0)}원</Text></View>
           <View style={[styles.infoRow, { borderBottomWidth: 0 }]}><Text style={styles.infoLabel}>작업 일수</Text><Text style={styles.infoValue}>{row?.work_days ?? 0}일</Text></View>
         </View>
+        <Text style={styles.taxNote}>{TAX_NOTE}</Text>
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>원본 내역</Text>
@@ -150,6 +161,10 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', gap: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
   infoLabel: { width: 88, fontSize: 13, color: colors.textSecondary },
   infoValue: { flex: 1, fontSize: 14, fontWeight: '500', color: colors.textPrimary },
+  // ★ v18.66 — 예상 원천세 내역 줄 + 계산 기준 안내
+  taxValueCol: { flex: 1, gap: 2 },
+  taxSub: { fontSize: 12, color: colors.textSecondary },
+  taxNote: { fontSize: 11, color: colors.textSecondary, lineHeight: 16, paddingHorizontal: 4, marginTop: -4 },
 
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },

@@ -28,6 +28,9 @@ class SiteReportController extends Controller
     /** ★ v18.63 — 공유 링크 유효 기간(일). 공유할 때마다 그때부터 3일 */
     public const SHARE_DAYS = 3;
 
+    /** ★ v18.66 — 인사말을 비워 두면 보고서 첫 장에 넣는 기본 문구 */
+    public const DEFAULT_GREETING = "안녕하세요. 맡겨 주신 시공이 잘 마무리되어 현장 사진과 함께 보고드립니다.\n궁금하신 점이 있으면 언제든 연락 주세요. 감사합니다.";
+
     /**
      * ★ v18.63 — 공유하기(앱의 [공유]·[열기]). 링크가 살아 있으면 그대로 두고 기한만 지금부터 3일로,
      *   이미 만료됐으면 새 주소로 바꿔서(옛 링크는 계속 막힘) 돌려줌.
@@ -63,11 +66,65 @@ class SiteReportController extends Controller
             return ApiResponse::error('일정을 찾을 수 없습니다.', ErrorCode::SCHEDULE_NOT_FOUND, 404);
         }
 
-        $reports = SiteReport::where('schedule_id', $schedule->id)
+        $user = $request->user();
+        $reports = SiteReport::with('user:id,name')
+            ->where('schedule_id', $schedule->id)
             ->orderByDesc('id')
-            ->get();
+            ->get()
+            // ★ v18.66 디자인 SCHEDULE_REPORTS — 삭제 버튼(만든 사람·팀장·부팀장만)과 "OOO님이 만든 보고서" 표시용
+            ->map(function (SiteReport $r) use ($user, $schedule) {
+                $mine = (int) $r->user_id === (int) $user->id;
+                $r->setAttribute('is_mine', $mine);
+                $r->setAttribute('can_delete', $mine || $schedule->canEditBy($user));
+                $r->setAttribute('author_name', $mine ? null : $r->user?->name);
+                $r->unsetRelation('user');
+                return $r;
+            });
+
+        // ★ v18.66 — ?with_context=1이면 화면 위쪽 "보고서에 들어갈 내용"·이번 달 사용량도 같이(예전 앱은 배열 그대로 받음)
+        if ($request->boolean('with_context')) {
+            return ApiResponse::success([
+                'reports' => $reports,
+                'context' => $this->context($schedule, $user),
+            ], '보고서 목록 조회 성공');
+        }
 
         return ApiResponse::success($reports, '보고서 목록 조회 성공');
+    }
+
+    /** ★ v18.66 — 보고서에 들어갈 내용(현장·작업일·공정·사진 수) + 이번 달 무료 사용량 */
+    private function context(Schedule $schedule, $user): array
+    {
+        $schedule->loadMissing('site', 'workTypeRelation');
+        $site = $schedule->site;
+        $address = $site
+            ? trim(implode(' ', array_filter([$site->address, $site->dong ? $site->dong . '동' : null, $site->ho ? $site->ho . '호' : null])))
+            : trim(($schedule->address ?? '') . ' ' . ($schedule->address_detail ?? ''));
+
+        $counts = ['before' => 0, 'during' => 0, 'after' => 0, 'other' => 0];
+        if ($schedule->site_id) {
+            SiteFile::where('site_id', $schedule->site_id)->where('file_type', 'photo')
+                ->selectRaw('photo_category, COUNT(*) as c')->groupBy('photo_category')->get()
+                ->each(function ($row) use (&$counts) {
+                    $key = array_key_exists($row->photo_category ?? '', $counts) ? $row->photo_category : 'other';
+                    $counts[$key] += (int) $row->c;
+                });
+        }
+
+        $limit = \App\Services\PlanService::limit($user, 'reports_per_month', 'report_unlimited');
+        $used = SiteReport::withTrashed()->where('user_id', $user->id)->where('created_at', '>=', now()->startOfMonth())->count();
+
+        return [
+            'has_site'     => (bool) ($schedule->site_id || $schedule->address),
+            'site_name'    => $site ? ($site->apt_name ?: $site->address) : ($schedule->title ?: $schedule->address),
+            'address'      => $address ?: null,
+            'date'         => $schedule->date instanceof \Carbon\Carbon ? $schedule->date->toDateString() : (string) $schedule->date,
+            'work_type'    => $schedule->workTypeRelation?->name ?? $schedule->work_type,
+            'area_m2'      => $schedule->area_m2 !== null ? (float) $schedule->area_m2 : null,
+            'photo_counts' => $counts + ['total' => array_sum($counts)],
+            // 무료 한도(null이면 무제한 — 출시 기념 무료·프로)
+            'usage'        => ['used' => $used, 'limit' => $limit],
+        ];
     }
 
     /**
@@ -113,7 +170,10 @@ class SiteReportController extends Controller
             'title'             => $data['title'],
             'client_name'       => $data['client_name'] ?? null,
             'client_contact'    => $data['client_contact'] ?? null,
-            'greeting_message'  => $data['greeting_message'] ?? null,
+            // ★ v18.66 디자인 SCHEDULE_REPORTS — "비워 두면 기본 인사말을 넣어요"
+            'greeting_message'  => trim((string) ($data['greeting_message'] ?? '')) !== ''
+                ? $data['greeting_message']
+                : self::DEFAULT_GREETING,
             'template_id'       => 'basic',
             'share_token'       => $this->generateShareToken(),
             'share_expires_at'  => now()->addDays(self::SHARE_DAYS),

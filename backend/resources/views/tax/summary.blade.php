@@ -23,6 +23,7 @@
     th { background: #1F3864; color: #fff; font-weight: bold; text-align: center; }
     td.label { text-align: center; }
     tr.total td { background: #F5F7FA; font-weight: bold; }
+    .split { margin-top: 8px; text-align: right; font-size: 11px; color: #555; } /* ★ v18.66 */
     .note {
         margin-top: 16px; font-size: 10px; color: #888; line-height: 1.6;
     }
@@ -70,8 +71,18 @@
     </tbody>
 </table>
 
+{{-- ★ v18.66 — 소득세/지방소득세 내역 + 계산 기준(지방소득세 10% 포함, 소액부징수) 안내 --}}
+<div class="split">
+    예상 원천징수액 합계 {{ number_format($totals['estimated_tax']) }}원
+    = 소득세 {{ number_format($totals['income_tax'] ?? 0) }}원 + 지방소득세 {{ number_format($totals['local_tax'] ?? 0) }}원
+</div>
+
 <div class="note">
-    ※ "예상 원천징수액"은 일용근로소득 기준 간이 추정치입니다 (일당에서 150,000원을 공제한 금액의 2.7%, 실제 원천징수 세율과 다를 수 있습니다).<br>
+    ※ "예상 원천징수액"은 일정 1건(1회 지급분)마다 계산해 더한 간이 추정치이며, 소득세와 지방소득세(소득세의 10%)를 포함합니다.<br>
+    &nbsp;&nbsp;· 일용근로: (하루 지급액 - 150,000원) × 2.7% (세율 6%에서 근로소득세액공제 55%를 뺀 값)<br>
+    &nbsp;&nbsp;· 프리랜서(사업소득): 지급액 × 3% (지방소득세를 더하면 3.3%)<br>
+    &nbsp;&nbsp;· 1회 지급분의 소득세가 1,000원 미만이면 떼지 않아 0원으로 계산합니다(소액부징수).<br>
+    &nbsp;&nbsp;· 여러 날 치를 한꺼번에 받으면 합산한 금액 기준으로 원천징수되므로 실제 금액과 달라질 수 있습니다.<br>
     ※ 이 표는 종합소득세 신고를 위한 참고 자료이며, 실제 신고는 세무 전문가와 상담 후 진행하시기 바랍니다.<br>
     ※ 현장메이트에 기록된 일정·공수·단가·경비 데이터를 기준으로 자동 계산되었습니다.
 </div>

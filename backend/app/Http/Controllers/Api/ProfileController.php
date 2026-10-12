@@ -25,10 +25,24 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'phone'         => ['nullable', 'string', 'max:20', \Illuminate\Validation\Rule::unique('users', 'phone')->ignore($request->user()->id)], // ★ v18.65
+            'phone'         => ['nullable', 'string', 'max:20'],
             'kakao_talk_id' => 'nullable|string|max:50',
             'avatar_color'  => 'nullable|regex:/^#[0-9A-Fa-f]{6}$/',
-        ], ['phone.unique' => '이미 다른 계정에서 쓰는 전화번호예요.']);
+        ]);
+
+        // ★ v18.66 — 휴대폰 번호는 여기서 못 바꿈. 탈퇴·처음 비밀번호 설정의 문자 본인 확인에 쓰여서
+        //   본인 확인 + 새 번호 문자 인증을 거치는 PUT /profile/phone(PhoneChangeController)으로만 바꿈.
+        //   옛 버전 앱은 안 바뀐 번호도 같이 보내서, 지금 번호와 같으면(숫자만 비교) 그냥 넘어감.
+        if (array_key_exists('phone', $data)) {
+            if (preg_replace('/\D/', '', (string) $data['phone']) !== preg_replace('/\D/', '', (string) $user->phone)) {
+                return ApiResponse::error(
+                    '휴대폰 번호를 바꾸려면 문자 인증이 필요해요. 앱을 최신 버전으로 업데이트한 뒤 프로필 설정의 휴대폰 번호 [변경]에서 바꿔주세요.',
+                    \App\Constants\ErrorCode::VALID_GENERAL,
+                    422
+                );
+            }
+            unset($data['phone']);
+        }
 
         $user->update($data);
 

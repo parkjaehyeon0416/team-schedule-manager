@@ -11,7 +11,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import { createInquiry, INQUIRY_CATEGORIES } from '../api/inquiryApi';
 import type { InquiryCategory, InquiryPhoto } from '../api/inquiryApi';
-import { pickImage } from '../utils/pickImage';
+import { pickImages, toPhotoFile } from '../utils/pickImage';
 import { APP_VERSION } from '../constants/appVersion';
 import { colors, spacing } from '../theme/designTokens';
 
@@ -35,10 +35,14 @@ export default function InquiryCreateScreen() {
   const [notify, setNotify] = useState(true);
   const [sending, setSending] = useState(false);
 
+  // ★ v18.66 — 남은 칸 수(최대 3장 - 이미 담은 장수)만큼 갤러리에서 한 번에 고름. 첨부는 문의 보낼 때 함께 올라감.
   const addPhoto = async () => {
-    const asset = await pickImage();
-    if (!asset?.uri) return;
-    setPhotos(prev => [...prev, { uri: asset.uri!, name: asset.fileName ?? 'photo.jpg', type: asset.type ?? 'image/jpeg' }].slice(0, MAX_PHOTOS));
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) return;
+    const assets = await pickImages(remaining);
+    const picked = assets.map(a => toPhotoFile(a)).filter((f): f is InquiryPhoto => f !== null);
+    if (picked.length === 0) return;
+    setPhotos(prev => [...prev, ...picked].slice(0, MAX_PHOTOS));
   };
 
   const submit = async () => {

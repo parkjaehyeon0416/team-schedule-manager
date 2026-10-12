@@ -28,7 +28,6 @@ export default function ProfileEditScreen() {
   const navigation = useNavigation<any>();
   const { user, updateUser } = useAuthStore();
 
-  const [phone, setPhone] = useState(formatPhoneInput(user?.phone ?? ''));
   const [kakaoTalkId, setKakaoTalkId] = useState(user?.kakao_talk_id ?? '');
   const [avatarImagePath, setAvatarImagePath] = useState(user?.avatar_image_path ?? null);
   const [serviceArea, setServiceArea] = useState('');
@@ -81,14 +80,14 @@ export default function ProfileEditScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // ★ v18.66 — 휴대폰 번호는 여기서 안 보냄(본인 확인 + 문자 인증 거치는 [변경] 화면에서만 바뀜)
       const updated = await updateProfile({
-        phone: stripPhoneFormatting(phone) || undefined,
         kakao_talk_id: kakaoTalkId.trim() || undefined,
       });
       await updateUser(updated);
       await saveBusinessCard({
         display_name: user.name,
-        contact_phone: stripPhoneFormatting(phone) || undefined,
+        contact_phone: stripPhoneFormatting(user.phone ?? '') || undefined,
         service_area: serviceArea.trim() || undefined,
         years_experience: yearsExperience ? Number(yearsExperience) : undefined,
         specialty: selectedTypes.length > 0 ? selectedTypes.join(',') : undefined,
@@ -130,16 +129,14 @@ export default function ProfileEditScreen() {
 
         <View style={styles.field}>
           <Text style={styles.label}>휴대폰 번호</Text>
-          <View style={styles.inputWrap}>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={t => setPhone(formatPhoneInput(t))}
-              placeholder="010-0000-0000"
-              placeholderTextColor={colors.muted}
-              keyboardType="phone-pad"
-              maxLength={13}
-            />
+          {/* ★ v18.66 — 읽기 전용 + [변경]: 번호는 문자 본인 확인에 쓰여서 PhoneChange 화면에서 인증 후에만 바뀜 */}
+          <View style={[styles.inputWrap, styles.inputWrapDisabled, styles.phoneRow]}>
+            <Text style={[styles.disabledText, { flex: 1 }]} numberOfLines={1}>
+              {user.phone ? formatPhoneInput(user.phone) : '등록된 번호가 없어요'}
+            </Text>
+            <Pressable onPress={() => navigation.navigate('PhoneChange')} style={styles.phoneBtn} accessibilityRole="button" hitSlop={6}>
+              <Text style={styles.phoneBtnText}>{user.phone ? '변경' : '등록'}</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -248,6 +245,9 @@ const styles = StyleSheet.create({
   inputWrapDisabled: { backgroundColor: '#F3F6FA' },
   disabledText: { fontSize: 14, color: colors.textSecondary },
   input: { fontSize: 14, color: colors.textPrimary, padding: 0 },
+  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 7 }, // ★ v18.66
+  phoneBtn: { height: 34, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1, borderColor: '#BFDBFB', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  phoneBtnText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { height: 34, paddingHorizontal: 14, borderRadius: 17, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },

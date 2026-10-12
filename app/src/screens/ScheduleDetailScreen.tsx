@@ -4,11 +4,13 @@
 //     카테고리별(시공전/중/후/기타) 사진 관리 + 짝 지정 + 비교 화면 기능은 디자인보다
 //     훨씬 많은 실제 기능이라 그대로 유지하고 외곽 스타일만 디자인에 맞춤.
 // ═══════════════════════════════════════════════════════════════
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { pickImage } from '../utils/pickImage';
+import { pickImages, toPhotoFile } from '../utils/pickImage';
+import type { PhotoFile } from '../utils/pickImage';
+import { uploadSequentially, showUploadSummary } from '../utils/uploadPhotos';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 
@@ -29,7 +31,6 @@ import PhotoPairPicker from '../components/PhotoPairPicker';
 import AppHeader from '../components/AppHeader';
 import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 import { colors, radius, spacing } from '../theme/designTokens';
-import { isPlanLocked } from '../utils/planLock';
 
 const WEEKDAY_LABEL = ['일', '월', '화', '수', '목', '금', '토'];
 const AVATAR_BG = ['#FFE3C2', '#D6ECFF', '#D9F6F1', '#ECE5FF', '#FFE0E0'];
@@ -53,7 +54,10 @@ const EMPTY_PHOTOS: PhotoListResponse = {
   counts: { before: 0, during: 0, after: 0, other: 0 },
 };
 
-interface PendingPhoto { uri: string; name: string; type: string }
+type PendingPhoto = PhotoFile;
+
+// ★ v18.66 — 갤러리에서 한 번에 고를 수 있는 사진 수
+const PHOTOS_PER_PICK = 10;
 
 export default function ScheduleDetailScreen({ route }: any) {
   const { id } = route.params;
@@ -71,6 +75,9 @@ export default function ScheduleDetailScreen({ route }: any) {
   const [pairPickerVisible, setPairPickerVisible] = useState(false);
   const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
   const [reassignPhotoId, setReassignPhotoId] = useState<number | null>(null);
+  // ★ v18.66 — 여러 장 올리는 중 진행 상황(2/5), 사진 고르기·올리기 중복 실행 방지
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const busyRef = useRef(false);
 
   useFocusEffect(useCallback(() => {
     fetchDetail();
@@ -107,28 +114,49 @@ export default function ScheduleDetailScreen({ route }: any) {
     } catch {}
   };
 
+  // ★ v18.66 — 갤러리에서 여러 장(최대 10장)을 골라 지금 보고 있는 분류(시공 전/중/후/기타)로 한꺼번에 올림.
+  //   시공 후 사진을 1장만 고르면 예전처럼 짝(시공 전 사진) 선택 창을 띄우고,
+  //   여러 장이면 짝 없이 올린 뒤 사진을 길게 눌러 짝을 지정하도록 안내함.
   const handlePhotoUpload = async () => {
-    const asset = await pickImage();
-    if (!asset) return;
-    if (!asset.uri || !asset.fileName || !asset.type) {
-      Alert.alert('오류', '사진 정보를 읽을 수 없습니다.');
-      return;
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const category = currentCategory; // 올리는 도중 분류 탭을 바꿔도 고른 순간의 분류로 올림
+      const assets = await pickImages(PHOTOS_PER_PICK);
+      if (assets.length === 0) return;
+      const files = assets.map(a => toPhotoFile(a)).filter((f): f is PhotoFile => f !== null);
+      if (files.length === 0) {
+        Alert.alert('오류', '사진 정보를 읽을 수 없습니다.');
+        return;
+      }
+      if (category === 'after' && files.length === 1) {
+        setPendingPhoto(files[0]);
+        setPairPickerVisible(true);
+        return;
+      }
+      await uploadBatch(files, category);
+    } finally {
+      busyRef.current = false;
     }
-    const photo: PendingPhoto = { uri: asset.uri, name: asset.fileName, type: asset.type };
-    if (currentCategory === 'after') {
-      setPendingPhoto(photo);
-      setPairPickerVisible(true);
-      return;
-    }
-    await doUpload(photo, undefined);
   };
 
-  const doUpload = async (photo: PendingPhoto, pairedWithId?: number) => {
+  // ★ v18.66 — 한 장씩 차례로 올리고, 끝난 뒤 사진 목록은 한 번만 새로고침 + 결과 알림 한 번
+  const uploadBatch = async (files: PhotoFile[], category: PhotoCategory, pairedWithId?: number) => {
+    setUploadProgress({ current: 0, total: files.length });
     try {
-      await uploadSchedulePhoto(id, photo, currentCategory, undefined, pairedWithId);
-      fetchPhotos();
-    } catch (e: any) {
-      if (!isPlanLocked(e)) Alert.alert('업로드 실패', e?.response?.data?.message || '다시 시도해주세요.');
+      const result = await uploadSequentially(
+        files,
+        f => uploadSchedulePhoto(id, f, category, undefined, pairedWithId),
+        (current, total) => setUploadProgress({ current, total }),
+      );
+      if (result.done > 0) fetchPhotos();
+      if (category === 'after' && files.length > 1 && result.done === result.total) {
+        Alert.alert('사진 올리기 완료', `시공 후 사진 ${result.done}장을 올렸어요.\n비교 화면에 쓰려면 사진을 길게 눌러 짝(시공 전 사진)을 지정해주세요.`);
+      } else {
+        showUploadSummary(result);
+      }
+    } finally {
+      setUploadProgress(null);
     }
   };
 
@@ -153,7 +181,12 @@ export default function ScheduleDetailScreen({ route }: any) {
     if (!pendingPhoto) return;
     const photo = pendingPhoto;
     setPendingPhoto(null);
-    await doUpload(photo, pairedWithId ?? undefined);
+    busyRef.current = true;
+    try {
+      await uploadBatch([photo], 'after', pairedWithId ?? undefined);
+    } finally {
+      busyRef.current = false;
+    }
   };
 
   const handlePairCancel = () => {
@@ -338,9 +371,19 @@ export default function ScheduleDetailScreen({ route }: any) {
                 <Text style={styles.photoActionBtnText}>비교</Text>
               </Pressable>
             )}
-            <Pressable style={styles.photoActionBtn} onPress={handlePhotoUpload}>
-              <Icon name="plus" size={14} color={colors.primaryDark} />
-              <Text style={styles.photoActionBtnText}>추가</Text>
+            {/* ★ v18.66 — 여러 장 올리는 중엔 "올리는 중 2/5"로 바뀌고 눌리지 않음 */}
+            <Pressable style={styles.photoActionBtn} onPress={handlePhotoUpload} disabled={!!uploadProgress}>
+              {uploadProgress ? (
+                <>
+                  <ActivityIndicator size="small" color={colors.primaryDark} style={styles.photoActionSpinner} />
+                  <Text style={styles.photoActionBtnText}>올리는 중 {uploadProgress.current}/{uploadProgress.total}</Text>
+                </>
+              ) : (
+                <>
+                  <Icon name="plus" size={14} color={colors.primaryDark} />
+                  <Text style={styles.photoActionBtnText}>추가</Text>
+                </>
+              )}
             </Pressable>
           </View>
         </View>
@@ -422,6 +465,7 @@ const styles = StyleSheet.create({
   photoHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   photoActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 28, paddingHorizontal: 10, borderRadius: 14, borderWidth: 1, borderColor: '#BFDBFB' },
   photoActionBtnText: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
+  photoActionSpinner: { transform: [{ scale: 0.7 }] }, // ★ v18.66 — 28px 높이 버튼 안에 들어가게
   unpairedNotice: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
   unpairedNoticeText: { flex: 1, fontSize: 12, color: colors.danger, lineHeight: 17 },
   photoCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderCard, borderRadius: radius.lg, padding: 12, gap: 8 },

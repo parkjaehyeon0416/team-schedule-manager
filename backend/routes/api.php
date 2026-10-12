@@ -137,6 +137,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile',          [ProfileController::class, 'update']);
     Route::post('/profile/avatar',  [ProfileController::class, 'uploadAvatar']);
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+    // ★ v18.66 — 휴대폰 번호 변경(등록)은 ① 본인 확인 + ② 새 번호 문자 인증 (PUT /profile로는 못 바꿈)
+    //   throttle 세 번째 값은 횟수 묶음 이름 — 안 주면 같은 사용자의 throttle 라우트끼리 횟수를 같이 셈
+    Route::post('/profile/phone/reauth', [\App\Http\Controllers\Api\PhoneChangeController::class, 'reauth'])->middleware('throttle:5,1,phone-reauth');
+    Route::post('/profile/phone/code',   [\App\Http\Controllers\Api\PhoneChangeController::class, 'sendCode'])->middleware('throttle:5,1,phone-code');
+    Route::put('/profile/phone',         [\App\Http\Controllers\Api\PhoneChangeController::class, 'update'])->middleware('throttle:10,1,phone-save');
 
     // ═══════════════════════════════════════════════════════════
     // ── 조회 (member 이상 모두 가능) ──

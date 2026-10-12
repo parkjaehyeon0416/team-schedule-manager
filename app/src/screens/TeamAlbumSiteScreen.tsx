@@ -2,6 +2,8 @@
  * 현장별 앨범 — DESIGN-CANVAS 기준, TEAM_ALBUM_SITE.dc.html (★ v18.48)
  * 단계(전체/시공 전/중/후/기타) · 올린 사람 필터, 3열 사진 격자(60장씩 더 불러오기), 크게 보기(올린 사람·날짜·저장).
  * 오른쪽 위 카메라: 이 현장을 수정할 수 있는 사람(팀장·부팀장·개인 현장 주인)만 사진 올리기.
+ * ★ v18.66 — 갤러리에서 여러 장(최대 10장)을 골라 같은 단계로 한꺼번에 올림. 단계 고르기는 안드로이드 Alert가
+ *   버튼을 3개까지만 보여줘서(기타·취소가 안 보였음) 아래에서 올라오는 선택 창으로 바꿈.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image, Modal, Alert, Platform, PermissionsAndroid, Dimensions } from 'react-native';
@@ -15,13 +17,17 @@ import { getTeamAlbumPhotos } from '../api/teamApi';
 import type { AlbumPhoto, AlbumPhotoPage, PhotoStage } from '../api/teamApi';
 import { uploadSitePhoto } from '../api/siteApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
-import { pickImage } from '../utils/pickImage';
+import { pickImages, toPhotoFile } from '../utils/pickImage';
+import type { PhotoFile } from '../utils/pickImage';
+import { uploadSequentially, showUploadSummary } from '../utils/uploadPhotos';
 import { Avatar } from '../components/TeamUi';
 import { STAGE_LABEL, STAGE_BG } from './TeamAlbumScreen';
 import { colors, spacing } from '../theme/designTokens';
-import { isPlanLocked } from '../utils/planLock';
 
 const STAGES: (PhotoStage | null)[] = [null, 'before', 'during', 'after', 'other'];
+const UPLOAD_STAGES: PhotoStage[] = ['before', 'during', 'after', 'other'];
+// ★ v18.66 — 갤러리에서 한 번에 고를 수 있는 사진 수
+const PHOTOS_PER_PICK = 10;
 const SIDE = (Dimensions.get('window').width - 6) / 3;
 
 export default function TeamAlbumSiteScreen() {
@@ -35,12 +41,20 @@ export default function TeamAlbumSiteScreen() {
   const [view, setView] = useState<AlbumPhoto | null>(null);
   const [saving, setSaving] = useState(false);
   const shotRef = useRef<any>(null);
+  // ★ v18.66 — 단계 고르기를 기다리는 사진들, 올리는 중 진행 상황(2/5), 중복 실행 방지
+  const [pendingFiles, setPendingFiles] = useState<PhotoFile[] | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const busyRef = useRef(false);
 
   const load = useCallback(async (p = 1) => {
     const r = await getTeamAlbumPhotos(teamId, { site_id: siteId, category: stage ?? undefined, uploader: uploader ?? undefined, page: p });
     setPage(r);
     setItems(prev => (p === 1 ? r.items : [...prev, ...r.items]));
   }, [teamId, siteId, stage, uploader]);
+
+  // ★ v18.66 — 올리는 도중 필터를 바꿔도 끝난 뒤엔 "지금" 필터로 새로고침하도록 최신 load를 들고 있음
+  const loadRef = useRef(load);
+  useEffect(() => { loadRef.current = load; }, [load]);
 
   useEffect(() => { load(1).catch(() => setPage(null)); }, [load]);
 
@@ -50,23 +64,37 @@ export default function TeamAlbumSiteScreen() {
     try { await load(page.page + 1); } finally { setLoadingMore(false); }
   };
 
+  // ★ v18.66 — ① 사진 여러 장 고르기 → ② 단계 선택 창 → ③ 한 장씩 차례로 올리고 끝나면 한 번만 새로고침
   const upload = async () => {
-    const asset = await pickImage();
-    if (!asset?.uri || !asset.fileName || !asset.type) return;
-    Alert.alert('어떤 사진인가요?', undefined, [
-      ...(['before', 'during', 'after', 'other'] as PhotoStage[]).map(c => ({
-        text: STAGE_LABEL[c],
-        onPress: async () => {
-          try {
-            await uploadSitePhoto(siteId, { uri: asset.uri!, name: asset.fileName!, type: asset.type! }, c);
-            load(1);
-          } catch (e: any) {
-            if (!isPlanLocked(e)) Alert.alert('업로드 실패', e?.response?.data?.message || '다시 시도해주세요.');
-          }
-        },
-      })),
-      { text: '취소', style: 'cancel' as const },
-    ]);
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const assets = await pickImages(PHOTOS_PER_PICK);
+      const files = assets.map(a => toPhotoFile(a)).filter((f): f is PhotoFile => f !== null);
+      if (files.length > 0) setPendingFiles(files);
+    } finally {
+      busyRef.current = false;
+    }
+  };
+
+  const uploadAs = async (c: PhotoStage) => {
+    const files = pendingFiles;
+    setPendingFiles(null);
+    if (!files || files.length === 0 || busyRef.current) return;
+    busyRef.current = true;
+    setUploadProgress({ current: 0, total: files.length });
+    try {
+      const result = await uploadSequentially(
+        files,
+        f => uploadSitePhoto(siteId, f, c),
+        (current, total) => setUploadProgress({ current, total }),
+      );
+      if (result.done > 0) loadRef.current(1).catch(() => {});
+      showUploadSummary(result);
+    } finally {
+      setUploadProgress(null);
+      busyRef.current = false;
+    }
   };
 
   const save = async () => {
@@ -106,11 +134,18 @@ export default function TeamAlbumSiteScreen() {
         leftType="back"
         title="현장 앨범"
         rightContent={site?.can_upload ? (
-          <Pressable onPress={upload} style={styles.headerBtn} accessibilityLabel="사진 올리기">
-            <Icon name="camera-outline" size={22} color={colors.textPrimary} />
+          <Pressable onPress={upload} style={styles.headerBtn} accessibilityLabel="사진 올리기" disabled={!!uploadProgress}>
+            {uploadProgress ? <ActivityIndicator color={colors.primaryDark} /> : <Icon name="camera-outline" size={22} color={colors.textPrimary} />}
           </Pressable>
         ) : undefined}
       />
+      {/* ★ v18.66 — 여러 장 올리는 중 진행 표시 */}
+      {!!uploadProgress && (
+        <View style={styles.uploadBanner}>
+          <ActivityIndicator size="small" color={colors.primaryDark} />
+          <Text style={styles.uploadBannerText}>사진 올리는 중 {uploadProgress.current}/{uploadProgress.total}</Text>
+        </View>
+      )}
       {!page ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
@@ -147,6 +182,26 @@ export default function TeamAlbumSiteScreen() {
           )}
         </ScrollView>
       )}
+
+      {/* ★ v18.66 — 올릴 사진의 단계 고르기(고른 사진 전부 같은 단계로) */}
+      <Modal visible={!!pendingFiles} animationType="slide" transparent onRequestClose={() => setPendingFiles(null)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setPendingFiles(null)} accessibilityLabel="닫기" />
+        <View style={styles.sheet}>
+          <Text style={styles.sheetTitle}>어떤 사진인가요?</Text>
+          {!!pendingFiles && pendingFiles.length > 1 && (
+            <Text style={styles.sheetSub}>고른 사진 {pendingFiles.length}장을 모두 같은 단계로 올려요.</Text>
+          )}
+          {UPLOAD_STAGES.map(c => (
+            <Pressable key={c} style={styles.sheetRow} onPress={() => uploadAs(c)}>
+              <View style={[styles.sheetDot, { backgroundColor: STAGE_BG[c] }]} />
+              <Text style={styles.sheetRowText}>{STAGE_LABEL[c]}</Text>
+            </Pressable>
+          ))}
+          <Pressable style={styles.sheetCancel} onPress={() => setPendingFiles(null)}>
+            <Text style={styles.sheetCancelText}>취소</Text>
+          </Pressable>
+        </View>
+      </Modal>
 
       <Modal visible={!!view} animationType="fade" onRequestClose={() => setView(null)} statusBarTranslucent>
         {view && (
@@ -212,4 +267,16 @@ const styles = StyleSheet.create({
   viewerName: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   viewerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
   saveBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  // ★ v18.66 — 올리는 중 표시 · 단계 선택 창
+  uploadBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: spacing.lg, marginBottom: 8, paddingHorizontal: 12, height: 36, borderRadius: 10, backgroundColor: '#E8F3FF' },
+  uploadBannerText: { fontSize: 13, fontWeight: '600', color: colors.primaryDark },
+  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(16,42,86,0.4)' },
+  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: 28 },
+  sheetTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  sheetSub: { fontSize: 13, color: colors.textSecondary, marginTop: 4 },
+  sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },
+  sheetDot: { width: 10, height: 10, borderRadius: 5 },
+  sheetRowText: { fontSize: 15, color: colors.textPrimary },
+  sheetCancel: { marginTop: 12, height: 46, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  sheetCancelText: { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
 });

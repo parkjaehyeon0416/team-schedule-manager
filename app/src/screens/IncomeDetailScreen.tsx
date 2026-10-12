@@ -1,8 +1,8 @@
 /**
  * 수입 상세 화면 — DESIGN-CANVAS 기준, INCOME_DETAIL.dc.html
  * 2026-10-02: Schedule에 employment_type/payment_status를 추가해 "지급 완료" 배지와
- * "세무 추정"(원천세/실수령 per건)을 디자인대로 구현함. 원천세는 참고용 단순 추정치로
- * 고용형태와 무관하게 3.3% 정률 적용(디자인 예시와 동일한 계산 방식).
+ * "세무 추정"(원천세/실수령 per건)을 디자인대로 구현함. 원천세는 참고용 추정치.
+ * ★ v18.66: 계산은 utils/tax.ts(서버와 같은 식)로 — 소득세 + 지방소득세(10%), 소액부징수 적용, 내역 줄 표시.
  */
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
@@ -15,6 +15,7 @@ import type { Schedule } from '../types/api';
 import { formatMoney, formatWorkUnits } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { scheduleLocationLabel } from '../utils/scheduleLocation';
+import { estimateWithholding, TAX_NOTE } from '../utils/tax';
 
 export default function IncomeDetailScreen() {
   const navigation = useNavigation<any>();
@@ -61,11 +62,17 @@ export default function IncomeDetailScreen() {
   const wage = Number(schedule.daily_wage) || 0;
   const units = Number(schedule.work_units) || 1;
   const income = wage * units;
-  // 서버 MonthlySummaryService.estimateTax와 같은 식 — 일용근로: (일당 − 15만원) × 2.7%, 프리랜서: 3.3%
-  const withholdingTax = Math.round(
-    schedule.employment_type === 'freelance' ? income * 0.033 : Math.max(0, wage - 150000) * 0.027 * units,
-  );
+  // ★ v18.66 — 서버 MonthlySummaryService.taxBreakdown과 같은 식(utils/tax.ts)
+  const isFreelance = schedule.employment_type === 'freelance';
+  const tax = estimateWithholding(wage, units, schedule.employment_type);
+  const withholdingTax = tax.total;
   const netIncome = income - withholdingTax;
+  // 0원인 이유 안내: 소액부징수 / 일용근로 하루 15만원 공제
+  const zeroReason = tax.exempt
+    ? '소액부징수(1,000원 미만)로 0원'
+    : !isFreelance && tax.total === 0
+      ? '일용근로는 하루 지급액 15만원까지 공제돼 0원'
+      : null;
   const isPaid = schedule.payment_status === 'paid';
 
   return (
@@ -111,17 +118,30 @@ export default function IncomeDetailScreen() {
               <View style={styles.refBadge}><Text style={styles.refBadgeText}>참고용</Text></View>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>구분</Text>
-              <Text style={styles.infoValue}>{schedule.employment_type === 'freelance' ? '프리랜서(3.3%)' : '일용근로'}</Text>
+              <Text style={[styles.infoLabel, styles.taxLabel]}>구분</Text>
+              <Text style={styles.infoValue}>{isFreelance ? '프리랜서(3.3%)' : '일용근로'}</Text>
+            </View>
+            {/* ★ v18.66 — 소득세 / 지방소득세 내역 */}
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, styles.taxLabel]}>소득세</Text>
+              <Text style={styles.infoValue}>{formatMoney(tax.incomeTax)}원</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>원천세(추정)</Text>
-              <Text style={styles.infoValue}>{formatMoney(withholdingTax)}원</Text>
+              <Text style={[styles.infoLabel, styles.taxLabel]}>지방소득세</Text>
+              <Text style={styles.infoValue}>{formatMoney(tax.localTax)}원 (소득세의 10%)</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, styles.taxLabel]}>원천세(추정)</Text>
+              <View style={styles.taxValueCol}>
+                <Text style={styles.infoValue}>{formatMoney(withholdingTax)}원</Text>
+                {!!zeroReason && <Text style={styles.taxSub}>{zeroReason}</Text>}
+              </View>
             </View>
             <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.infoLabel}>실수령(추정)</Text>
+              <Text style={[styles.infoLabel, styles.taxLabel]}>실수령(추정)</Text>
               <Text style={styles.infoValue}>{formatMoney(netIncome)}원</Text>
             </View>
+            <Text style={styles.taxHint}>{TAX_NOTE}</Text>
             <Text style={styles.taxHint}>계산 참고용이며, 실제 신고는 별도로 처리해야 해요.</Text>
           </View>
         )}
@@ -169,6 +189,10 @@ const styles = StyleSheet.create({
   refBadge: { height: 24, paddingHorizontal: 9, borderRadius: 7, backgroundColor: '#EEF2F7', alignItems: 'center', justifyContent: 'center' },
   refBadgeText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
   taxHint: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  // ★ v18.66 — 세무 추정 카드는 라벨이 길어("지방소득세", "원천세(추정)") 폭을 넓힘
+  taxLabel: { width: 84 },
+  taxValueCol: { flex: 1, gap: 2 },
+  taxSub: { fontSize: 12, color: colors.textSecondary },
 
   infoCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderCard, borderRadius: radius.lg, padding: 16, gap: 4 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },

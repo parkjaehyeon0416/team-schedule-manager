@@ -2,7 +2,16 @@
 // 📄 src/api/reportApi.ts — 자동 보고서 (★ v12~v13, 모바일 연동 ★ 이번 작업)
 // ═══════════════════════════════════════════════════════════════
 import axios, { SERVER_BASE_URL } from './axiosInstance';
-import type { ApiResponse, SiteReport } from '../types/api';
+import type { ApiResponse, SiteReport, ReportContext } from '../types/api';
+
+/** ★ v18.66 — 보고서 목록 + 화면 위쪽 정보(현장·사진 수·이번 달 사용량) */
+export async function getReportsWithContext(scheduleId: number): Promise<{ reports: SiteReport[]; context: ReportContext }> {
+  const res = await axios.get<ApiResponse<{ reports: SiteReport[]; context: ReportContext }>>(
+    `/schedules/${scheduleId}/reports`,
+    { params: { with_context: 1 } },
+  );
+  return res.data.data;
+}
 
 export interface ReportInput {
   title: string;

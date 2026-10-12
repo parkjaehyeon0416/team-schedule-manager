@@ -306,7 +306,7 @@ const CalendarScreen = forwardRef<CalendarHandle, Props>(
               <View style={[styles.evBar, { backgroundColor: teamColor(e.team_id) }]} />
               <View style={styles.evTextBox}>
                 <Text style={styles.evTitle} numberOfLines={1}>
-                  {scheduleLocationLabel(e) || e.work_type_relation?.name || e.work_type || '일정'}
+                  {scheduleLocationLabel(e) || e.title || e.work_type_relation?.name || e.work_type || '일정'}
                 </Text>
                 <Text style={styles.evSub} numberOfLines={1}>
                   {scheduleAddress(e) || e.memo || ''}

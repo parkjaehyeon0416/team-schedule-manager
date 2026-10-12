@@ -11,6 +11,7 @@ import AppHeader from '../components/AppHeader';
 import { getTaxSummary } from '../api/taxSummaryApi';
 import type { TaxSummary } from '../types/api';
 import { formatMoney } from '../utils/format';
+import { TAX_NOTE } from '../utils/tax';
 import { colors, radius, spacing } from '../theme/designTokens';
 
 export default function TaxHomeScreen() {
@@ -82,6 +83,8 @@ export default function TaxHomeScreen() {
               <Text style={styles.summaryStatValue}>{summary?.totals.work_days ?? 0}일</Text>
             </View>
           </View>
+          {/* ★ v18.66 — 예상 원천세 계산 기준 안내 */}
+          <Text style={styles.taxNote}>{TAX_NOTE}</Text>
         </View>
 
         <View style={styles.menuCard}>
@@ -160,6 +163,7 @@ const styles = StyleSheet.create({
   summaryStatsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 6, borderTopWidth: 1, borderTopColor: colors.borderHairline },
   summaryStatLabel: { fontSize: 12, color: colors.textSecondary },
   summaryStatValue: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  taxNote: { fontSize: 11, color: colors.textSecondary, lineHeight: 16 }, // ★ v18.66
 
   menuCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderCard, borderRadius: radius.lg, paddingHorizontal: 16 },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderHairline },

@@ -65,7 +65,8 @@ export default function HomeDashboardScreen() {
   const [quoteCounts, setQuoteCounts] = useState<{ draft: number; sent: number; done: number } | null>(null);
 
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  // ★ v18.66 — 휴대폰 시간(한국) 기준 날짜. 예전엔 toISOString(UTC)이라 새벽 0~9시엔 어제 일정이 '오늘의 일정'에 나왔음
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const load = useCallback(async () => {
     try {
@@ -234,7 +235,7 @@ export default function HomeDashboardScreen() {
                 </View>
                 <View style={styles.scheduleTextBox}>
                   <Text style={styles.scheduleTitle} numberOfLines={1}>
-                    {scheduleLocationLabel(s) || s.work_type_relation?.name || s.work_type || '일정'}
+                    {scheduleLocationLabel(s) || s.title || s.work_type_relation?.name || s.work_type || '일정'}
                   </Text>
                   <Text style={styles.scheduleSub} numberOfLines={1}>
                     {scheduleAddress(s) || s.memo || ''}

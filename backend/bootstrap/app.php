@@ -136,6 +136,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ★ v18.36 — PDF 다운로드 서명 링크가 만료됐거나 변조됨 — 403 (캐치올에 걸려 500이 나가던 것 수정)
         $exceptions->render(function (\Illuminate\Routing\Exceptions\InvalidSignatureException $e, $request) {
+            // ★ v18.66 — 고객이 브라우저로 연 견적서 링크(3일)가 만료되면 JSON 대신 "링크 만료" 안내 페이지
+            if ($request->routeIs('quotes.pdf.signed') && !$request->expectsJson()) {
+                return response(view('errors.link-expired', ['what' => '견적서']), 410);
+            }
             if ($request->is('api/*')) {
                 return response()->json([
                     'success' => false,

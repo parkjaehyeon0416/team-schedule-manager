@@ -14,6 +14,7 @@ import { getSchedules } from '../api/schedulesApi';
 import { getTaxSummary } from '../api/taxSummaryApi';
 import { getMyTeams } from '../api/teamApi';
 import type { Schedule, Team } from '../types/api';
+import { scheduleLocationLabel } from '../utils/scheduleLocation'; // ★ v18.66 제목·현장 없으면 '일정'만 보이던 것
 import { formatMoney } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
 
@@ -130,7 +131,7 @@ export default function IncomeListScreen() {
                 <Pressable key={s.id} style={[styles.row, i === schedules.length - 1 && { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('IncomeDetail', { scheduleId: s.id })}>
                   <View style={[styles.rowIcon, { backgroundColor: bg }]}><Icon name="currency-krw" size={18} color={fg} /></View>
                   <View style={{ flex: 1, gap: 3 }}>
-                    <Text style={styles.rowTitle} numberOfLines={1}>{s.memo || s.work_type_relation?.name || '일정'}</Text>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{s.title || scheduleLocationLabel(s) || s.memo || s.work_type_relation?.name || '일정'}</Text>
                     <Text style={styles.rowSub}>{s.date.slice(5).replace('-', '.')}{team ? ` · ${team.name}` : ''}</Text>
                   </View>
                   <Text style={styles.rowAmount}>{formatMoney(scheduleIncome(s))}원</Text>

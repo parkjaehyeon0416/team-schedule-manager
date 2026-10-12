@@ -25,10 +25,10 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'phone'         => 'nullable|string|max:20',
+            'phone'         => ['nullable', 'string', 'max:20', \Illuminate\Validation\Rule::unique('users', 'phone')->ignore($request->user()->id)], // ★ v18.65
             'kakao_talk_id' => 'nullable|string|max:50',
             'avatar_color'  => 'nullable|regex:/^#[0-9A-Fa-f]{6}$/',
-        ]);
+        ], ['phone.unique' => '이미 다른 계정에서 쓰는 전화번호예요.']);
 
         $user->update($data);
 

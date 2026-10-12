@@ -155,7 +155,7 @@ export default function QuoteDetailScreen() {
               <View style={styles.itemIcon}><Icon name="view-grid-outline" size={16} color={colors.primaryDark} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.itemName}>{l.name}</Text>
-                <Text style={styles.itemSpec}>{l.quantity}{l.unit} × {formatMoney(l.unit_price)}원</Text>
+                <Text style={styles.itemSpec}>{Number(l.quantity).toLocaleString()}{l.unit} × {formatMoney(l.unit_price)}원</Text>
               </View>
               <Text style={styles.itemAmount}>{formatMoney(l.amount ?? Number(l.quantity) * Number(l.unit_price))}원</Text>
             </View>

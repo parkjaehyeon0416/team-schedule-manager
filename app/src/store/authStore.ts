@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { unregisterPush } from '../utils/push';
+import axiosInstance, { setMemoryToken, setUnauthorizedHandler } from '../api/axiosInstance';
 
 interface User {
   id: number;
@@ -45,6 +46,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
     }
+    setMemoryToken(token); // ★ v18.65 저장 안 해도(로그인 상태 유지 끔) 이번 실행 동안 요청에 토큰이 붙게
     set({ user, token, isLoggedIn: true, isLoading: false });
   },
 
@@ -63,6 +65,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   logout: async () => {
     // ★ v18.38 — 서버 인증 토큰이 남아 있을 때 먼저 이 기기의 푸시 등록을 해제
     await unregisterPush();
+    // ★ v18.65 — 서버의 이 기기 로그인(토큰)도 폐기. 예전엔 폰에서만 지워서 서버엔 토큰이 30일간 살아 있었음
+    await axiosInstance.post('/auth/logout').catch(() => {});
+    setMemoryToken(null);
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
     set({ user: null, token: null, isLoggedIn: false, isLoading: false });
@@ -77,6 +82,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       if (token && userJson) {
         const user = JSON.parse(userJson);
+        setMemoryToken(token);
         set({ user, token, isLoggedIn: true, isLoading: false });
       } else {
         set({ isLoading: false });
@@ -87,3 +93,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 }));
+
+// ★ v18.65 — 로그인이 만료(401)되면 저장된 정보를 지우고 로그인 화면으로
+setUnauthorizedHandler(() => {
+  if (!useAuthStore.getState().isLoggedIn) return;
+  setMemoryToken(null);
+  AsyncStorage.multiRemove(['token', 'user']).catch(() => {});
+  useAuthStore.setState({ user: null, token: null, isLoggedIn: false, isLoading: false });
+});

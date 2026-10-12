@@ -38,7 +38,7 @@ class SiteController extends Controller
             'apt_name' => 'nullable|string|max:255',
             'dong'     => 'nullable|string|max:50',
             'ho'       => 'nullable|string|max:50',
-            'area_m2'  => 'nullable|numeric|min:0',
+            'area_m2'  => 'nullable|numeric|min:0|max:999999',
             'memo'     => 'nullable|string',
             'is_personal' => 'nullable|boolean',
             // ★ DESIGN-CANVAS(SITE_CREATE) 추가 필드
@@ -136,7 +136,7 @@ class SiteController extends Controller
             'apt_name' => 'nullable|string|max:255',
             'dong'     => 'nullable|string|max:50',
             'ho'       => 'nullable|string|max:50',
-            'area_m2'  => 'nullable|numeric|min:0',
+            'area_m2'  => 'nullable|numeric|min:0|max:999999',
             'memo'     => 'nullable|string',
             // ★ DESIGN-CANVAS(SITE_EDIT) 추가 필드
             'start_date' => 'nullable|date',

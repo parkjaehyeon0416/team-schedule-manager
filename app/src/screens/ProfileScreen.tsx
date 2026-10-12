@@ -71,7 +71,9 @@ export default function ProfileScreen() {
   if (!user) return null;
 
   const avatarUri = user.avatar_image_path ? `${SERVER_BASE_URL}/storage/${user.avatar_image_path}` : null;
-  const roleLine = [user.team?.name, user.role?.name].filter(Boolean).join(' · ');
+  // ★ v18.65 — 역할은 한글로(예전엔 내부 값 manager/member가 그대로 보였음). 팀이 없으면 '개인'
+  const roleLabel = teamCount === 0 ? '개인' : ({ superadmin: '운영자', manager: '팀장', member: '팀원' } as Record<string, string>)[user.role?.name ?? ''];
+  const roleLine = [user.team?.name, roleLabel].filter(Boolean).join(' · ');
 
   const profileMenu: MenuRow[] = [
     {

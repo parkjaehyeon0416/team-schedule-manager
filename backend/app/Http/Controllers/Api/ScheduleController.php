@@ -61,7 +61,7 @@ class ScheduleController extends Controller
             'expenses'      => 'nullable|numeric|min:0|max:99999999.99',
             'expenses_memo' => 'nullable|string|max:255',
 
-            'area_m2'       => 'nullable|numeric|min:0',
+            'area_m2'       => 'nullable|numeric|min:0|max:999999',
             'memo'          => 'nullable|string',
             'user_ids'      => 'nullable|array',
             'user_ids.*'    => 'integer|exists:users,id',
@@ -248,7 +248,7 @@ class ScheduleController extends Controller
             'expenses'      => 'nullable|numeric|min:0|max:99999999.99',
             'expenses_memo' => 'nullable|string|max:255',
 
-            'area_m2'       => 'nullable|numeric|min:0',
+            'area_m2'       => 'nullable|numeric|min:0|max:999999',
             'memo'          => 'nullable|string',
             'user_ids'      => 'nullable|array',
             'user_ids.*'    => 'integer|exists:users,id',

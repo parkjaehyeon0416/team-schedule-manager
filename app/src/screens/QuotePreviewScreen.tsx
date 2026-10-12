@@ -137,7 +137,7 @@ export default function QuotePreviewScreen() {
             {(quote.lines ?? []).map((l, i) => (
               <View key={l.id ?? i} style={styles.tableRow}>
                 <Text style={[styles.tableCell, { flex: 1.2 }]}>{l.name}</Text>
-                <Text style={[styles.tableCellSub, { flex: 1.4 }]}>{l.quantity}{l.unit} × {formatMoney(l.unit_price)}원</Text>
+                <Text style={[styles.tableCellSub, { flex: 1.4 }]}>{Number(l.quantity).toLocaleString()}{l.unit} × {formatMoney(l.unit_price)}원</Text>
                 <Text style={[styles.tableCell, { flex: 1, textAlign: 'right', fontWeight: '600' }]}>{formatMoney(l.amount ?? Number(l.quantity) * Number(l.unit_price))}원</Text>
               </View>
             ))}

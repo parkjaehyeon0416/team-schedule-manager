@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -35,7 +35,7 @@ export default function TeamJoinScreen() {
   useEffect(() => {
     setPreview(null);
     setPreviewError(null);
-    if (code.length < 4) return;
+    if (code.length < 6) return; // ★ v18.65 6자리를 다 넣은 뒤에만 확인(입력 중에 "유효하지 않음"이 뜨던 것)
     let cancelled = false;
     setPreviewLoading(true);
     previewTeam(code)
@@ -66,7 +66,8 @@ export default function TeamJoinScreen() {
   const avatarIdx = preview ? preview.id % AVATAR_BG.length : 0;
 
   return (
-    <View style={styles.screen}>
+    // ★ v18.65 키보드가 아래 [팀 참여하기] 버튼을 가리지 않게(안드로이드 edge-to-edge에선 adjustResize가 안 먹음)
+    <KeyboardAvoidingView style={styles.screen} behavior="padding">
       <AppHeader leftType="back" title="팀 참여" />
       <View style={styles.content}>
         <View style={styles.titleBlock}>
@@ -145,7 +146,7 @@ export default function TeamJoinScreen() {
           </LinearGradient>
         </Pressable>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

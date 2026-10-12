@@ -36,10 +36,19 @@ const axiosInstance = axios.create({
 //   AsyncStorage에 저장된 토큰을 꺼내 Authorization 헤더에 자동 첨부.
 //   ※ 키 이름 'token' 은 authStore.ts의 setItem 키와 동일해야 함!
 // ─────────────────────────────────────────────────────────
+// ★ v18.65 — 메모리 토큰. "로그인 상태 유지"를 끄면 토큰을 저장소에 안 남겨서, 예전엔 로그인 직후부터
+//   모든 요청이 토큰 없이 나가 홈·팀이 텅 비어 보였음. authStore가 로그인/복원/로그아웃 때 채우고 비움.
+let memoryToken: string | null = null;
+export const setMemoryToken = (t: string | null) => { memoryToken = t; };
+
+// ★ v18.65 — 로그인이 만료되면(30일 미사용 등 401) 로그인 화면으로 보내기 위한 콜백(authStore가 등록)
+let onUnauthorized: (() => void) | null = null;
+export const setUnauthorizedHandler = (fn: () => void) => { onUnauthorized = fn; };
+
 axiosInstance.interceptors.request.use(
   async config => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = memoryToken ?? (await AsyncStorage.getItem('token'));
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -61,6 +70,8 @@ axiosInstance.interceptors.response.use(
   async error => {
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('token');
+      // 토큰을 실어 보낸 요청이 401이면 로그인이 끝난 것 → 로그인 화면으로(로그인 실패 401은 제외)
+      if (error.config?.headers?.Authorization && onUnauthorized) onUnauthorized();
     }
     // ★ v18.48 — 요금제 한도(무료 견적 월 3건 등)에 걸리면 잠금 안내 시트(PLAN_LOCKED)를 띄움
     const data = error.response?.data;

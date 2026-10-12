@@ -29,6 +29,29 @@ use Illuminate\Support\Facades\URL;
  */
 class QuoteController extends Controller
 {
+    // ★ v18.65 — 금액 입력 상한 안내(DB 칸: 단가 1억 미만, 합계 100억 미만)
+    private const AMOUNT_MESSAGES = [
+        'lines.*.quantity.max'   => '수량은 99,999까지 입력할 수 있어요.',
+        'lines.*.unit_price.max' => '단가는 1억 원 미만으로 입력해주세요.',
+        'discount_amount.max'    => '할인 금액이 너무 커요.',
+    ];
+
+    /** 항목 합계가 100억 이상이거나 할인이 공급가보다 크면 안내 */
+    private function amountError(array $data)
+    {
+        $subtotal = 0;
+        foreach ($data['lines'] as $line) {
+            $subtotal += $line['quantity'] * $line['unit_price'];
+        }
+        if ($subtotal >= 9000000000) {
+            return ApiResponse::error('견적 합계는 90억 원 미만이어야 해요. 금액을 확인해주세요.', 'ERR_VALIDATION', 422);
+        }
+        if (($data['discount_amount'] ?? 0) > $subtotal) {
+            return ApiResponse::error('할인 금액이 공급가보다 클 수 없어요.', 'ERR_VALIDATION', 422);
+        }
+        return null;
+    }
+
     /**
      * 견적 목록 조회 (내가 작성한 것)
      * GET /api/quotes
@@ -63,15 +86,18 @@ class QuoteController extends Controller
             'work_type_id'     => 'nullable|integer|exists:work_types,id',
             'desired_date'     => 'nullable|date',
             'memo'             => 'nullable|string',
-            'discount_amount'  => 'nullable|numeric|min:0',
+            'discount_amount'  => 'nullable|numeric|min:0|max:9999999999', // ★ v18.65 DB 칸(12,2) 넘으면 500 나던 것
             'tax_type'         => 'nullable|in:separate,included,exempt',
             'lines'            => 'required|array|min:1',
             'lines.*.name'       => 'required|string|max:100',
             'lines.*.spec'       => 'nullable|string|max:255',
-            'lines.*.quantity'   => 'required|numeric|min:0',
+            'lines.*.quantity'   => 'required|numeric|min:0|max:99999',
             'lines.*.unit'       => 'nullable|string|max:20',
-            'lines.*.unit_price' => 'required|numeric|min:0',
-        ]);
+            'lines.*.unit_price' => 'required|numeric|min:0|max:99999999',
+        ], self::AMOUNT_MESSAGES);
+        if ($fail = $this->amountError($data)) {
+            return $fail;
+        }
         // ★ v18.62 보안 — 내가 볼 수 있는 현장만 연결(예전엔 아무 현장 번호나 넣어 남의 현장 주소를 견적서로 볼 수 있었음)
         if (!empty($data['site_id']) && !Site::forUser($request->user())->whereKey($data['site_id'])->exists()) {
             return ApiResponse::error('선택할 수 없는 현장입니다.', ErrorCode::QUOTE_NOT_FOUND, 422);
@@ -172,15 +198,18 @@ class QuoteController extends Controller
             'work_type_id'     => 'nullable|integer|exists:work_types,id',
             'desired_date'     => 'nullable|date',
             'memo'             => 'nullable|string',
-            'discount_amount'  => 'nullable|numeric|min:0',
+            'discount_amount'  => 'nullable|numeric|min:0|max:9999999999', // ★ v18.65 DB 칸(12,2) 넘으면 500 나던 것
             'tax_type'         => 'nullable|in:separate,included,exempt',
             'lines'            => 'required|array|min:1',
             'lines.*.name'       => 'required|string|max:100',
             'lines.*.spec'       => 'nullable|string|max:255',
-            'lines.*.quantity'   => 'required|numeric|min:0',
+            'lines.*.quantity'   => 'required|numeric|min:0|max:99999',
             'lines.*.unit'       => 'nullable|string|max:20',
-            'lines.*.unit_price' => 'required|numeric|min:0',
-        ]);
+            'lines.*.unit_price' => 'required|numeric|min:0|max:99999999',
+        ], self::AMOUNT_MESSAGES);
+        if ($fail = $this->amountError($data)) {
+            return $fail;
+        }
         // ★ v18.62 보안 — 내가 볼 수 있는 현장만 연결(예전엔 아무 현장 번호나 넣어 남의 현장 주소를 견적서로 볼 수 있었음)
         if (!empty($data['site_id']) && !Site::forUser($request->user())->whereKey($data['site_id'])->exists()) {
             return ApiResponse::error('선택할 수 없는 현장입니다.', ErrorCode::QUOTE_NOT_FOUND, 422);

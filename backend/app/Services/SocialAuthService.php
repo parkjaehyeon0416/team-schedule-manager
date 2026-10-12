@@ -126,6 +126,7 @@ class SocialAuthService
         if ($appId) {
             $info = Http::withToken($accessToken)->get('https://kapi.kakao.com/v1/user/access_token_info');
             if (!$info->successful() || (string) $info->json('app_id') !== (string) $appId) {
+                \Illuminate\Support\Facades\Log::warning('카카오 토큰 앱 불일치로 거절', ['status' => $info->status(), 'token_app_id' => $info->json('app_id'), 'expected' => $appId]);
                 return null;
             }
         }

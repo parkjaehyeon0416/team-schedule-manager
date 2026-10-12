@@ -28,6 +28,7 @@ class LoginLinkController extends Controller
         $data = $request->validate([
             'provider' => 'required|in:google,kakao,apple',
             'token'    => 'required|string',
+            'auth_code' => 'nullable|string', // ★ v18.64 Apple 갱신 토큰용
         ]);
         $user = $request->user();
 
@@ -48,6 +49,10 @@ class LoginLinkController extends Controller
             );
         }
 
+        if ($data['provider'] === 'apple' && !empty($data['auth_code'])) {
+            SocialAuthService::saveAppleToken($user, \App\Services\SocialRevokeService::appleExchange($data['auth_code']));
+        }
+
         return ApiResponse::success($this->summary($user->fresh()), '연결했습니다.');
     }
 
@@ -65,7 +70,11 @@ class LoginLinkController extends Controller
             return ApiResponse::error('최소 하나의 로그인 방법이 필요해요.', ErrorCode::AUTH_LOGIN_LINK_LAST, 422);
         }
 
-        $user->forceFill([$col => null, "{$provider}_linked_at" => null])->save();
+        SocialAuthService::disconnect($user, $provider); // ★ v18.64 카카오 unlink / Apple revoke
+        $user->forceFill(array_merge(
+            [$col => null, "{$provider}_linked_at" => null],
+            $provider === 'apple' ? ['apple_refresh_token' => null] : []
+        ))->save();
 
         return ApiResponse::success($this->summary($user->fresh()), '연결을 해제했습니다.');
     }

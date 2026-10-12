@@ -44,6 +44,7 @@ class SocialAuthService
             'id'    => $profile['id'],
             'email' => $profile['email'],
             'name'  => $profile['name'],
+            'rt'    => $profile['rt'] ?? null, // ★ v18.64 Apple 갱신 토큰(가입·연결 때 저장해 탈퇴 revoke에 씀)
             'exp'   => now()->addMinutes(15)->timestamp,
         ]));
     }
@@ -84,6 +85,24 @@ class SocialAuthService
         }
         $user->forceFill([$col => $providerId, "{$provider}_linked_at" => now()])->save();
         return null;
+    }
+
+    /** ★ v18.64 — Apple 갱신 토큰 저장(있을 때만) */
+    public static function saveAppleToken(User $user, ?string $refreshToken): void
+    {
+        if ($refreshToken) {
+            $user->forceFill(['apple_refresh_token' => $refreshToken])->save();
+        }
+    }
+
+    /** ★ v18.64 — 연결 해제·탈퇴 때 소셜 쪽 연결도 끊기(카카오 unlink / Apple revoke). 실패해도 진행 */
+    public static function disconnect(User $user, string $provider): void
+    {
+        if ($provider === 'kakao') {
+            SocialRevokeService::kakaoUnlink($user->kakao_id);
+        } elseif ($provider === 'apple') {
+            SocialRevokeService::appleRevoke($user->apple_refresh_token);
+        }
     }
 
     /** 화면 표시용 — "철수 · chul***@kakao.com" */

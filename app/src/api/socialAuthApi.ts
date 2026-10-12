@@ -29,7 +29,7 @@ export const APPLE_LOGIN_AVAILABLE = Platform.OS === 'ios' && appleAuth.isSuppor
  * 소셜 SDK로 로그인해 서버 검증용 토큰을 받음(구글: id_token, 카카오: access_token, 애플: identity token).
  * name은 애플만 — 애플은 이름을 토큰에 안 넣고 처음 로그인 때 앱에만 한 번 알려 줌.
  */
-export async function getSocialCredential(provider: SocialProvider): Promise<{ token: string; name?: string }> {
+export async function getSocialCredential(provider: SocialProvider): Promise<{ token: string; name?: string; authCode?: string }> {
   if (provider === 'apple') {
     const res = await appleAuth.performRequest({
       requestedOperation: appleAuth.Operation.LOGIN,
@@ -40,7 +40,8 @@ export async function getSocialCredential(provider: SocialProvider): Promise<{ t
     }
     // 한국식 이름 순서(성+이름)
     const name = [res.fullName?.familyName, res.fullName?.givenName].filter(Boolean).join('') || undefined;
-    return { token: res.identityToken, name };
+    // ★ v18.64 authorizationCode — 서버가 갱신 토큰으로 바꿔 저장(탈퇴 때 애플 연결 끊기용)
+    return { token: res.identityToken, name, authCode: res.authorizationCode ?? undefined };
   }
   return { token: await getSocialToken(provider) };
 }
@@ -67,11 +68,12 @@ async function getSocialToken(provider: 'google' | 'kakao'): Promise<string> {
  * linkTicket을 주면 "쓰던 계정으로 로그인" — 로그인한 계정에 티켓의 소셜 계정을 연결.
  */
 export async function socialLogin(provider: SocialProvider, linkTicket?: string) {
-  const { token, name } = await getSocialCredential(provider);
+  const { token, name, authCode } = await getSocialCredential(provider);
   const res = await axiosInstance.post('/auth/social-login', {
     provider,
     token,
     ...(name ? { name } : {}),
+    ...(authCode ? { auth_code: authCode } : {}),
     platform: 'mobile',
     flow: 'v2',
     ...(linkTicket ? { link_ticket: linkTicket } : {}),
@@ -111,8 +113,8 @@ export async function getLoginLinks(): Promise<LoginLinks> {
 }
 
 export async function linkSocial(provider: SocialProvider): Promise<LoginLinks> {
-  const { token } = await getSocialCredential(provider);
-  const res = await axiosInstance.post('/me/login-links', { provider, token });
+  const { token, authCode } = await getSocialCredential(provider);
+  const res = await axiosInstance.post('/me/login-links', { provider, token, ...(authCode ? { auth_code: authCode } : {}) });
   return res.data.data;
 }
 

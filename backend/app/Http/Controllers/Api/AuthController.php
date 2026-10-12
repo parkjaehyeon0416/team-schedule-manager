@@ -8,6 +8,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
 use App\Services\SocialAuthService;
+use App\Services\SocialRevokeService;
 use App\Services\VerificationCode;
 use App\Services\Reauth;
 use App\Support\PasswordPolicy;
@@ -185,9 +186,13 @@ class AuthController extends Controller
             'platform'    => 'required|in:web,mobile',
             'flow'        => 'nullable|in:v2',
             'link_ticket' => 'nullable|string',
+            'auth_code'   => 'nullable|string', // ★ v18.64 Apple authorization code → 갱신 토큰(탈퇴 revoke용)
         ]);
 
         $profile = SocialAuthService::verify($data['provider'], $data['token']);
+        if ($profile && $data['provider'] === 'apple' && !empty($data['auth_code'])) {
+            $profile['rt'] = SocialRevokeService::appleExchange($data['auth_code']);
+        }
         // ★ v18.60 — Apple은 이름을 토큰에 안 넣어 줌 → 앱이 첫 로그인 때 받은 이름 사용
         if ($profile && empty($profile['name']) && !empty($data['name'])) {
             $profile['name'] = $data['name'];
@@ -251,6 +256,9 @@ class AuthController extends Controller
         if ($linking && ($fail = $this->attachTicket($user, $data['link_ticket']))) {
             return $fail;
         }
+        if ($data['provider'] === 'apple') {
+            SocialAuthService::saveAppleToken($user, $profile['rt'] ?? null);
+        }
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -288,6 +296,9 @@ class AuthController extends Controller
                 );
                 return $user;
             });
+        if ($ticket['p'] === 'apple') {
+            SocialAuthService::saveAppleToken($user, $ticket['rt'] ?? null);
+        }
 
         if ($user->suspended_at) {
             return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
@@ -325,6 +336,9 @@ class AuthController extends Controller
             return ApiResponse::error('시간이 지나 다시 로그인해야 해요.', ErrorCode::AUTH_SOCIAL_TICKET_INVALID, 422);
         }
         $why = SocialAuthService::attach($user, $ticket['p'], $ticket['id']);
+        if (!$why && $ticket['p'] === 'apple') {
+            SocialAuthService::saveAppleToken($user, $ticket['rt'] ?? null);
+        }
         if ($why) {
             $name = SocialAuthService::NAMES[$ticket['p']] ?? $ticket['p'];
             return ApiResponse::error(
@@ -566,6 +580,13 @@ class AuthController extends Controller
         $user->tokens()->delete();
         DB::table('device_tokens')->where('user_id', $user->id)->delete(); // ★ v18.62 탈퇴 후 푸시 안 가게
 
+        // ★ v18.64 — 카카오 연결 끊기 / Apple 토큰 revoke(애플 심사 필수). 실패해도 탈퇴는 진행
+        foreach (['kakao', 'apple'] as $p) {
+            if ($user->{SocialAuthService::column($p)}) {
+                SocialAuthService::disconnect($user, $p);
+            }
+        }
+
         // ★ v18.62 — 탈퇴한 계정에 남아 있던 연락처·소셜 연결 지움. 남겨 두면
         //   ① 같은 전화번호·같은 소셜 계정으로 다시 가입이 막히고(고유값 충돌) ② 필요 없는 개인정보를 계속 보관하게 됨.
         //   이름은 팀원들의 과거 일정·정산 기록에 표시돼야 해서 남김.
@@ -579,6 +600,7 @@ class AuthController extends Controller
             'google_linked_at' => null,
             'kakao_linked_at'  => null,
             'apple_linked_at'  => null,
+            'apple_refresh_token' => null,
         ])->save();
         $user->delete(); // SoftDeletes
 

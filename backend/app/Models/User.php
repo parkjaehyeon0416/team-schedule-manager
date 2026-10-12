@@ -38,7 +38,7 @@ class User extends Authenticatable
         'plan',
         'plan_expires_at',
     ];
-    protected $hidden = ['password', 'remember_token', 'operator_phone'];
+    protected $hidden = ['password', 'remember_token', 'operator_phone', 'apple_refresh_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
@@ -46,6 +46,7 @@ class User extends Authenticatable
         'google_linked_at' => 'datetime', // ★ v18.51 로그인 연결 관리
         'kakao_linked_at' => 'datetime',
         'apple_linked_at' => 'datetime', // ★ v18.60
+        'apple_refresh_token' => 'encrypted', // ★ v18.64 탈퇴 revoke용
         'password_set_at' => 'datetime', // ★ v18.56 운영자 관리
         'last_login_at' => 'datetime',
         'plan_expires_at' => 'datetime',

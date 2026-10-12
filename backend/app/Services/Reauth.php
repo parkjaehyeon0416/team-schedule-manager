@@ -23,7 +23,9 @@ class Reauth
             $p = preg_replace('/\D/', '', $user->phone);
             $ch['phone'] = substr($p, 0, 3) . '-****-' . substr($p, -4);
         }
-        if ($user->email && !str_ends_with($user->email, '@social.local')) {
+        // 메일 발송 설정(.env MAIL_MAILER=smtp 등)이 돼 있을 때만 이메일 선택지를 보여줌.
+        //   log/array면 실제 메일이 안 나가는데 앱엔 "보냈어요"가 떠서 사용자가 기다리기만 하게 됨.
+        if ($user->email && !str_ends_with($user->email, '@social.local') && self::mailReady()) {
             $ch['email'] = self::maskEmail($user->email);
         }
         return $ch;
@@ -101,6 +103,12 @@ class Reauth
             return ApiResponse::error('이 계정에 연결된 소셜 계정으로 다시 로그인해주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 422);
         }
         return null;
+    }
+
+    /** 실제로 메일이 나가는 설정인지(log·array는 기록만 하고 안 보냄) */
+    public static function mailReady(): bool
+    {
+        return !in_array(config('mail.default'), ['log', 'array', null, ''], true);
     }
 
     /** chulsoo@gmail.com → chu****@gmail.com */

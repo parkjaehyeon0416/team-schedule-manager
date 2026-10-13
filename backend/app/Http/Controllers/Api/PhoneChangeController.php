@@ -9,6 +9,7 @@ use App\Models\BusinessCard;
 use App\Models\User;
 use App\Services\Reauth;
 use App\Services\Sms\SmsServiceInterface;
+use App\Services\SmsGuard;
 use App\Services\SocialAuthService;
 use App\Services\VerificationCode;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -17,7 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 
 /**
  * ★ v18.66 — 휴대폰 번호 변경(없던 번호 등록 포함)은 인증을 거쳐야 함 (디자인: 프로필 설정 › 휴대폰 번호 [변경])
@@ -34,15 +34,14 @@ use Illuminate\Support\Facades\Log;
  *   - 비밀번호 없는 사용자는 ①을 연결된 소셜 계정 다시 로그인으로도 통과 가능(지금 번호를 잃어버린 경우 —
  *     번호를 바꾸는 가장 흔한 이유. 실서버는 메일 발송 전이라 이메일 선택지도 없음). Reauth 공용 동작은 그대로 둠.
  *   - ② 새 번호 문자는 아무 번호로나 갈 수 있어서 같은 번호 다시 받기 60초 대기 + 하루 상한(계정 10통, 번호 5통)
+ * ★ v18.67 ② 발송 제한은 SmsGuard 공용 관문(IP별 하루 상한 + 서비스 전체 상한 추가)
  */
 class PhoneChangeController extends Controller
 {
     private const REAUTH_PURPOSE    = 'change_phone'; // ① 지금 번호·이메일로 보내는 본인 확인 인증번호
     private const NEW_PHONE_PURPOSE = 'new_phone';    // ② 새 번호로 보내는 인증번호
     private const PASSED_MINUTES    = 10;             // ② 통과 기록 유지 시간
-    private const RESEND_SECONDS    = 60;             // ★ v18.66 같은 번호로 다시 받기까지 기다리는 시간(계정 상관없이 번호 기준)
-    private const DAILY_PER_USER    = 10;             // ★ v18.66 한 계정이 하루에 받을 수 있는 새 번호 인증 문자
-    private const DAILY_PER_PHONE   = 5;              // ★ v18.66 한 번호로 하루에 보내는 새 번호 인증 문자(여러 계정 합산)
+    // ★ v18.67 다시 받기 대기(60초)·하루 상한(계정 10·번호 5)은 config/verification.php + App\Services\SmsGuard로 옮김
 
     public function __construct(private readonly SmsServiceInterface $sms)
     {
@@ -82,36 +81,40 @@ class PhoneChangeController extends Controller
             return $this->withField($locked, 'phone');
         }
 
-        // ★ v18.66 발송 제한 — 아직 가입 안 된 아무 번호로나 보낼 수 있어서(문자 괴롭히기·문자 요금 소모 방지)
-        //   하루 상한(계정·번호) 먼저 → 같은 번호 60초 대기(Cache::add로 동시 요청도 하나만 통과)
-        $day = now()->format('Ymd');
-        $userKey = "new_phone_daily_user:{$user->id}:{$day}";
-        $phoneKey = 'new_phone_daily_phone:' . sha1($phone) . ":{$day}";
-        if ((int) Cache::get($userKey, 0) >= self::DAILY_PER_USER || (int) Cache::get($phoneKey, 0) >= self::DAILY_PER_PHONE) {
-            return $this->fail('오늘은 인증번호를 더 받을 수 없어요. 내일 다시 시도해주세요.', ErrorCode::TOO_MANY_REQUESTS, 429, 'phone');
+        // ★ v18.67 발송 제한을 SmsGuard 공용 관문으로 옮김 — 아직 가입 안 된 아무 번호로나 보낼 수 있고,
+        //   계정은 공짜로 계속 만들 수 있어서 계정 단위 상한만으론 못 막았음(계정마다 다른 번호 10개씩 → IP 하나로 하루 수만 통).
+        //   이제 계정별(10)·번호별(5)·같은 번호 60초 대기에 더해 IP별 하루 요청 수(20), 서비스 전체 하루 상한(문자 500),
+        //   새 번호 인증 전용 전체 상한(200 — 아이디·비밀번호 찾기 문자 몫은 남겨 둠)까지 걸림.
+        //   ①(비밀번호·본인 확인)을 먼저 받게 바꾸지 않은 이유: 지금 앱은 ① 입력 전에 이 요청을 보내고(바꾸면 앱 수정 필요),
+        //   공격자는 자기 계정이라 ①을 바로 통과하므로 남용을 막는 효과도 없음 — 막는 건 IP·서비스 전체 상한.
+        if ($limited = SmsGuard::checkRequest(SmsGuard::SMS, self::NEW_PHONE_PURPOSE)) {
+            return $this->guardFail($limited);
         }
-        $coolKey = 'new_phone_cooldown:' . sha1($phone);
-        if (!Cache::add($coolKey, time() + self::RESEND_SECONDS, self::RESEND_SECONDS)) {
-            $left = max(1, (int) Cache::get($coolKey, 0) - time());
-            return $this->fail("{$left}초 뒤에 다시 받아주세요.", ErrorCode::TOO_MANY_REQUESTS, 429, 'phone', ['retry_after' => $left]);
-        }
-        foreach ([$userKey, $phoneKey] as $key) {
-            Cache::add($key, 0, now()->endOfDay()); // DB 캐시는 없는 키를 increment 못 함
-            Cache::increment($key);
-        }
-
         // payload에 사용자 id — 이 계정에서 요청한 인증번호만 이 계정 변경에 쓰이게
-        $code = VerificationCode::issue(self::NEW_PHONE_PURPOSE, $phone, (string) $user->id);
-        try {
+        $limited = SmsGuard::sendCode(SmsGuard::SMS, self::NEW_PHONE_PURPOSE, $phone, $user->id, function (string $code) use ($phone) {
             $this->sms->send($phone, "[현장메이트] 휴대폰 번호 변경 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
-        } catch (\Throwable $e) {
-            Log::error('새 휴대폰 번호 인증번호 발송 실패', ['user_id' => $user->id, 'error' => $e->getMessage()]);
-            Cache::forget($coolKey); // 안 나갔으니 바로 다시 시도할 수 있게(하루 상한 횟수는 그대로 셈)
-            return $this->fail('인증번호를 보내지 못했어요. 번호를 확인하거나 잠시 후 다시 시도해주세요.', ErrorCode::SERVER_ERROR, 503, 'phone');
+        }, (string) $user->id);
+        if ($limited) {
+            return $limited->getStatusCode() === 503
+                ? $this->fail('인증번호를 보내지 못했어요. 번호를 확인하거나 잠시 후 다시 시도해주세요.', ErrorCode::SERVER_ERROR, 503, 'phone')
+                : $this->guardFail($limited);
         }
 
         // resend_after: 앱이 [다시 받기]에 남은 시간 표시
-        return ApiResponse::success(['minutes' => VerificationCode::TTL_MINUTES, 'resend_after' => self::RESEND_SECONDS], '인증번호를 보냈어요.');
+        return ApiResponse::success(['minutes' => VerificationCode::TTL_MINUTES, 'resend_after' => SmsGuard::resendSeconds()], '인증번호를 보냈어요.');
+    }
+
+    /** ★ v18.67 SmsGuard 제한 응답 → errors.phone 붙여서(앱이 새 번호 칸에 표시), 대기면 data.retry_after 유지 */
+    private function guardFail(JsonResponse $response): JsonResponse
+    {
+        $body = $response->getData(true);
+        return $this->fail(
+            $body['message'] ?? '잠시 후 다시 시도해주세요.',
+            $body['error_code'] ?? ErrorCode::TOO_MANY_REQUESTS,
+            $response->getStatusCode(),
+            'phone',
+            $body['data'] ?? null
+        );
     }
 
     // 저장 — ①②를 같은 요청에서 모두 통과해야 바뀜

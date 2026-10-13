@@ -87,14 +87,45 @@ class AdminSmsController extends Controller
         }
 
         $text = str_replace('{이름}', $request->user()->name ?? '테스트', self::finalBody($data['kind'], $data['body'], $data['notice_id'] ?? null));
+
+        // ★ v18.67 — 테스트 발송도 기록. 아무 번호로나 회사 발신번호로 보낼 수 있어서(운영자 토큰이 새면 스미싱에 악용 가능)
+        //   누가·어느 번호(가린 번호)로·무슨 문구를 보냈는지 발송 기록(sms_campaigns, 대상 'test:가린번호')과 로그에 남김.
+        //   횟수는 라우트에서 운영자별 1시간 10번(throttle:10,60,sms-test).
+        $masked = self::maskPhone($data['phone']);
+        $campaign = SmsCampaign::create([
+            'template_id'     => null,
+            'kind'            => $data['kind'],
+            'target'          => 'test:' . $masked,
+            'body'            => $text,
+            'recipient_count' => 1,
+            'status'          => 'sending',
+            'sent_by'         => $request->user()->id,
+        ]);
+        Log::info('[문자 테스트 발송]', [
+            'campaign_id' => $campaign->id,
+            'operator_id' => $request->user()->id,
+            'to'          => $masked,
+            'kind'        => $data['kind'],
+            'body_sha256' => hash('sha256', $text),
+        ]);
+
         try {
             $sms->send($data['phone'], $text);
         } catch (\Throwable $e) {
             Log::error('[문자 테스트 발송 실패] ' . $e->getMessage());
+            $campaign->update(['fail_count' => 1, 'status' => 'failed']);
             return ApiResponse::error('테스트 문자를 보내지 못했습니다.', 'ERR_SERVER_001', 500);
         }
+        $campaign->update(['success_count' => 1, 'status' => 'done']);
 
         return ApiResponse::success(null, '테스트 문자를 보냈습니다.');
+    }
+
+    /** ★ v18.67 010-1234-5678 → 010-****-5678 (발송 기록·로그용) */
+    private static function maskPhone(string $phone): string
+    {
+        $d = preg_replace('/\D/', '', $phone);
+        return substr($d, 0, 3) . '-****-' . substr($d, -4);
     }
 
     // GET /api/admin/sms/config — 템플릿 작성 화면 미리보기용 (수신거부 문구, 발신번호, 공지 링크 주소)
@@ -303,12 +334,15 @@ class AdminSmsController extends Controller
 
     private static function campaignRow(SmsCampaign $c): array
     {
+        // ★ v18.67 테스트 발송 기록: 템플릿 칸 "테스트 발송", 대상 칸 가린 번호
+        $isTest = str_starts_with((string) $c->target, 'test:');
+
         return [
             'id'              => $c->id,
-            'template'        => $c->template?->name,
+            'template'        => $isTest ? '테스트 발송' : $c->template?->name,
             'kind'            => $c->kind,
             'type'            => self::byteLength(str_replace('{이름}', '김철수', $c->body)) > 90 ? 'LMS' : 'SMS',
-            'target'          => self::TARGETS[$c->target] ?? null,
+            'target'          => $isTest ? substr((string) $c->target, 5) : (self::TARGETS[$c->target] ?? null),
             'recipient_count' => $c->recipient_count,
             'success_count'   => $c->success_count,
             'fail_count'      => $c->fail_count,

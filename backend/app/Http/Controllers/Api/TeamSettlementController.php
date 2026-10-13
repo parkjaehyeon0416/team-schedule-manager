@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Models\TeamSettlement;
 use App\Services\PlanService;
 use App\Services\XlsxBuilder;
+use App\Support\SafeSheet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -101,13 +102,16 @@ class TeamSettlementController extends Controller
         }
         $data = $this->build($team, $month);
 
+        // ★ v18.67 보안 — 팀원 이름·메모·현장명·공정명은 사용자가 쓴 글 → SafeSheet::text로 항상 글자 칸.
+        //   (팀원이 이름을 '1e999'로 바꾸면 숫자 칸에 무한대(INF)가 들어가 팀장이 받는 엑셀이 깨졌음, '00123'은 123이 됐음)
+        $txt = fn($v) => SafeSheet::text($v);
         $summary = [['팀원', '역할', '근무일', '공수', '정산 금액', '지급', '지급일', '메모']];
         $detail  = [['팀원', '날짜', '현장', '공정', '공수', '단가', '금액']];
         foreach ($data['members'] as $m) {
-            $summary[] = [$m['name'], $m['role'], $m['work_days'], $m['work_units'], $m['amount'],
-                $m['paid'] ? '완료' : '미지급', $m['paid_at'] ? substr($m['paid_at'], 0, 10) : '', $m['memo'] ?? ''];
+            $summary[] = [$txt($m['name']), $m['role'], $m['work_days'], $m['work_units'], $m['amount'],
+                $m['paid'] ? '완료' : '미지급', $m['paid_at'] ? substr($m['paid_at'], 0, 10) : '', $txt($m['memo'])];
             foreach ($m['schedules'] as $s) {
-                $detail[] = [$m['name'], $s['date'], $s['site'] ?? '', $s['work_type'] ?? '', $s['work_units'], $s['daily_wage'], $s['amount']];
+                $detail[] = [$txt($m['name']), $s['date'], $txt($s['site']), $txt($s['work_type']), $s['work_units'], $s['daily_wage'], $s['amount']];
             }
         }
         $summary[] = [];

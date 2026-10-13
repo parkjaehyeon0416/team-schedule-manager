@@ -8,14 +8,22 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Team;
 use App\Services\PlanService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
 /**
  * ★ v18.47 — 팀 현장 앨범 (팀 요금제, 팀원 누구나 보기)
  *   팀원들이 일정·현장에 올린 사진을 현장별로 모아 보여줌. 사진 자체는 기존 site_files(현장 사진).
  */
-class TeamAlbumController extends Controller
+class TeamAlbumController extends Controller implements HasMiddleware
 {
+    /** ★ v18.67 보안 — 운영자 계정은 앱 팀 앨범 사용 불가(routes/api.php 대신 컨트롤러에서 붙임) */
+    public static function middleware(): array
+    {
+        return [new Middleware(\App\Http\Middleware\BlockOperatorFromApp::class)];
+    }
+
     // GET /teams/{id}/album — 사진이 있는 팀 현장 목록(최근 사진 순)
     public function index(Request $request, string $id)
     {
@@ -144,7 +152,8 @@ class TeamAlbumController extends Controller
     private function authorizeTeam(Request $request, string $id): array
     {
         $user = $request->user();
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->teamIds()))->find($id);
+        // ★ v18.67 보안 — 예전엔 role_id=1(운영자 superadmin)이면 아무 팀 앨범이나 열 수 있었음 → 소속 팀만
+        $team = Team::whereIn('id', $user->teamIds())->find($id);
         if (!$team) {
             return [null, ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404)];
         }

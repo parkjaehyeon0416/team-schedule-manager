@@ -18,6 +18,9 @@ return [
     |
     */
 
+    // ★ v18.67 — 기본은 stack → daily(날짜별 파일, 14일 지나면 자동 삭제). 예전 기본(single)은 laravel.log 하나가
+    //   끝없이 커지고 지워지지 않았음(오류 로그 속 개인정보도 무기한 보관). 실서버 .env에 LOG_STACK=single이 있으면
+    //   그 값이 이기므로 LOG_STACK=daily, LOG_DAILY_DAYS=14 로 바꿔야 함.
     'default' => env('LOG_CHANNEL', 'stack'),
 
     /*
@@ -54,7 +57,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            'channels' => explode(',', (string) env('LOG_STACK', 'daily')), // ★ v18.67 기본 single → daily
             'ignore_exceptions' => false,
         ],
 
@@ -69,7 +72,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
+            'days' => (int) env('LOG_DAILY_DAYS', 14), // ★ v18.67 14일 보관 후 자동 삭제
             'replace_placeholders' => true,
         ],
 

@@ -33,7 +33,11 @@ class PushService
             return;
         }
 
-        $tokens = DeviceToken::whereIn('user_id', $targetUserIds)->pluck('token');
+        // ★ v18.67 보안 — 로그인 세션이 끊긴 기기(로그아웃·비밀번호 재설정·다른 기기 로그아웃·30일 미사용)는
+        //   지우고, 세션이 살아 있는 기기에만 보냄. 예전엔 분실폰 세션을 끊어도 잠금화면에 고객 주소 알림이 계속 갔음.
+        //   세션 번호가 없는 예전 등록(null)은 하위 호환으로 계속 보냄(앱 다음 실행 때 채워짐).
+        DeviceToken::whereIn('user_id', $targetUserIds)->withDeadSession()->delete();
+        $tokens = DeviceToken::whereIn('user_id', $targetUserIds)->withLiveSession()->pluck('token');
         if ($tokens->isEmpty()) {
             return;
         }

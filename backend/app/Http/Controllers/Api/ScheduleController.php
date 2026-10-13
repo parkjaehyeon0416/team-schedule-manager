@@ -6,12 +6,21 @@ use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\Schedule;
+use App\Models\WorkType;
 use App\Http\Responses\ApiResponse;
 use App\Services\MonthlySummaryService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class ScheduleController extends Controller
+class ScheduleController extends Controller implements HasMiddleware
 {
+    /** ★ v18.67 보안 — 운영자 계정은 앱 일정 API 사용 불가(routes/api.php 대신 컨트롤러에서 붙임) */
+    public static function middleware(): array
+    {
+        return [new Middleware(\App\Http\Middleware\BlockOperatorFromApp::class)];
+    }
+
     // ─── ① 스케줄 목록 조회 ───
     public function index(Request $request)
     {
@@ -103,6 +112,9 @@ class ScheduleController extends Controller
         $data['created_by'] = $user->id;
 
         if ($fail = $this->checkRefs($user, $data, $data['team_id'], $data['owner_id'])) {
+            return $fail;
+        }
+        if ($fail = $this->checkWorkType($user, $data['work_type_id'] ?? null)) {
             return $fail;
         }
 
@@ -267,7 +279,24 @@ class ScheduleController extends Controller
             'is_personal'    => 'nullable|boolean',
         ]);
 
-        if (array_key_exists('team_id', $data) || $request->has('is_personal')) {
+        $oldTeamId  = $schedule->team_id ? (int) $schedule->team_id : null;
+        $oldOwnerId = $schedule->owner_id ? (int) $schedule->owner_id : null;
+        $newTeamId  = $oldTeamId;
+        $newOwnerId = $oldOwnerId;
+
+        // ★ v18.67 — 지금 배포된 앱(v18.66 이하)은 "팀장인 팀"이 하나도 없는 부팀장이 팀 일정을 수정하면
+        //   팀 선택·투입 인원 칸을 숨기고 개인 일정처럼(is_personal=true, team_id=null) 보냄(ScheduleCreateScreen의 hasTeam이 팀장만 봄).
+        //   예전 서버는 이걸 그대로 받아 팀 일정을 부팀장 개인 일정으로 바꿔 버렸고(팀원들이 못 보게 됨),
+        //   부팀장은 팀 일정을 팀 밖으로 옮길 수 없으므로 이 경우만 "소속·투입 인원은 그대로, 나머지 내용만 수정"으로 받음.
+        //   (팀장인 팀이 있는 사람의 앱은 원래 team_id를 그대로 보내므로 해당 없음 → 직접 옮기려 하면 아래에서 403)
+        $legacySubLeaderEdit = $oldTeamId !== null
+            && $user->canAssignIn($oldTeamId) && !$user->isLeaderOf($oldTeamId) && empty($user->ledTeamIds())
+            && ($data['team_id'] ?? null) === null && $request->boolean('is_personal');
+        if ($legacySubLeaderEdit) {
+            unset($data['team_id'], $data['user_ids']); // 화면에 투입 인원 칸이 없었으므로 배정도 바꾸지 않음
+        }
+
+        if (!$legacySubLeaderEdit && (array_key_exists('team_id', $data) || $request->has('is_personal'))) {
             $requestedTeamId = $data['team_id'] ?? null;
             if ($requestedTeamId !== null && !in_array($requestedTeamId, $user->teamIds(), true)) {
                 return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::SCHEDULE_NOT_FOUND, 422);
@@ -276,21 +305,58 @@ class ScheduleController extends Controller
             if ($requestedTeamId !== null && !$user->canAssignIn($requestedTeamId)) {
                 return ApiResponse::error('팀 일정은 그 팀의 팀장·부팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
             }
-            $wantsPersonal = $requestedTeamId === null ? $request->boolean('is_personal') : false;
-            $data['team_id']  = $wantsPersonal ? null : $requestedTeamId;
-            $data['owner_id'] = $wantsPersonal ? $user->id : null;
+            if ($requestedTeamId !== null) {
+                $newTeamId  = (int) $requestedTeamId;
+                $newOwnerId = null;
+            } elseif ($request->boolean('is_personal')) {
+                $newTeamId  = null;
+                $newOwnerId = (int) $user->id;
+            }
+            // ★ v18.67 — 팀도 안 고르고 개인도 아니면(예전 앱이 is_personal=false만 보냄) 소속은 그대로.
+            //   예전엔 이 경우 team_id·owner_id가 둘 다 비어 아무도 못 보는 일정이 됐음.
+            $data['team_id']  = $newTeamId;
+            $data['owner_id'] = $newOwnerId;
         }
         unset($data['is_personal']);
 
-        $oldUserIds = $schedule->users()->pluck('users.id')->all();
-        if ($fail = $this->checkRefs(
-            $user,
-            $data,
-            array_key_exists('team_id', $data) ? $data['team_id'] : $schedule->team_id,
-            array_key_exists('owner_id', $data) ? $data['owner_id'] : $schedule->owner_id,
-            $oldUserIds,
-            $schedule->site_id,
-        )) {
+        $oldUserIds = $schedule->users()->pluck('users.id')->map(fn($v) => (int) $v)->all();
+        $keepUserIds = $oldUserIds;
+        $keepSiteId  = $schedule->site_id ? (int) $schedule->site_id : null;
+
+        // ★ v18.67 보안 — 소속(팀↔개인, 다른 팀)이 바뀌는 경우
+        $moved = $newTeamId !== $oldTeamId || $newOwnerId !== $oldOwnerId;
+        if ($moved) {
+            // ① 팀 일정을 팀 밖(개인·다른 팀)으로 빼는 건 원래 팀의 팀장만. 부팀장은 같은 팀 안에서 내용만 수정
+            //    (예전엔 부팀장이 팀 일정을 자기 개인 일정이나 자기가 팀장인 다른 팀으로 옮겨 가져갈 수 있었음)
+            if ($oldTeamId !== null && !$user->isLeaderOf($oldTeamId)) {
+                return ApiResponse::error('팀 일정을 개인 일정이나 다른 팀으로 옮기는 건 그 팀 팀장만 할 수 있어요.', 'ERR_AUTH_002', 403);
+            }
+            // ② 지금 연결된 현장도 새 소속 기준으로 다시 확인(예전엔 현장을 그대로 두고 team_id만 바꾸면 검사를 건너뛰어
+            //    다른 팀 현장이 우리 팀 일정에 붙었음)
+            $keepSiteId = null;
+            if (!array_key_exists('site_id', $data) && $schedule->site_id) {
+                $data['site_id'] = (int) $schedule->site_id;
+            }
+            // ③ 투입 인원도 새 소속 기준으로. 팀 → 개인이면 주인 한 명만 남김
+            //    (예전엔 옛 팀원이 그대로 배정돼 일정은 못 보는데 그 사람 수입·공수에는 계속 잡혔음)
+            $keepUserIds = [];
+            if ($newTeamId === null) {
+                $data['user_ids'] = [(int) $user->id];
+            } elseif (!isset($data['user_ids'])) {
+                // 다른 팀으로 옮기면서 투입 인원을 안 보냈으면 옮겨 갈 팀의 팀원만 남김
+                $data['user_ids'] = \Illuminate\Support\Facades\DB::table('team_members')
+                    ->where('team_id', $newTeamId)->whereNull('deleted_at')
+                    ->whereIn('user_id', $oldUserIds)->pluck('user_id')->map(fn($v) => (int) $v)->all();
+            }
+        }
+
+        if ($fail = $this->checkRefs($user, $data, $newTeamId, $newOwnerId, $keepUserIds, $keepSiteId)) {
+            return $fail;
+        }
+        // ★ v18.67 — 공정을 바꿀 때만 확인(예전에 붙은 공정은 그대로 수정 가능)
+        if (array_key_exists('work_type_id', $data) && $data['work_type_id'] !== null
+            && (int) $data['work_type_id'] !== (int) $schedule->work_type_id
+            && ($fail = $this->checkWorkType($user, $data['work_type_id']))) {
             return $fail;
         }
 
@@ -376,13 +442,27 @@ class ScheduleController extends Controller
      *   - 현장: 내가 볼 수 있는 현장이어야 하고, 팀 일정이면 같은 팀 현장(또는 팀 없는 내 현장)만
      *   - 투입 인원: 팀 일정이면 그 팀 팀원만(이미 배정돼 있던 사람은 팀을 나갔어도 유지 가능),
      *     개인 일정이면 본인만(다른 사람은 조용히 뺌)
+     *
+     * ★ v18.67 보안 — 현장 규칙을 "그 현장이 팀 밖으로 새어 나가지 않게"로 좁힘.
+     *   예전엔 "내가 볼 수 있는 현장"이면 됐고 개인 일정은 팀 검사도 없어서, A팀 팀장이면서 B팀 팀원인 사람이
+     *   B팀 현장을 A팀 일정에 붙이면 B팀과 무관한 A팀원들이 B팀 고객 주소·사진을 보고 올릴 수 있었음.
+     *   - 팀 일정: 같은 팀 현장, 또는 팀 없는 내 개인 현장(owner_id = 나)만
+     *   - 개인 일정: 내 개인 현장, 또는 내가 "지금" 소속된 팀의 현장
+     *     (개인 일정은 주인 혼자만 보는 일정이라 팀 밖 사람에게 보이지 않음. 팀원이 자기 수입 기록용으로
+     *      팀 현장을 고르는 기존 앱 흐름은 그대로 됨. 팀을 나간 뒤엔 그 팀 현장을 새로 붙일 수 없음)
      */
     private function checkRefs($user, array &$data, ?int $teamId, ?int $ownerId, array $keepUserIds = [], ?int $keepSiteId = null)
     {
         $siteId = $data['site_id'] ?? null;
         if ($siteId && (int) $siteId !== $keepSiteId) {
-            $site = \App\Models\Site::forUser($user)->find($siteId);
-            if (!$site || ($teamId && $site->team_id && (int) $site->team_id !== $teamId)) {
+            $site = \App\Models\Site::find($siteId);
+            $allowed = $site && ($teamId
+                ? ((int) $site->team_id === $teamId
+                    || (!$site->team_id && (int) $site->owner_id === (int) $user->id))
+                : ($site->team_id
+                    ? $user->isMemberOf((int) $site->team_id)
+                    : (int) $site->owner_id === (int) $user->id));
+            if (!$allowed) {
                 return ApiResponse::error('선택할 수 없는 현장입니다.', 'ERR_NOT_FOUND', 422);
             }
         }
@@ -402,6 +482,22 @@ class ScheduleController extends Controller
             $data['user_ids'] = $ids;
         }
 
+        return null;
+    }
+
+    /**
+     * ★ v18.67 보안 — 공정(work_type_id)은 내가 볼 수 있는 공정만(공용 + 소속 팀 공정 + 내 개인 공정).
+     *   예전엔 "DB에 있는 번호"인지만 봐서 남의 개인 공정·다른 팀 공정을 번호로 붙여 이름·색상을 알아낼 수 있었음.
+     *   지운 공정도 forUser에서 빠지므로 함께 막힘.
+     */
+    private function checkWorkType($user, $workTypeId)
+    {
+        if ($workTypeId === null || $workTypeId === '') {
+            return null;
+        }
+        if (!WorkType::forUser($user)->whereKey((int) $workTypeId)->exists()) {
+            return ApiResponse::error('선택할 수 없는 공정입니다.', ErrorCode::WORKTYPE_NOT_FOUND, 422);
+        }
         return null;
     }
 }

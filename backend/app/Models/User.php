@@ -104,6 +104,10 @@ class User extends Authenticatable
 
     public function teamRoles(): array
     {
+        // ★ v18.67 보안 — 운영자 계정은 팀 권한(팀장·부팀장) 없음. 혹시 팀에 들어가 있어도 앱 API에서 팀 관리 불가
+        if ($this->isOperator()) {
+            return $this->teamRoleMap = [];
+        }
         return $this->teamRoleMap ??= \Illuminate\Support\Facades\DB::table('team_members')
             ->where('user_id', $this->id)
             ->whereNull('deleted_at')
@@ -112,17 +116,34 @@ class User extends Authenticatable
             ->all();
     }
 
-    /** 운영자(superadmin)이거나 그 팀에서 팀장이면 true */
+    /** ★ v18.67 — 운영자(웹 관리자 전용) 계정인가 */
+    public function isOperator(): bool
+    {
+        return $this->user_type === 'operator';
+    }
+
+    /**
+     * 그 팀에서 팀장이면 true
+     *   ★ v18.67 보안 — 예전엔 role_id=1(운영자 superadmin)이면 "모든 팀의 팀장"으로 통과시켜서, 운영자 토큰으로
+     *   일반 앱 API를 부르면 남의 팀 일정·현장·사진·근태를 관리할 수 있었음. 운영자는 웹 관리자(/api/admin)만 쓰고
+     *   팀 권한이 필요 없어서 그 우회를 없앰(운영자 웹 API는 이 함수를 쓰지 않음).
+     */
     public function isLeaderOf(?int $teamId): bool
     {
         if (!$teamId) {
             return false;
         }
-        if ((int) $this->role_id === 1) {
-            return true;
-        }
         $role = $this->teamRoles()[$teamId] ?? null;
         return $role !== null && $role <= 2;
+    }
+
+    /**
+     * ★ v18.67 — 지금 그 팀 소속(팀장·부팀장·팀원)인가. 팀을 나간 사람은 false.
+     *   나간 팀의 옛 기록은 "보기"만 되고(v18.7), 사진 올리기·보고서 만들기 같은 쓰기는 지금 소속일 때만.
+     */
+    public function isMemberOf(?int $teamId): bool
+    {
+        return $teamId && !$this->isOperator() && in_array((int) $teamId, array_map('intval', $this->teamIds()), true);
     }
 
     /** 내가 팀장인 팀 id 목록 */
@@ -139,6 +160,10 @@ class User extends Authenticatable
 
     public function subLeaderTeamIds(): array
     {
+        // ★ v18.67 보안 — 운영자 계정은 팀 권한 없음(teamRoles와 같음)
+        if ($this->isOperator()) {
+            return $this->subLeaderMap = [];
+        }
         $this->subLeaderMap ??= \Illuminate\Support\Facades\DB::table('team_members')
             ->where('user_id', $this->id)
             ->whereNull('deleted_at')

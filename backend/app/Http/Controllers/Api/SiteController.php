@@ -7,9 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Site;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SiteController extends Controller
+class SiteController extends Controller implements HasMiddleware
 {
+    /** ★ v18.67 보안 — 운영자 계정은 앱 현장 API 사용 불가(routes/api.php 대신 컨트롤러에서 붙임) */
+    public static function middleware(): array
+    {
+        return [new Middleware(\App\Http\Middleware\BlockOperatorFromApp::class)];
+    }
+
     // ─── ① 현장 목록 조회 ───
     public function index(Request $request)
     {
@@ -153,6 +161,15 @@ class SiteController extends Controller
             }
             if ($requestedTeamId !== null && !$user->canAssignIn($requestedTeamId)) {
                 return ApiResponse::error('팀 현장은 그 팀의 팀장·부팀장만 등록할 수 있어요.', 'ERR_AUTH_002', 403);
+            }
+            // ★ v18.67 보안 — 팀 현장을 팀 밖(내 개인 현장·다른 팀)으로 옮기는 건 원래 팀의 팀장만.
+            //   예전엔 부팀장이 팀 현장(고객 주소·사진)을 자기 개인 현장이나 자기가 팀장인 다른 팀으로 옮겨
+            //   팀장·팀원이 더는 못 보게 가져갈 수 있었음. 부팀장은 같은 팀 안에서 내용만 수정.
+            //   (앱은 수정할 때 원래 team_id를 그대로 보내므로 소속이 그대로면 검사하지 않음)
+            $oldTeamId = $site->team_id ? (int) $site->team_id : null;
+            $newTeamId = $requestedTeamId !== null ? (int) $requestedTeamId : null;
+            if ($oldTeamId !== null && $newTeamId !== $oldTeamId && !$user->isLeaderOf($oldTeamId)) {
+                return ApiResponse::error('팀 현장을 개인 현장이나 다른 팀으로 옮기는 건 그 팀 팀장만 할 수 있어요.', 'ERR_AUTH_002', 403);
             }
             $data['owner_id'] = $requestedTeamId === null ? $user->id : null;
         }

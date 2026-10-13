@@ -81,7 +81,9 @@ class Schedule extends Model
             'apt_name'   => $this->address_detail,
             'team_id'    => $this->team_id,
             'owner_id'   => $this->team_id ? null : ($this->owner_id ?? $userId),
-            'created_by' => $userId,
+            // ★ v18.67 보안 — 팀 일정이면 처음 사진을 올린 팀원이 아니라 일정을 만든 사람(팀장·부팀장)을 만든 사람으로.
+            //   예전엔 팀원이 만든 사람으로 기록돼, 팀을 나간 뒤에도(Site::forUser의 created_by) 그 현장의 새 사진을 계속 봤음
+            'created_by' => $this->team_id ? ($this->created_by ?? $userId) : $userId,
         ]);
 
         $this->site_id        = $site->id;
@@ -196,5 +198,53 @@ class Schedule extends Model
     {
         return (int) $this->owner_id === (int) $user->id
             || ($this->team_id && $user->canAssignIn((int) $this->team_id));
+    }
+
+    /**
+     * ★ v18.67 보안 — 이 일정에서 사진 올리기·보고서 만들기·공유 같은 "쓰기"를 할 수 있나.
+     *   보기 범위(forUser)에는 팀을 나간 뒤에도 "그때 일한 팀 일정"이 남지만(v18.7), 쓰기는 지금 소속일 때만.
+     *   - 개인 일정: 주인 본인
+     *   - 팀 일정: 지금 그 팀 팀원(팀장·부팀장 포함)
+     */
+    public function canContributeBy($user): bool
+    {
+        if ($this->team_id) {
+            return $user->isMemberOf((int) $this->team_id);
+        }
+        return (int) $this->owner_id === (int) $user->id;
+    }
+
+    /**
+     * ★ v18.67 보안 — 이 일정으로 사진·보고서를 어디까지 볼 수 있나(Site::viewCutoffFor 참고).
+     *   현장이 있으면 현장 기준, 없으면 일정 기준(팀을 나갔으면 나간 때까지).
+     */
+    public function viewCutoffFor($user): \Illuminate\Support\Carbon|false|null
+    {
+        $site = $this->site_id ? Site::withTrashed()->find($this->site_id) : null;
+        if ($site) {
+            return $site->viewCutoffFor($user, $this);
+        }
+        if ($this->canContributeBy($user)) {
+            return null;
+        }
+        return $this->team_id ? Site::leftTeamAt($user, (int) $this->team_id) : false;
+    }
+
+    /**
+     * ★ v18.67 보안 — 팀 일정에는 다른 팀 현장을 붙일 수 없음(어느 경로로 저장되든 공통 안전장치).
+     *   일정 API는 checkRefs가 422로 먼저 막지만, 견적 승인처럼 다른 경로로 만들어지는 일정이 있어서
+     *   (예: A팀 팀장이면서 B팀 팀원인 사람이 B팀 현장으로 견적을 승인 → A팀 일정에 B팀 현장) 모델에서 한 번 더 확인.
+     *   어긋나면 현장 연결만 비움(견적 승인은 원래도 볼 수 없는 현장이면 연결을 비우고 진행했음).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Schedule $s) {
+            if ($s->site_id && $s->team_id && ($s->isDirty('site_id') || $s->isDirty('team_id'))) {
+                $siteTeamId = Site::withTrashed()->whereKey($s->site_id)->value('team_id');
+                if ($siteTeamId && (int) $siteTeamId !== (int) $s->team_id) {
+                    $s->site_id = null;
+                }
+            }
+        });
     }
 }

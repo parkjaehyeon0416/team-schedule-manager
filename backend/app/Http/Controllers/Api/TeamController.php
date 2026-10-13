@@ -75,6 +75,9 @@ class TeamController extends Controller
             return \App\Services\PlanService::denied('multi_team_lead', '무료로는 팀을 1개까지 만들 수 있어요. 여러 팀 운영은 팀 요금제에서 쓸 수 있어요.',
                 ['limit' => $ledLimit, 'used' => count($user->ledTeamIds()), 'unit' => '팀']);
         }
+        if ($fail = $this->teamPhotoError($request, $user)) { // ★ v18.67
+            return $fail;
+        }
 
         $team = Team::create([
             'name'          => $data['name'],
@@ -148,6 +151,9 @@ class TeamController extends Controller
         ]);
 
         if ($request->hasFile('photo')) {
+            if ($fail = $this->teamPhotoError($request, $user)) { // ★ v18.67
+                return $fail;
+            }
             if ($team->photo_path) {
                 Storage::disk('public')->delete($team->photo_path);
             }
@@ -175,6 +181,9 @@ class TeamController extends Controller
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:5120',
         ]);
+        if ($fail = $this->teamPhotoError($request, $user)) { // ★ v18.67
+            return $fail;
+        }
 
         if ($team->photo_path) {
             Storage::disk('public')->delete($team->photo_path);
@@ -184,6 +193,19 @@ class TeamController extends Controller
         $team->update(['photo_path' => $path]);
 
         return ApiResponse::success($team->fresh(), '팀 사진이 등록되었습니다.');
+    }
+
+    /**
+     * ★ v18.67 보안 — 팀 사진(생성·수정·사진 등록 공통): 저장 전에 사진 머리글 확인(6000픽셀 이하)
+     *   + 사용자당 하루 20장까지. 사진이 없으면 통과(null).
+     */
+    private function teamPhotoError(Request $request, User $user)
+    {
+        if (!$request->hasFile('photo')) {
+            return null;
+        }
+        return \App\Support\UploadGuard::imageError($request->file('photo'))
+            ?? \App\Support\UploadGuard::dailyLimit('team_photo', $user->id, 1, 20, '팀 사진');
     }
 
     public function deletePhoto(Request $request, string $id)

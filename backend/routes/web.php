@@ -17,7 +17,9 @@ Route::get('/privacy', [\App\Http\Controllers\LandingPageController::class, 'pri
 Route::get('/c/{code}', [BusinessCardPageController::class, 'show']);
 
 // ★ v18.43 — 팀 초대 링크(카톡·문자로 공유) + 최신 APK 고정 주소
-Route::get('/join/{code}', [\App\Http\Controllers\TeamInvitePageController::class, 'show'])->where('code', '[A-Za-z0-9]{4,12}');
+// ★ v18.67 IP당 분당 10번 — API(/teams/preview·join, v18.62)의 초대코드 맞히기 방지를 이 웹페이지로 우회하던 것 막음
+Route::get('/join/{code}', [\App\Http\Controllers\TeamInvitePageController::class, 'show'])->where('code', '[A-Za-z0-9]{4,12}')
+    ->middleware('throttle:10,1,join-web');
 // ★ v18.43 — 문자 속 공지·이벤트 바로가기
 Route::get('/n/{id}', [\App\Http\Controllers\NoticePageController::class, 'show'])->whereNumber('id');
 Route::get('/download/latest', [\App\Http\Controllers\TeamInvitePageController::class, 'latestApk']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\MonthlySummary;
@@ -9,8 +10,11 @@ use App\Models\Schedule;
 use App\Models\User;
 use App\Services\MonthlySummaryService;
 use App\Services\XlsxBuilder;
+use App\Support\SafeSheet;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -24,6 +28,9 @@ use Illuminate\Support\Facades\URL;
  */
 class TaxSummaryController extends Controller
 {
+    private const EXPORT_MAX_MONTHS = 24; // ★ v18.67 내보내기 기간 상한(개월)
+    private const EXPORT_PER_HOUR = 20;   // ★ v18.67 사용자당 1시간 내보내기 횟수
+
     /**
      * 연간 수입·경비 정리 조회 (화면용)
      * GET /api/tax-summary?year=2026
@@ -59,6 +66,9 @@ class TaxSummaryController extends Controller
         $request->validate([
             'year' => 'required|integer|min:2020|max:2099',
         ]);
+        if ($limited = $this->exportThrottle($request->user()->id)) { // ★ v18.67
+            return $limited;
+        }
 
         return $this->renderPdf($request->user(), (int) $request->query('year'));
     }
@@ -96,6 +106,9 @@ class TaxSummaryController extends Controller
         if (!$owner) {
             return ApiResponse::error('존재하지 않는 사용자입니다.', 'ERR_NOT_FOUND', 404);
         }
+        if ($limited = $this->exportThrottle($owner->id)) { // ★ v18.67
+            return $limited;
+        }
 
         return $this->renderPdf($owner, $year);
     }
@@ -125,20 +138,26 @@ class TaxSummaryController extends Controller
         if ($gate = $this->exportGate($request)) {
             return $gate;
         }
-        $data = $this->validateExport($request);
+        [$data, $invalid] = $this->validateExport($request);
+        if ($invalid) {
+            return $invalid;
+        }
+        if ($limited = $this->exportThrottle($request->user()->id)) {
+            return $limited;
+        }
         [$summary, $schedules] = $this->buildExportRows($request->user()->id, $data);
 
-        $lines = array_map(fn($r) => implode(',', $r), $summary);
+        // ★ v18.67 보안 — 메모 등 사용자가 쓴 칸이 =·+·-·@로 시작하면 '를 붙여 수식 실행을 막고(SafeSheet),
+        //   쉼표·따옴표·줄바꿈은 큰따옴표로 감쌈(예전엔 쉼표만 공백으로 바꿔서 수식이 그대로 들어갔음).
+        //   BOM도 깨진 글자(ï»¿)로 나가던 것을 진짜 UTF-8 BOM으로 고침.
+        $rows = $summary;
         if ($schedules !== null) {
-            $lines[] = '';
-            $lines[] = '원본 일정';
-            foreach ($schedules as $r) {
-                $lines[] = implode(',', array_map(fn($v) => str_replace(',', ' ', (string) $v), $r));
-            }
+            $rows[] = [];
+            $rows[] = ['원본 일정'];
+            array_push($rows, ...$schedules);
         }
 
-        $csv = "ï»¿" . implode("
-", $lines); // UTF-8 BOM — 엑셀에서 한글 깨짐 방지
+        $csv = SafeSheet::csv($rows); // UTF-8 BOM — 엑셀에서 한글 깨짐 방지
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -154,7 +173,10 @@ class TaxSummaryController extends Controller
         if ($gate = $this->exportGate($request)) {
             return $gate;
         }
-        $data = $this->validateExport($request);
+        [$data, $invalid] = $this->validateExport($request);
+        if ($invalid) {
+            return $invalid;
+        }
 
         $path = URL::temporarySignedRoute('tax.xlsx.signed', now()->addMinutes(10), [
             'user'  => $request->user()->id,
@@ -177,7 +199,13 @@ class TaxSummaryController extends Controller
             return ApiResponse::error('존재하지 않는 사용자입니다.', 'ERR_NOT_FOUND', 404);
         }
 
-        $data = $this->validateExport($request);
+        [$data, $invalid] = $this->validateExport($request);
+        if ($invalid) {
+            return $invalid;
+        }
+        if ($limited = $this->exportThrottle($owner->id)) {
+            return $limited;
+        }
         [$summary, $schedules] = $this->buildExportRows($owner->id, $data);
 
         $sheets = ['월별 요약' => $summary];
@@ -188,13 +216,55 @@ class TaxSummaryController extends Controller
         return XlsxBuilder::download("세무자료_{$data['from']}_{$data['to']}.xlsx", $sheets);
     }
 
+    /**
+     * ★ v18.67 보안 — 기간 상한 추가. 예전엔 from=0001-01&to=9999-12 처럼 아무 기간이나 받아서
+     *   요청 1건이 연도마다 쿼리를 돌려 쿼리 3만 개·22초를 잡을 수 있었음(서버 전체 멈춤).
+     *   이제 2020-01 ~ 2099-12 안에서, 시작 ≤ 끝, 최대 24개월까지만.
+     *   (앱은 날짜 선택기로 아무 달이나 고를 수 있어 '작년 1월 ~ 올해'까지 넉넉히 24개월)
+     *   안내 문구가 앱 알림창에 그대로 보이도록 ValidationException 대신 message에 이유를 담아 422로 돌려줌.
+     * @return array{0: array, 1: ?\Illuminate\Http\JsonResponse}  [검증된 값, 오류 응답(없으면 null)]
+     */
     private function validateExport(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'from'  => 'required|date_format:Y-m',
             'to'    => 'required|date_format:Y-m',
-            'items' => 'nullable|string',
+            'items' => 'nullable|string|max:100',
         ]);
+
+        [$fromYear, $fromMonth] = array_map('intval', explode('-', $data['from']));
+        [$toYear, $toMonth] = array_map('intval', explode('-', $data['to']));
+        $months = ($toYear * 12 + $toMonth) - ($fromYear * 12 + $fromMonth) + 1;
+
+        $error = match (true) {
+            $fromYear < 2020 || $toYear > 2099 => '2020년 1월부터 2099년 12월 사이 기간만 내보낼 수 있어요.',
+            $months < 1                        => '끝 달이 시작 달보다 빠를 수 없어요. 기간을 확인해주세요.',
+            $months > self::EXPORT_MAX_MONTHS  => '기간은 최대 ' . self::EXPORT_MAX_MONTHS . '개월까지 선택할 수 있어요.',
+            default                            => null,
+        };
+
+        return [$data, $error ? ApiResponse::error($error, ErrorCode::VALID_GENERAL, 422) : null];
+    }
+
+    /**
+     * ★ v18.67 보안 — 자료 내보내기(CSV·엑셀·PDF 생성)는 사용자당 1시간에 20번까지.
+     *   서명 링크(로그인 없이 10분간 반복 호출 가능)로 여는 파일도 링크 주인 기준으로 같이 셈.
+     *   링크 발급(export-link·pdf-link)은 가벼워서 세지 않고, 실제로 파일을 만드는 요청만 셈.
+     */
+    private function exportThrottle(int $userId)
+    {
+        $key = 'tax-export:' . $userId;
+        if (RateLimiter::tooManyAttempts($key, self::EXPORT_PER_HOUR)) {
+            $minutes = max(1, (int) ceil(RateLimiter::availableIn($key) / 60));
+            return ApiResponse::error(
+                '자료 내보내기는 1시간에 ' . self::EXPORT_PER_HOUR . "번까지 할 수 있어요. {$minutes}분 뒤에 다시 시도해주세요.",
+                ErrorCode::TOO_MANY_REQUESTS,
+                429
+            );
+        }
+        RateLimiter::hit($key, 3600);
+
+        return null;
     }
 
     /**
@@ -207,6 +277,8 @@ class TaxSummaryController extends Controller
         [$fromYear, $fromMonth] = array_map('intval', explode('-', $data['from']));
         [$toYear, $toMonth] = array_map('intval', explode('-', $data['to']));
 
+        // ★ v18.67 — 연도마다 쿼리 3번(월별 집계·일정 있는 달·소득세 내역). 일정별 세금 계산은 쿼리 없는 산수라 N+1 아님.
+        //   기간이 최대 24개월(validateExport)이라 연도는 많아야 3개 → 쿼리 9번 + 캐시 없는 달 재계산뿐.
         $rows = [];
         for ($y = $fromYear; $y <= $toYear; $y++) {
             foreach ($this->buildYearlySummaries($userId, $y) as $row) {
@@ -240,7 +312,12 @@ class TaxSummaryController extends Controller
                 ->whereNull('schedules.deleted_at')
                 ->whereNull('schedule_users.deleted_at')
                 ->where('schedule_users.user_id', $userId)
-                ->whereBetween('schedules.date', ["{$data['from']}-01", "{$data['to']}-31"])
+                // ★ v18.67 — 끝 날짜를 '{to}-31' 대신 그 달 말일로. 예전엔 끝 달이 2·4·6·9·11월이면 '2026-02-31' 같은
+                //   없는 날짜가 들어가 MySQL 비교가 실패 → '원본 일정'이 한 줄도 안 나왔음(로컬 재현: 0건)
+                ->whereBetween('schedules.date', [
+                    "{$data['from']}-01",
+                    Carbon::createFromFormat('Y-m-d', "{$data['to']}-01")->endOfMonth()->toDateString(),
+                ])
                 ->orderBy('schedules.date')
                 ->select('schedules.date', 'schedules.memo', 'schedules.daily_wage', 'schedules.work_units', 'schedules.employment_type')
                 ->get();
@@ -255,7 +332,9 @@ class TaxSummaryController extends Controller
                 );
                 $schedules[] = [
                     substr((string) $s->date, 0, 10),
-                    (string) $s->memo,
+                    // ★ v18.67 — 메모는 팀장이 팀원 일정에 쓸 수 있는 남의 글 → 엑셀에서 '1e999' 같은 글이 숫자(무한대) 칸이 돼
+                    //   파일이 깨지지 않게 항상 글자 칸으로(SafeSheet::text). CSV에선 그대로 글로 처리됨.
+                    SafeSheet::text($s->memo),
                     $s->daily_wage,
                     $s->work_units,
                     $s->employment_type === 'freelance' ? '프리랜서(3.3%)' : '일용근로',

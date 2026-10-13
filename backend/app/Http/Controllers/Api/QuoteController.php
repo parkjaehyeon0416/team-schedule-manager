@@ -13,12 +13,17 @@ use App\Models\Site;
 use App\Models\User;
 use App\Models\UserMaterial;
 use App\Services\XlsxBuilder;
+use App\Support\SafeSheet;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 /**
  * 견적서(Quote) 컨트롤러 — ★ v12~v13 신규
@@ -35,6 +40,40 @@ class QuoteController extends Controller
         'lines.*.unit_price.max' => '단가는 1억 원 미만으로 입력해주세요.',
         'discount_amount.max'    => '할인 금액이 너무 커요.',
     ];
+
+    // ★ v18.67 보안 — 항목 수·메모 길이 상한. 예전엔 항목 수천 개·메모 수만 자짜리 견적을 만들어
+    //   PDF를 요청할 때마다 수 초~십수 초씩 서버를 붙잡을 수 있었음(php-fpm 워커 5개 서버 마비).
+    private const MAX_LINES = 100;
+    private const MEMO_MAX  = 2000;
+
+    // ★ v18.67 보안 — 견적서 PDF는 내용이 그대로면 한 번 그린 파일을 다시 씀(private 디스크
+    //   storage/app/private/quote-pdf/{견적id}/{내용 지문}.pdf). 3일짜리 공유 링크는 로그인 없이 열리므로
+    //   요청마다 새로 그리면 링크만 있으면 누구나 CPU를 태울 수 있었음.
+    private const PDF_DIR = 'quote-pdf';
+    private const PDF_RENDERS_PER_MINUTE = 10; // 새로 그리기(내용이 바뀐 경우만) — 견적 주인 기준
+    private const PDF_SIGNED_PER_MINUTE  = 30; // 로그인 없는 서명·공유 링크 열기 — IP 기준
+
+    private const LIMIT_MESSAGES = [
+        'lines.max' => '견적 항목은 100개까지 넣을 수 있어요.',
+        'memo.max'  => '메모는 2,000자까지 입력할 수 있어요.',
+    ];
+
+    /**
+     * ★ v18.67 — 항목 수·메모 길이를 검증 전에 먼저 확인(항목 수천 개를 하나하나 검증하는 것부터 무거워서).
+     *   앱 알림창엔 message만 보이므로 이유를 message에 담아 422로 돌려줌.
+     */
+    private function sizeError(Request $request)
+    {
+        $lines = $request->input('lines');
+        if (is_array($lines) && count($lines) > self::MAX_LINES) {
+            return ApiResponse::error(self::LIMIT_MESSAGES['lines.max'], ErrorCode::VALID_GENERAL, 422);
+        }
+        $memo = $request->input('memo');
+        if (is_string($memo) && mb_strlen($memo) > self::MEMO_MAX) {
+            return ApiResponse::error(self::LIMIT_MESSAGES['memo.max'], ErrorCode::VALID_GENERAL, 422);
+        }
+        return null;
+    }
 
     /** 항목 합계가 100억 이상이거나 할인이 공급가보다 크면 안내 */
     private function amountError(array $data)
@@ -78,6 +117,9 @@ class QuoteController extends Controller
     {
         $user = $request->user();
 
+        if ($fail = $this->sizeError($request)) { // ★ v18.67
+            return $fail;
+        }
         $data = $request->validate([
             'client_name'      => 'nullable|string|max:100',
             'client_contact'   => 'nullable|string|max:100',
@@ -85,16 +127,16 @@ class QuoteController extends Controller
             'site_id'          => 'nullable|integer|exists:sites,id',
             'work_type_id'     => 'nullable|integer|exists:work_types,id',
             'desired_date'     => 'nullable|date',
-            'memo'             => 'nullable|string',
+            'memo'             => 'nullable|string|max:' . self::MEMO_MAX, // ★ v18.67
             'discount_amount'  => 'nullable|numeric|min:0|max:9999999999', // ★ v18.65 DB 칸(12,2) 넘으면 500 나던 것
             'tax_type'         => 'nullable|in:separate,included,exempt',
-            'lines'            => 'required|array|min:1',
+            'lines'            => 'required|array|min:1|max:' . self::MAX_LINES, // ★ v18.67
             'lines.*.name'       => 'required|string|max:100',
             'lines.*.spec'       => 'nullable|string|max:255',
             'lines.*.quantity'   => 'required|numeric|min:0|max:99999',
             'lines.*.unit'       => 'nullable|string|max:20',
             'lines.*.unit_price' => 'required|numeric|min:0|max:99999999',
-        ], self::AMOUNT_MESSAGES);
+        ], self::AMOUNT_MESSAGES + self::LIMIT_MESSAGES);
         if ($fail = $this->amountError($data)) {
             return $fail;
         }
@@ -190,6 +232,9 @@ class QuoteController extends Controller
             return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
         }
 
+        if ($fail = $this->sizeError($request)) { // ★ v18.67
+            return $fail;
+        }
         $data = $request->validate([
             'client_name'      => 'nullable|string|max:100',
             'client_contact'   => 'nullable|string|max:100',
@@ -197,16 +242,16 @@ class QuoteController extends Controller
             'site_id'          => 'nullable|integer|exists:sites,id',
             'work_type_id'     => 'nullable|integer|exists:work_types,id',
             'desired_date'     => 'nullable|date',
-            'memo'             => 'nullable|string',
+            'memo'             => 'nullable|string|max:' . self::MEMO_MAX, // ★ v18.67
             'discount_amount'  => 'nullable|numeric|min:0|max:9999999999', // ★ v18.65 DB 칸(12,2) 넘으면 500 나던 것
             'tax_type'         => 'nullable|in:separate,included,exempt',
-            'lines'            => 'required|array|min:1',
+            'lines'            => 'required|array|min:1|max:' . self::MAX_LINES, // ★ v18.67
             'lines.*.name'       => 'required|string|max:100',
             'lines.*.spec'       => 'nullable|string|max:255',
             'lines.*.quantity'   => 'required|numeric|min:0|max:99999',
             'lines.*.unit'       => 'nullable|string|max:20',
             'lines.*.unit_price' => 'required|numeric|min:0|max:99999999',
-        ], self::AMOUNT_MESSAGES);
+        ], self::AMOUNT_MESSAGES + self::LIMIT_MESSAGES);
         if ($fail = $this->amountError($data)) {
             return $fail;
         }
@@ -376,12 +421,15 @@ class QuoteController extends Controller
         }
 
         $quote->delete();
+        Storage::disk('local')->deleteDirectory(self::PDF_DIR . '/' . $quote->id); // ★ v18.67 저장해 둔 PDF도 지움
 
         return ApiResponse::success(null, '견적서가 삭제되었습니다.');
     }
 
     /**
-     * 견적서 PDF 다운로드 — 저장하지 않고 요청마다 즉석 렌더링(수정 가능성이 높은 문서라 캐시하지 않음)
+     * 견적서 PDF 다운로드
+     *   ★ v18.67 — 예전엔 요청마다 새로 그렸음. 이제 내용(견적·항목·현장·명함·요금제 문구·템플릿)이 그대로면
+     *   저장해 둔 PDF를 다시 주고, 바뀌었을 때만 새로 그림(renderPdf 참고). 수정하면 지문이 바뀌어 자동으로 새로 그려짐.
      * GET /api/quotes/{id}/pdf
      */
     public function downloadPdf(Request $request, string $id)
@@ -439,10 +487,12 @@ class QuoteController extends Controller
             return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
         }
 
+        // ★ v18.67 보안 — 항목명·규격·단위·고객명은 사용자가 쓴 글 → SafeSheet::text로 항상 글자 칸
+        //   (XlsxBuilder는 숫자처럼 보이면 숫자 칸으로 써서 '1e999'는 무한대(INF)로 파일이 깨지고 '00123'은 123이 됐음)
         $rows = [['항목', '규격/설명', '수량', '단위', '단가', '금액']];
         foreach ($quote->lines as $l) {
             $amount = $l->amount ?? ((float) $l->quantity * (float) $l->unit_price);
-            $rows[] = [$l->name, $l->spec ?? '', $l->quantity, $l->unit, $l->unit_price, $amount];
+            $rows[] = [SafeSheet::text($l->name), SafeSheet::text($l->spec), $l->quantity, SafeSheet::text($l->unit), $l->unit_price, $amount];
         }
         $rows[] = [];
         $rows[] = ['', '', '', '', '소계', $quote->subtotal_amount];
@@ -453,7 +503,7 @@ class QuoteController extends Controller
         $rows[] = ['', '', '', '', "부가세({$quote->tax_label})", $quote->tax_type === 'exempt' ? '면세' : ($quote->vat_amount ?? 0)];
         $rows[] = ['', '', '', '', '합계', $quote->total_amount];
         $rows[] = [];
-        $rows[] = ['고객명', $quote->client_name ?? '-'];
+        $rows[] = ['고객명', SafeSheet::text($quote->client_name ?? '-')];
         $rows[] = ['작성일', $quote->created_at?->format('Y-m-d')];
 
         return XlsxBuilder::download("견적서_E-{$quote->id}.xlsx", ['견적서' => $rows]);
@@ -480,22 +530,57 @@ class QuoteController extends Controller
      * ★ v18.36 — 서명 링크로 여는 PDF (인증 대신 signed 미들웨어가 접근 검증)
      * GET /api/files/quotes/{id}/pdf
      */
-    public function signedPdf(string $id)
+    public function signedPdf(Request $request, string $id)
     {
+        // ★ v18.67 보안 — 로그인 없이 열리는 링크(10분 다운로드·3일 공유)라 같은 IP에서 같은 견적은 분당 30번까지
+        //   (통신사 공용 IP를 여러 사람이 같이 쓸 수 있어 IP만으로 묶지 않고 견적별로 셈. 새로 그리기는 아래 renderPdf에서 따로 제한)
+        $ipKey = 'quote-pdf-ip:' . $request->ip() . ':' . $id;
+        if (RateLimiter::tooManyAttempts($ipKey, self::PDF_SIGNED_PER_MINUTE)) {
+            return ApiResponse::error('요청이 너무 많아요. 잠시 후 다시 열어주세요.', ErrorCode::TOO_MANY_REQUESTS, 429);
+        }
+        RateLimiter::hit($ipKey, 60);
+
         $quote = Quote::find($id);
         if (!$quote) {
             return ApiResponse::error('존재하지 않는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
         }
+        // ★ v18.67 — 작성자가 탈퇴했으면 이미 보낸 링크(최대 3일)도 열리지 않게(고객 이름·연락처·주소 노출 방지).
+        //   User::find는 탈퇴(소프트 삭제)한 계정을 못 찾음 → 저장해 둔 PDF도 지움
+        $owner = User::find($quote->user_id);
+        if (!$owner) {
+            Storage::disk('local')->deleteDirectory(self::PDF_DIR . '/' . $quote->id);
+            return ApiResponse::error('더 이상 열 수 없는 견적서입니다.', ErrorCode::QUOTE_NOT_FOUND, 404);
+        }
 
-        return $this->renderPdf($quote, User::find($quote->user_id));
+        return $this->renderPdf($quote, $owner);
     }
 
     private function renderPdf(Quote $quote, ?User $user)
     {
         $quote->load(['lines', 'site']);
+        $filename = '견적서_' . $quote->id . '.pdf';
 
         try {
             $card = BusinessCard::where('user_id', $quote->user_id)->where('is_public', true)->first();
+            // ★ v18.47 — 무료는 하단에 "현장메이트로 작성" 문구, 개인 프로는 제거
+            $showBranding = !\App\Services\PlanService::can($user, 'quote_branding');
+
+            // ★ v18.67 — 내용이 그대로면 저장해 둔 PDF를 그대로 줌(새로 그리지 않음)
+            $disk = Storage::disk('local');
+            $dir  = self::PDF_DIR . '/' . $quote->id;
+            $path = $dir . '/' . $this->pdfFingerprint($quote, $user, $card, $showBranding) . '.pdf';
+            if ($disk->exists($path) && ($cached = $disk->get($path))) {
+                return $this->pdfResponse($cached, $filename);
+            }
+
+            // ★ v18.67 — 새로 그리는 건 견적 주인 기준 분당 10번까지(수정 → PDF 반복으로 CPU를 태우지 못하게)
+            $renderKey = 'quote-pdf-render:' . $quote->user_id;
+            if (RateLimiter::tooManyAttempts($renderKey, self::PDF_RENDERS_PER_MINUTE)) {
+                $seconds = max(1, RateLimiter::availableIn($renderKey));
+                return ApiResponse::error("견적서 PDF를 너무 자주 만들고 있어요. {$seconds}초 뒤에 다시 시도해주세요.", ErrorCode::TOO_MANY_REQUESTS, 429);
+            }
+            RateLimiter::hit($renderKey, 60);
+
             $cardQrDataUri = null;
             if ($card) {
                 $cardUrl = rtrim(config('app.url'), '/') . '/c/' . $card->share_code;
@@ -503,18 +588,70 @@ class QuoteController extends Controller
                 $cardQrDataUri = 'data:image/png;base64,' . base64_encode($png);
             }
 
-            $pdf = Pdf::loadView('quotes.basic', [
+            $bytes = Pdf::loadView('quotes.basic', [
                 'quote'         => $quote,
                 'user'          => $user,
                 'cardQrDataUri' => $cardQrDataUri,
-                // ★ v18.47 — 무료는 하단에 "현장메이트로 작성" 문구, 개인 프로는 제거
-                'showBranding'  => !\App\Services\PlanService::can($user, 'quote_branding'),
-            ]);
+                'showBranding'  => $showBranding,
+            ])->output();
         } catch (\Throwable $e) {
             return ApiResponse::error('PDF 생성 중 오류가 발생했습니다.', ErrorCode::QUOTE_PDF_FAILED, 500);
         }
 
-        return $pdf->download('견적서_' . $quote->id . '.pdf');
+        $this->storePdf($dir, $path, $bytes);
+
+        return $this->pdfResponse($bytes, $filename);
+    }
+
+    /**
+     * ★ v18.67 — PDF 내용 지문: PDF에 들어가는 값이 하나라도 바뀌면 달라짐.
+     *   견적 칸 전체(수정일 포함) + 항목(수정하면 지웠다 새로 만들어 id가 바뀜) + 현장 + 작성자 이름 + 공개 명함(QR) +
+     *   요금제 문구 + 템플릿 파일 수정 시각(배포로 양식이 바뀌면 새로 그림).
+     */
+    private function pdfFingerprint(Quote $quote, ?User $user, ?BusinessCard $card, bool $showBranding): string
+    {
+        return sha1(json_encode([
+            @filemtime(resource_path('views/quotes/basic.blade.php')),
+            $quote->getAttributes(),
+            $quote->lines->map(fn(QuoteLine $l) => $l->getAttributes())->all(),
+            $quote->site?->only(['id', 'apt_name', 'dong', 'ho', 'address']),
+            $user?->name,
+            $card?->share_code,
+            config('app.url'),
+            $showBranding,
+        ], JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR));
+    }
+
+    /** ★ v18.67 — 새로 그린 PDF 저장(그 견적의 예전 PDF는 지움 → 견적당 파일 1개). 저장 실패해도 응답은 그대로 */
+    private function storePdf(string $dir, string $path, string $bytes): void
+    {
+        try {
+            $disk = Storage::disk('local');
+            foreach ($disk->files($dir) as $old) {
+                if ($old !== $path) {
+                    $disk->delete($old);
+                }
+            }
+            $disk->makeDirectory($dir);
+            // 임시 파일에 쓴 뒤 이름 바꾸기 — 동시에 여는 사람이 반쯤 쓴 파일을 받지 않게
+            $abs = $disk->path($path);
+            $tmp = $abs . '.' . bin2hex(random_bytes(4)) . '.tmp';
+            if (file_put_contents($tmp, $bytes) !== false && !@rename($tmp, $abs)) {
+                @unlink($tmp);
+            }
+        } catch (\Throwable $e) {
+            // 저장은 다음 요청 때 다시 시도(PDF 응답에는 영향 없음)
+        }
+    }
+
+    /** DomPDF download()와 같은 헤더(첨부 파일, 한글 파일명 + 영문 대체 이름) */
+    private function pdfResponse(string $bytes, string $filename)
+    {
+        return response($bytes, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => HeaderUtils::makeDisposition('attachment', $filename, str_replace('%', '', Str::ascii($filename))),
+            'Content-Length'      => strlen($bytes),
+        ]);
     }
 
     // ─────────────────────────────────────────────

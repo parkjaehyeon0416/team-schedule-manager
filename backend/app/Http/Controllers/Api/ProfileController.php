@@ -60,6 +60,13 @@ class ProfileController extends Controller
         $request->validate([
             'avatar' => 'required|image|mimes:jpeg,png,jpg|max:5120',
         ]);
+        // ★ v18.67 보안 — 저장 전에 사진 머리글 확인(6000픽셀 이하) + 하루 20번까지 교체
+        if ($fail = \App\Support\UploadGuard::imageError($request->file('avatar'))) {
+            return $fail;
+        }
+        if ($fail = \App\Support\UploadGuard::dailyLimit('avatar', $user->id, 1, 20, '프로필 사진')) {
+            return $fail;
+        }
 
         if ($user->avatar_image_path) {
             Storage::disk('public')->delete($user->avatar_image_path);

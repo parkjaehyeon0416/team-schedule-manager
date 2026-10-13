@@ -44,6 +44,7 @@ class SocialAuthService
             'id'    => $profile['id'],
             'email' => $profile['email'],
             'name'  => $profile['name'],
+            'email_verified' => !empty($profile['email_verified']), // ★ v18.67 인증된 이메일만 가입 때 계정 이메일로 저장
             'rt'    => $profile['rt'] ?? null, // ★ v18.64 Apple 갱신 토큰(가입·연결 때 저장해 탈퇴 revoke에 씀)
             'exp'   => now()->addMinutes(15)->timestamp,
         ]));
@@ -116,14 +117,31 @@ class SocialAuthService
         return implode(' · ', array_filter([$profile['name'] ?? null, $email])) ?: '이름 없는 계정';
     }
 
+    /**
+     * ★ v18.67 보안 — 앱 ID 설정(GOOGLE_CLIENT_IDS·KAKAO_APP_ID)이 비어 있으면 검사를 건너뛰던 것(fail-open)을
+     *   로컬·테스트 환경에서만 허용. 실서버에서 .env를 옮기다 값이 빠지면 다른 앱이 받은 토큰으로도 로그인되던 위험 →
+     *   이제 그 소셜 로그인을 거절하고 오류 로그를 남김(설정을 넣으면 바로 정상).
+     */
+    private static function allowMissingAppConfig(string $envName): bool
+    {
+        if (app()->environment('local', 'testing')) {
+            return true;
+        }
+        \Illuminate\Support\Facades\Log::error("[소셜 로그인] {$envName} 설정이 비어 있어 로그인을 거절함 — 실서버 .env에 {$envName}를 넣고 config:cache 다시 실행");
+        return false;
+    }
+
     private static function verifyGoogle(string $idToken): ?array
     {
+        $allowedClientIds = config('services.google.client_ids');
+        if (empty($allowedClientIds) && !self::allowMissingAppConfig('GOOGLE_CLIENT_IDS')) {
+            return null;
+        }
         $response = Http::get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $idToken]);
         if (!$response->successful()) {
             return null;
         }
         $payload = $response->json();
-        $allowedClientIds = config('services.google.client_ids');
         // aud가 우리 앱의 OAuth 클라이언트 ID 중 하나인지 검증 (다른 앱용 토큰 도용 방지)
         if (!empty($allowedClientIds) && !in_array($payload['aud'] ?? null, $allowedClientIds, true)) {
             return null;
@@ -140,8 +158,12 @@ class SocialAuthService
     private static function verifyKakao(string $accessToken): ?array
     {
         // ★ v18.62 보안 — 우리 카카오 앱에서 발급한 토큰인지 확인. 안 하면 다른 카카오 앱이 받은 토큰으로도
-        //   그 사용자로 로그인할 수 있음. KAKAO_APP_ID(카카오 개발자 콘솔 › 앱 › 앱 ID 숫자)가 없으면 검사 생략.
+        //   그 사용자로 로그인할 수 있음. KAKAO_APP_ID(카카오 개발자 콘솔 › 앱 › 앱 ID 숫자).
+        //   ★ v18.67 값이 없으면 로컬·테스트에서만 검사 생략, 실서버는 거절(fail-closed)
         $appId = config('services.kakao.app_id');
+        if (!$appId && !self::allowMissingAppConfig('KAKAO_APP_ID')) {
+            return null;
+        }
         if ($appId) {
             $info = Http::withToken($accessToken)->get('https://kapi.kakao.com/v1/user/access_token_info');
             if (!$info->successful() || (string) $info->json('app_id') !== (string) $appId) {

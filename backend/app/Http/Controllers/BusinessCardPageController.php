@@ -21,12 +21,17 @@ class BusinessCardPageController extends Controller
 
     public function show(Request $request, string $code)
     {
+        // ★ v18.67 보안 — 명함 주인이 탈퇴(소프트 삭제)했거나 운영자가 정지한 계정이면 열지 않음.
+        //   예전엔 탈퇴 후에도 /c/{code}와 견적서·보고서 PDF 속 QR로 이름·전화번호·사진이 계속 공개됐음.
+        //   (whereHas는 User의 SoftDeletes 기본 조건 때문에 탈퇴 계정을 자동으로 뺌)
         $card = BusinessCard::where('share_code', $code)
             ->where('is_public', true)
+            ->whereHas('user', fn($q) => $q->whereNull('suspended_at'))
             ->first();
 
         if (!$card) {
-            abort(404);
+            // ★ v18.67 — 영어 기본 404 대신 한국어 안내(이유는 구분하지 않음)
+            return response()->view('cards.not-found', [], 404);
         }
 
         $this->trackView($request, $card);

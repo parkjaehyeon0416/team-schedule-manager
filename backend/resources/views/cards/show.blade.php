@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ $card->display_name ?? '명함' }} · 현장메이트</title>
+{{-- ★ v18.67 개인정보 — 휴대폰 번호가 적힌 페이지라 검색 사이트에 올라가지 않게(링크·QR을 받은 사람만 보도록).
+     검색 결과에 남으면 명함을 지우거나 탈퇴한 뒤에도 캐시로 계속 보일 수 있음 --}}
+<meta name="robots" content="noindex, nofollow">
 
 <!-- Open Graph — 카카오톡/문자 미리보기용 (기획서 3-2절) -->
 <meta property="og:title" content="{{ $card->display_name ?? '기사' }}{{ $card->job_title ? ' — '.$card->job_title : '' }}">

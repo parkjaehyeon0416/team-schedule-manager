@@ -11,6 +11,7 @@ use App\Services\SocialAuthService;
 use App\Services\SocialRevokeService;
 use App\Services\VerificationCode;
 use App\Services\Reauth;
+use App\Services\SmsGuard;
 use App\Support\PasswordPolicy;
 use App\Services\Sms\SmsServiceInterface;
 use Illuminate\Http\Request;
@@ -45,6 +46,25 @@ class AuthController extends Controller
         'freelancer' => 'mobile',
     ];
 
+    // ★ v18.67 로그인 실패 잠금 — 같은 이메일로 15분 안에 10번 틀리면 15분 잠금
+    private const LOGIN_MAX_FAILS    = 10;
+    private const LOGIN_FAIL_MINUTES = 15;
+    // ★ v18.67 없는 계정일 때도 bcrypt 검사를 한 번 돌리려고 쓰는 가짜 해시(아무 비밀번호와도 안 맞음, cost 12 = 실제 해시와 같은 시간)
+    private const DUMMY_HASH = '$2y$12$5V3w3eZY8JJSwqn3VC3K2eQxvE8.6KJ98CLRihwnhljbzsxgzGVma';
+
+    // ★ v18.67 (리뷰 반영) 입력 모양만 바꿔서 같은 계정을 찾게 하는 우회 차단.
+    //   DB 비교(utf8mb4_unicode_ci)는 악센트·대소문자·보이지 않는 글자(U+200C, 제어문자 등)를 무시해서,
+    //   "다르게 생긴 입력 = 같은 계정"인데 잠금·횟수는 입력 문자열 기준으로 따로 셌음.
+    //   - 이메일: 출력 가능한 ASCII만(로컬 MySQL로 확인 — 이 범위에선 대소문자 말고 같게 보는 글자가 없음)
+    //   - 휴대폰 번호(아이디·비밀번호 찾기): 숫자와 하이픈만. 조회·키는 숫자만 남긴 값으로
+    //   (/D: 끝의 줄바꿈도 허용 안 함)
+    private const ASCII_EMAIL_RULE = 'regex:/^[\x21-\x7E]+$/D';
+    private const PHONE_INPUT_RULE = 'regex:/^[0-9-]{9,20}$/D'; // 앱은 숫자만 보냄(stripPhoneFormatting), 예전 하이픈 입력도 받음
+    private const INPUT_MESSAGES = [
+        'email.regex' => '이메일 주소는 영문으로 정확히 입력해주세요.',
+        'phone.regex' => '휴대폰 번호는 숫자만 입력해주세요.',
+    ];
+
     public function __construct(private readonly SmsServiceInterface $sms)
     {
     }
@@ -58,7 +78,8 @@ class AuthController extends Controller
         // 1. 입력값 검증
         $validated = $request->validate([
             'name'         => 'required|string|max:100',
-            'email'        => 'required|email|unique:users,email',
+            // ★ v18.67 출력 가능한 ASCII만 — 로그인이 ASCII 이메일만 받으므로 가입도 같게(악센트 이메일로 가입하면 로그인 불가)
+            'email'        => ['required', 'email', self::ASCII_EMAIL_RULE, 'unique:users,email'],
             // ★ 아이디(이메일) 찾기를 이름+전화번호로 지원하기 위해 필수로 수집
             'phone'        => 'required|string|max:20|unique:users,phone',
             'password'     => PasswordPolicy::rules(), // ★ v18.62 영문+특수문자 8~16자
@@ -66,7 +87,7 @@ class AuthController extends Controller
             'platform'     => 'required|in:web,mobile',
             // ★ 이용약관/개인정보처리방침 동의 — 체크 안 하면 가입 자체가 안 됨
             'agree_terms'  => 'required|accepted',
-        ], PasswordPolicy::messages());
+        ], PasswordPolicy::messages() + self::INPUT_MESSAGES);
 
         // 2. web으로 가입은 허용하지 않음 (운영자는 콘솔에서 수동 생성)
         if ($validated['platform'] === 'web') {
@@ -108,19 +129,41 @@ class AuthController extends Controller
     {
         // 1. 입력값 검증
         $request->validate([
-            'email'    => 'required|email',
+            'email'    => ['required', 'email', self::ASCII_EMAIL_RULE], // ★ v18.67 악센트·보이지 않는 글자로 같은 계정 찾기 차단
             'password' => 'required',
             // ★ platform 필드 추가
             'platform' => 'required|in:web,mobile',
-        ]);
+        ], self::INPUT_MESSAGES);
 
         // 2. 이메일로 사용자 찾기
         $user = User::with('role')->where('email', $request->email)->first();
 
+        // ★ v18.67 계정 단위 로그인 실패 잠금 — IP를 바꿔 가며 한 계정에 비밀번호를 대입하는 것 방지.
+        //   15분 안에 10번 틀리면 15분 잠금(IP 상관없음). 없는 이메일도 똑같이 세서 가입 여부가 안 드러남.
+        //   잠금이 짧아서 남이 일부러 틀려도 주인이 오래 못 쓰게 되진 않음. 맞히면 횟수 초기화.
+        //   (리뷰 반영) 키를 입력 문자열이 아니라 찾은 계정 id로 — 예전엔 악센트만 다른 이메일이 같은 계정을 찾으면서
+        //   잠금은 따로 셌음(잠긴 뒤에도 다른 모양으로 계속 대입). 계정이 없을 때만 소문자로 맞춘 입력으로 셈.
+        //   (위 ASCII 검사로 "같은 계정을 찾는 입력 = 소문자가 같은 입력"이라 두 방식이 갈라지지 않음)
+        $who = $user ? 'user:' . $user->id : sha1(mb_strtolower(trim((string) $request->email)));
+        $failKey = "login_fail:{$who}";
+        $lockKey = "login_lock:{$who}";
+        if (($until = (int) Cache::get($lockKey, 0)) > time()) {
+            $min = max(1, (int) ceil(($until - time()) / 60));
+            return ApiResponse::error("로그인을 여러 번 실패해서 잠시 막혔어요. {$min}분 뒤에 다시 시도해주세요.", ErrorCode::TOO_MANY_REQUESTS, 429);
+        }
+
         // 3. 이메일 또는 비밀번호 불일치 확인
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        // ★ v18.67 없는 이메일·비밀번호 없는(소셜) 계정도 같은 bcrypt 검사를 거쳐 응답 시간으로 가입 여부가 안 드러나게
+        $hash = $user?->password ?: self::DUMMY_HASH;
+        if (!Hash::check((string) $request->password, $hash) || !$user || !$user->password) {
+            Cache::add($failKey, 0, now()->addMinutes(self::LOGIN_FAIL_MINUTES)); // DB 캐시는 없는 키를 increment 못 함
+            if ((int) Cache::increment($failKey) >= self::LOGIN_MAX_FAILS) {
+                Cache::forget($failKey);
+                Cache::put($lockKey, time() + self::LOGIN_FAIL_MINUTES * 60, now()->addMinutes(self::LOGIN_FAIL_MINUTES));
+            }
             return ApiResponse::error('이메일 또는 비밀번호가 틀렸습니다.', 'ERR_AUTH_001', 401);
         }
+        Cache::forget($failKey);
 
         // 4. ★ 플랫폼 접근 권한 검증
         //    user_type에 따라 허용된 플랫폼만 접속 가능
@@ -312,7 +355,10 @@ class AuthController extends Controller
 
     private function createSocialUser(string $provider, array $profile): User
     {
-        $email = $profile['email'] ?? null;
+        // ★ v18.67 보안 — 소셜 쪽에서 인증된 이메일만 계정 이메일로 저장. 인증 안 된 이메일(남의 주소로 만든 구글·카카오 계정)을
+        //   저장하면, 나중에 진짜 주인이 인증된 같은 이메일의 다른 소셜로 처음 로그인할 때 자동 연결로 이 계정에 들어와 버림(선점 탈취).
+        //   인증 여부를 모르는 예전 연결 티켓(배포 전 15분)도 인증 안 된 것으로 봄.
+        $email = !empty($profile['email_verified']) ? ($profile['email'] ?? null) : null;
         // 같은 이메일 계정이 이미 있으면(소셜 연결이 다른 계정이라 연동 실패한 경우) 대체 이메일 사용
         if (!$email || User::withTrashed()->where('email', $email)->exists()) {
             $email = $provider . '_' . $profile['id'] . '@social.local';
@@ -357,12 +403,16 @@ class AuthController extends Controller
     // ════════════════════════════════════════════════════════
 
     /**
-     * 6자리 인증번호 발급 + 문자 발송. ★ v18.63 유효 3분, 5번 틀리면 5분 잠금(App\Services\VerificationCode)
+     * 6자리 인증번호 문자 발송 + (성공하면) 저장. ★ v18.63 유효 3분, 5번 틀리면 5분 잠금(App\Services\VerificationCode)
+     * ★ v18.67 SmsGuard 거침 — 같은 번호+용도 60초 대기, 번호별·하루 상한, 서비스 전체 상한.
+     *   예전엔 번호를 먼저 저장하고 보냈어서 발송이 실패해도 번호가 생겼음 → 이제 보내기에 성공해야 저장.
+     * @return \Illuminate\Http\JsonResponse|null 막히거나 발송 실패면 에러 응답(429/503), 보냈으면 null
      */
-    private function issueVerificationCode(string $phone, string $purpose, ?string $payload = null): void
+    private function issueVerificationCode(string $phone, string $purpose, ?string $payload = null)
     {
-        $code = VerificationCode::issue($purpose, $phone, $payload);
-        $this->sms->send($phone, "[현장메이트] 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
+        return SmsGuard::sendCode(SmsGuard::SMS, $purpose, $phone, null, function (string $code) use ($phone) {
+            $this->sms->send($phone, "[현장메이트] 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
+        }, $payload);
     }
 
     /**
@@ -373,6 +423,34 @@ class AuthController extends Controller
         return VerificationCode::consume($purpose, $phone, $code);
     }
 
+    /** ★ v18.67 숫자만 남김 — 인증번호·발송 제한 키와 문자 받는 번호(SOLAPI도 숫자만 남겨 보냄) */
+    private static function phoneDigits(?string $phone): string
+    {
+        return preg_replace('/\D/', '', (string) $phone);
+    }
+
+    /** ★ v18.67 숫자만 남긴 번호 → DB에서 찾을 모양 [01012345678, 010-1234-5678] (예전에 하이픈 넣어 저장된 번호도 찾게) */
+    private static function phoneVariants(string $digits): array
+    {
+        if (strlen($digits) < 9) {
+            return []; // "---------"처럼 숫자가 거의 없는 입력 — 아무 계정도 안 찾음(whereIn 빈 배열 = 결과 없음)
+        }
+        $dashed = strlen($digits) === 11
+            ? substr($digits, 0, 3) . '-' . substr($digits, 3, 4) . '-' . substr($digits, 7)
+            : substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6);
+        return array_values(array_unique([$digits, $dashed]));
+    }
+
+    /**
+     * ★ v18.67 인증번호에 담아 둔 계정 찾기 + 지금도 그 번호인지 확인.
+     *   payload가 숫자면 계정 id(v18.67부터), 아니면 배포 직전에 받은 번호(유효 3분)의 예전 값 — $legacy로 찾음.
+     */
+    private static function userFromPayload(string $payload, string $digits, callable $legacy): ?User
+    {
+        $user = ctype_digit($payload) ? User::find((int) $payload) : $legacy($payload);
+        return ($user && self::phoneDigits($user->phone) === $digits) ? $user : null;
+    }
+
     // ────────────────────────────────────
     // 아이디 찾기 — 1단계: 이름+전화번호로 계정 확인 후 인증코드 발송
     // POST /api/auth/find-email/request
@@ -381,10 +459,18 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'name'  => 'required|string|max:100',
-            'phone' => 'required|string|max:20',
-        ]);
+            'phone' => ['required', 'string', self::PHONE_INPUT_RULE], // ★ v18.67 숫자·하이픈만
+        ], self::INPUT_MESSAGES);
 
-        $user = User::where('name', $data['name'])->where('phone', $data['phone'])->first();
+        // ★ v18.67 요청 단위 제한(IP 하루 요청 수·서비스 전체 상한) — 계정을 찾기 전에 셈
+        if ($limited = SmsGuard::checkRequest(SmsGuard::SMS, 'find_email')) {
+            return $limited;
+        }
+
+        // ★ v18.67 숫자만 남긴 번호로 찾음(입력 그대로 비교하지 않음)
+        $user = User::where('name', $data['name'])
+            ->whereIn('phone', self::phoneVariants(self::phoneDigits($data['phone'])))
+            ->first();
 
         if (!$user) {
             return ApiResponse::error(
@@ -394,10 +480,16 @@ class AuthController extends Controller
             );
         }
 
-        if ($locked = VerificationCode::lockedResponse('find_email', $data['phone'])) {
+        // ★ v18.67 (리뷰 반영) 잠금·대기·상한 키와 받는 번호는 입력이 아니라 찾은 계정에 저장된 번호(숫자만).
+        //   payload = 계정 id → 2단계에서 이 계정의 이메일만 알려줌
+        $target = self::phoneDigits($user->phone);
+        if ($locked = VerificationCode::lockedResponse('find_email', $target)) {
             return $locked;
         }
-        $this->issueVerificationCode($data['phone'], 'find_email');
+        // ★ v18.67 60초 대기·하루 상한에 걸리면 429(남은 초는 data.retry_after), 발송 실패면 503
+        if ($fail = $this->issueVerificationCode($target, 'find_email', (string) $user->id)) {
+            return $fail;
+        }
 
         return ApiResponse::success(null, '입력하신 전화번호로 인증번호를 발송했습니다.');
     }
@@ -410,21 +502,26 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'name'  => 'required|string|max:100',
-            'phone' => 'required|string|max:20',
+            'phone' => ['required', 'string', self::PHONE_INPUT_RULE], // ★ v18.67 숫자·하이픈만
             'code'  => 'required|string|size:6',
-        ]);
+        ], self::INPUT_MESSAGES);
 
-        if ($locked = VerificationCode::lockedResponse('find_email', $data['phone'])) {
+        // ★ v18.67 키는 숫자만 남긴 번호(1단계에서 저장된 번호를 숫자만 남긴 것과 같음) — 입력 모양을 바꿔도 같은 잠금·같은 번호
+        $digits = self::phoneDigits($data['phone']);
+        if ($locked = VerificationCode::lockedResponse('find_email', $digits)) {
             return $locked;
         }
-        if ($this->consumeVerificationCode($data['phone'], 'find_email', $data['code']) === null) {
-            if ($locked = VerificationCode::lockedResponse('find_email', $data['phone'])) {
+        $payload = $this->consumeVerificationCode($digits, 'find_email', $data['code']);
+        if ($payload === null) {
+            if ($locked = VerificationCode::lockedResponse('find_email', $digits)) {
                 return $locked;
             }
             return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
 
-        $user = User::where('name', $data['name'])->where('phone', $data['phone'])->first();
+        // ★ v18.67 1단계에서 찾은 계정(인증번호에 담긴 id). 예전 형식(빈 값)이면 이름+번호로
+        $user = self::userFromPayload($payload, $digits, fn() => User::where('name', $data['name'])
+            ->whereIn('phone', self::phoneVariants($digits))->first());
         if (!$user) {
             return ApiResponse::error('일치하는 계정을 찾을 수 없습니다.', ErrorCode::AUTH_ACCOUNT_NOT_FOUND, 404);
         }
@@ -440,23 +537,34 @@ class AuthController extends Controller
     public function forgotPassword(Request $request)
     {
         $data = $request->validate([
-            'email' => 'required|email',
+            'email' => ['required', 'email', self::ASCII_EMAIL_RULE], // ★ v18.67 ASCII만
             'name'  => 'required|string|max:100',
-            'phone' => 'required|string|max:20',
-        ]);
+            'phone' => ['required', 'string', self::PHONE_INPUT_RULE], // ★ v18.67 숫자·하이픈만
+        ], self::INPUT_MESSAGES);
 
+        // ★ v18.67 요청 단위 제한(IP 하루 요청 수·서비스 전체 상한) — 계정이 있든 없든 똑같이 셈(응답 차이로 가입 여부가 안 드러나게)
+        if ($limited = SmsGuard::checkRequest(SmsGuard::SMS, 'reset_password')) {
+            return $limited;
+        }
+
+        $digits = self::phoneDigits($data['phone']);
         $user = User::where('email', $data['email'])
             ->where('name', $data['name'])
-            ->where('phone', $data['phone'])
+            ->whereIn('phone', self::phoneVariants($digits)) // ★ v18.67 숫자만 남긴 번호로 찾음
             ->first();
 
         // 계정 존재/일치 여부를 노출하지 않기 위해, 없어도 항상 같은 성공 응답을 줌
         // (실제 코드 발급/발송은 셋 다 일치할 때만)
-        if ($locked = VerificationCode::lockedResponse('reset_password', $data['phone'])) {
+        // ★ v18.67 잠금 확인은 숫자만 남긴 입력으로(계정이 있든 없든 같은 키 — 계정이 있으면 저장된 번호의 숫자와 같음)
+        if ($locked = VerificationCode::lockedResponse('reset_password', $digits)) {
             return $locked;
         }
         if ($user) {
-            $this->issueVerificationCode($data['phone'], 'reset_password', $user->email);
+            // ★ v18.67 번호별 60초 대기·하루 상한에 걸리거나 발송이 실패해도 응답은 똑같이 "발송했습니다"(조용히 안 보냄).
+            //   여기서만 429/503을 주면 "이 이메일+이름+번호 계정이 있다"가 드러남. 대기 중이면 직전 번호(3분)가 그대로 유효.
+            //   (발송 실패는 SmsGuard가 오류 로그를 남김)
+            // ★ v18.67 (리뷰 반영) 키·받는 번호는 찾은 계정에 저장된 번호(숫자만), payload = 계정 id(2단계는 이 id로 계정을 찾음)
+            $this->issueVerificationCode(self::phoneDigits($user->phone), 'reset_password', (string) $user->id);
         }
 
         return ApiResponse::success(null, '입력하신 전화번호로 인증번호를 발송했습니다.');
@@ -469,23 +577,27 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $data = $request->validate([
-            'phone'    => 'required|string|max:20',
+            'phone'    => ['required', 'string', self::PHONE_INPUT_RULE], // ★ v18.67 숫자·하이픈만
             'code'     => 'required|string|size:6',
             'password' => PasswordPolicy::rules(),
-        ], PasswordPolicy::messages());
+        ], PasswordPolicy::messages() + self::INPUT_MESSAGES);
 
-        if ($locked = VerificationCode::lockedResponse('reset_password', $data['phone'])) {
+        // ★ v18.67 키는 숫자만 남긴 번호 — 입력 모양을 바꿔도 같은 틀린 횟수·잠금·인증번호
+        $digits = self::phoneDigits($data['phone']);
+        if ($locked = VerificationCode::lockedResponse('reset_password', $digits)) {
             return $locked;
         }
-        $email = $this->consumeVerificationCode($data['phone'], 'reset_password', $data['code']);
-        if (!$email) {
-            if ($locked = VerificationCode::lockedResponse('reset_password', $data['phone'])) {
+        $payload = $this->consumeVerificationCode($digits, 'reset_password', $data['code']);
+        if (!$payload) {
+            if ($locked = VerificationCode::lockedResponse('reset_password', $digits)) {
                 return $locked;
             }
             return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
 
-        $user = User::where('email', $email)->where('phone', $data['phone'])->first();
+        // ★ v18.67 (리뷰 반영) 인증번호에 담긴 계정 id로 찾음(입력으로 다시 찾지 않음) + 지금도 같은 번호인지 확인.
+        //   배포 직전에 받은 번호(유효 3분)는 payload가 이메일 — 예전처럼 이메일로 찾음
+        $user = self::userFromPayload($payload, $digits, fn(string $email) => User::where('email', $email)->first());
         if (!$user) {
             return ApiResponse::error('인증번호가 올바르지 않거나 만료되었습니다.', ErrorCode::AUTH_CODE_INVALID, 422);
         }
@@ -587,11 +699,14 @@ class AuthController extends Controller
             }
         }
 
+        // ★ v18.67 — 공개 명함·프로필 사진·보고서 공유 링크·문의 첨부·원래 이메일 정리(AccountCleanupService)
+        app(\App\Services\AccountCleanupService::class)->onWithdraw($user);
+
         // ★ v18.62 — 탈퇴한 계정에 남아 있던 연락처·소셜 연결 지움. 남겨 두면
         //   ① 같은 전화번호·같은 소셜 계정으로 다시 가입이 막히고(고유값 충돌) ② 필요 없는 개인정보를 계속 보관하게 됨.
         //   이름은 팀원들의 과거 일정·정산 기록에 표시돼야 해서 남김.
         $user->forceFill([
-            'email'           => $user->email.'.withdrawn.'.time(), // 재가입 시 이메일 중복 방지
+            // 이메일은 위 AccountCleanupService가 withdrawn_{id}_{시각}@deleted.local로 바꿈(재가입 가능, 원래 이메일 안 남김)
             'phone'           => null,
             'kakao_talk_id'   => null,
             'google_id'       => null,

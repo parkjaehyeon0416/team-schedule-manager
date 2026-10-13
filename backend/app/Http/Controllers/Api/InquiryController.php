@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Inquiry;
+use App\Support\UploadGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,8 @@ use Illuminate\Validation\Rule;
  */
 class InquiryController extends Controller
 {
+    private const DAILY_PHOTOS = 20; // ★ v18.67 사용자당 하루 문의 첨부 사진 장수
+
     // GET /api/inquiries — 내 문의 목록 (최신순) + 아직 안 읽은 답변 수(내정보 메뉴 "답변 N건")
     public function index(Request $request)
     {
@@ -73,6 +76,16 @@ class InquiryController extends Controller
             'photos'       => 'nullable|array|max:3',
             'photos.*'     => 'image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
+
+        // ★ v18.67 보안 — 저장 전에 사진 머리글 확인(6000픽셀 이하) + 사용자당 하루 사진 20장까지
+        //   (예전엔 분당 10번 × 3장 × 10MB까지 무제한이라 무료 계정 하나로 디스크를 채울 수 있었음)
+        $photos = $request->file('photos', []);
+        if ($fail = UploadGuard::imagesError($photos)) {
+            return $fail;
+        }
+        if ($fail = UploadGuard::dailyLimit('inquiry', $request->user()->id, count($photos), self::DAILY_PHOTOS, '문의 사진')) {
+            return $fail;
+        }
 
         $inquiry = DB::transaction(function () use ($request, $data) {
             $inquiry = Inquiry::create([

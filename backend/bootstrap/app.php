@@ -149,10 +149,32 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // ★ v18.67 — DB 오류 로그에 값(전화번호·이메일·비밀번호 해시 등)이 남지 않게.
+        //   QueryException 메시지는 바인딩 값을 채워 넣은 SQL이라, 예전엔 기본 기록 + 아래 [DB] 기록으로 같은 값이 두 번 남았음
+        //   (예: "Duplicate entry '010...' ... set `phone` = 010..."). 이제 기본 기록을 끄고(return false)
+        //   값 없는 SQL(? 그대로)·SQLSTATE·가린 드라이버 메시지·발생 위치만 한 번 남김.
+        $exceptions->report(function (QueryException $e) {
+            $driverMessage = (string) ($e->getPrevious()?->getMessage() ?? '');
+            // 따옴표 안 값은 가림 — 단, 키·컬럼·테이블 이름은 원인 파악에 필요해서 남김
+            //   (글자 바로 뒤 따옴표는 값의 시작이 아님: "doesn't" 같은 영어 문장 속 '를 값으로 잘못 보지 않게)
+            $driverMessage = preg_replace("/(?<![A-Za-z0-9])(?<!key |column |table |index |constraint )'[^'\\s][^']*'/i", "'***'", $driverMessage);
+            $driverMessage = preg_replace('/\b\d{6,}\b/', '***', (string) $driverMessage); // 따옴표 없는 긴 숫자(전화번호 등)
+            $frame = collect($e->getTrace())->first(fn ($f) => isset($f['file']) && str_starts_with($f['file'], app_path().DIRECTORY_SEPARATOR)); // 우리 코드 중 처음 나온 위치
+            Log::error('[DB] '.$driverMessage, [
+                'sqlstate'   => $e->errorInfo[0] ?? $e->getCode(),
+                'driver_code' => $e->errorInfo[1] ?? null,
+                'connection' => $e->getConnectionName(),
+                'sql'        => $e->getSql(), // 바인딩 값 없이 ? 그대로
+                'at'         => $frame ? $frame['file'].':'.($frame['line'] ?? '?') : $e->getFile().':'.$e->getLine(),
+                'url'        => request()?->method().' '.request()?->path(),
+            ]);
+            return false; // 기본 로그(값이 채워진 SQL + 스택)는 남기지 않음
+        });
+
         // DB 쿼리 오류 — 500, 클라이언트에는 SQL/스키마 노출하지 않음
         $exceptions->render(function (QueryException $e, $request) {
             if ($request->is('api/*')) {
-                Log::error('[DB] '.$e->getMessage(), ['sql' => $e->getSql() ?? null]);
+                // ★ v18.67 기록은 위 report()에서 한 번만(값 가림)
                 return response()->json([
                     'success' => false,
                     'message' => '데이터 처리 중 오류가 발생했습니다.',

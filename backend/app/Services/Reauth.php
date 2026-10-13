@@ -10,7 +10,8 @@ use App\Services\Sms\SmsServiceInterface;
 /**
  * ★ v18.63 — 비밀번호 없는(소셜 가입) 사용자의 중요한 작업 전 본인 확인 공용 처리.
  *   회원 탈퇴, 처음 비밀번호 설정에 씀.
- *   - 전화번호(문자) 또는 진짜 이메일로 6자리 인증번호(VerificationCode: 3분, 5번 틀리면 5분 잠금)
+ *   - 전화번호(문자) 또는 진짜 이메일로 6자리 인증번호(VerificationCode: 3분, 5번 틀리면 5분 잠금 · ★ v18.67 1시간 10번이면 1시간 잠금)
+ *   - ★ v18.67 발송은 SmsGuard로 제한(60초 대기·하루 상한·서비스 전체 상한)
  *   - 둘 다 없으면 연결된 소셜 계정으로 다시 로그인(provider + token)
  */
 class Reauth
@@ -46,7 +47,11 @@ class Reauth
         ];
     }
 
-    /** 인증번호 발송. 실패하면 에러 응답, 성공하면 null */
+    /**
+     * 인증번호 발송. 실패하면 에러 응답, 성공하면 null
+     * ★ v18.67 SmsGuard 거침 — 같은 곳 60초 대기, 하루 상한(대상·계정·IP), 서비스 전체 상한(문자·메일).
+     *   보내기에 성공한 뒤에만 인증번호 저장(발송 실패 시 번호 안 남음).
+     */
     public static function send(string $purpose, string $label, string $channel, User $user, SmsServiceInterface $sms)
     {
         if (!isset(self::channels($user)[$channel])) {
@@ -56,19 +61,23 @@ class Reauth
         if ($locked = VerificationCode::lockedResponse($purpose, $target)) {
             return $locked;
         }
-        $code = VerificationCode::issue($purpose, $target);
-        try {
+        $guardChannel = $channel === 'phone' ? SmsGuard::SMS : SmsGuard::EMAIL;
+        if ($limited = SmsGuard::checkRequest($guardChannel, $purpose)) {
+            return $limited;
+        }
+        $fail = SmsGuard::sendCode($guardChannel, $purpose, $target, $user->id, function (string $code) use ($channel, $target, $label, $sms) {
             if ($channel === 'phone') {
                 $sms->send($target, "[현장메이트] {$label} 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
             } else {
                 \Illuminate\Support\Facades\Mail::to($target)
                     ->send(new \App\Mail\VerificationCodeMail($code, $label, VerificationCode::TTL_MINUTES));
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('본인 확인 인증번호 발송 실패', ['user_id' => $user->id, 'purpose' => $purpose, 'channel' => $channel, 'error' => $e->getMessage()]);
+        });
+        if ($fail && $fail->getStatusCode() === 503) {
+            // 발송 실패(문자 잔액·메일 서버 등) — 예전 응답 그대로(앱은 메시지만 보여 줌)
             return ApiResponse::error('인증번호를 보내지 못했어요. 다른 방법을 고르거나 잠시 후 다시 시도해주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 503);
         }
-        return null;
+        return $fail;
     }
 
     /**

@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../Icon";
 import logo from "../../assets/icons/logo.png";
 import { useAuthStore } from "../../store/authStore";
+import { logout as logoutApi } from "../../api/auth";
 
 type Item = { to: string; label: string; icon: string; soon?: boolean };
 // ★ v18.43 — 디자인(ADMIN_*) 메뉴 묶음: 콘텐츠 / 운영 / 회원 / 준비 중
@@ -34,7 +35,13 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
-  const logout = () => { clearAuth(); navigate("/login"); };
+  // ★ v18.67 — 서버 토큰도 폐기(POST /api/auth/logout). 예전엔 브라우저에서만 지워서, 토큰이 한 번 복사됐다면
+  //   로그아웃 후에도 서버에선 계속 쓸 수 있었음. 서버 호출이 실패해도(이미 만료 등) 화면은 로그아웃.
+  const logout = async () => {
+    try { await logoutApi(); } catch { /* 이미 만료된 토큰 등 — 무시 */ }
+    clearAuth();
+    navigate("/login");
+  };
 
   return (
     <div className="adm-root">

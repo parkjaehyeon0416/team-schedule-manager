@@ -25,16 +25,22 @@ use Illuminate\Support\Facades\Route;
 // ═══════════════════════════════════════════════════════════════
 // ─── 공개 라우트 (인증 불필요) ──
 // ═══════════════════════════════════════════════════════════════
-// ★ 브루트포스 방지 — IP당 분당 5회로 제한 (기존엔 rate limit이 전혀 없었음)
-Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
-    Route::post('/register',           [AuthController::class, 'register']);
-    Route::post('/login',              [AuthController::class, 'login']);
-    Route::post('/social-login',       [AuthController::class, 'socialLogin']);
-    Route::post('/social-signup',      [AuthController::class, 'socialSignup']); // ★ v18.51
-    Route::post('/find-email/request', [AuthController::class, 'findEmailRequest']);
-    Route::post('/find-email/verify',  [AuthController::class, 'findEmailVerify']);
-    Route::post('/forgot-password',    [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password',     [AuthController::class, 'resetPassword']);
+// ★ 브루트포스 방지 — IP당 분당 제한 (기존엔 rate limit이 전혀 없었음)
+// ★ v18.67 — 예전엔 auth 전체가 이름 없는 throttle:5,1 하나라서 IP 하나가 가입·로그인·찾기를 합쳐 분당 5번을 나눠 씀
+//   (같은 와이파이·통신사 공용 IP 사용자끼리 서로 막힘). 이제 기능별로 횟수 묶음 이름(세 번째 값)을 따로 둠 — 여전히 IP당 엄격.
+//   계정 단위 제한은 따로: 로그인 = 이메일별 15분 10번 실패 잠금(AuthController), 인증번호 = 대상별 대기·하루 상한(SmsGuard)
+//   ※ 실서버는 route:cache를 써서 RateLimiter::for(이름 붙인 limiter)를 routes 파일에 두면 안 됨 → 문자열 throttle만 사용
+Route::prefix('auth')->group(function () {
+    Route::post('/register',           [AuthController::class, 'register'])
+        ->middleware(['throttle:5,1,auth-register', 'throttle:20,1440,auth-register-day']); // 분당 5개 + IP당 하루 20개(계정 무한 생성 방지)
+    Route::post('/login',              [AuthController::class, 'login'])->middleware('throttle:10,1,auth-login');
+    Route::post('/social-login',       [AuthController::class, 'socialLogin'])->middleware('throttle:10,1,auth-social');
+    Route::post('/social-signup',      [AuthController::class, 'socialSignup'])->middleware('throttle:10,1,auth-social'); // ★ v18.51
+    Route::post('/find-email/request', [AuthController::class, 'findEmailRequest'])->middleware('throttle:5,1,auth-find');
+    Route::post('/forgot-password',    [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1,auth-forgot');
+    // 인증번호 확인 — 맞혀 보기 횟수는 VerificationCode가 대상별로 막음(1시간 10번), 여기선 IP당 분당 10번
+    Route::post('/find-email/verify',  [AuthController::class, 'findEmailVerify'])->middleware('throttle:10,1,auth-verify');
+    Route::post('/reset-password',     [AuthController::class, 'resetPassword'])->middleware('throttle:10,1,auth-verify');
 });
 
 // ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.
@@ -99,16 +105,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sms/templates',           [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'templates']);
         Route::post('/sms/templates',          [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'storeTemplate']);
         Route::get('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'showTemplate']);
-        Route::post('/sms/test',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'test']);
+        // ★ v18.67 테스트 발송은 운영자별 1시간 10번(아무 번호로나 갈 수 있어서) — 보낼 때마다 발송 기록에도 남김
+        Route::post('/sms/test',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'test'])->middleware('throttle:10,60,sms-test');
         Route::get('/sms/config',              [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'config']);
         Route::put('/sms/templates/{id}',      [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'updateTemplate']);
         Route::delete('/sms/templates/{id}',   [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'destroyTemplate']);
         Route::post('/sms/preview',            [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'preview']);
-        Route::post('/sms/send',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'send']);
+        Route::post('/sms/send',               [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'send'])->middleware('throttle:5,1,sms-send'); // ★ v18.67 운영자별 분당 5번(연속 대량 발송 제한)
         Route::get('/sms/campaigns',           [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'campaigns']);
         // ★ v18.43 통계
         Route::get('/stats',                   [\App\Http\Controllers\Api\Admin\AdminStatsController::class, 'index']);
     });
+
+    // ★ v18.67 보안 — 여기부터 끝까지는 앱 전용. 운영자 계정(user_type=operator)은 403
+    //   (운영자 웹은 /me·/auth/logout·/admin/*만 씀. 예전엔 웹 토큰으로 팀·정산·공지 API에 들어올 수 있었음)
+    Route::middleware(\App\Http\Middleware\BlockOperatorFromApp::class)->group(function () {
 
     // ★ v18.43 — 고객 문의 (앱)
     Route::get('/inquiries',         [\App\Http\Controllers\Api\InquiryController::class, 'index']);
@@ -294,4 +305,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // ★ v11 변경: 사진 라우트는 member 그룹으로 이동됨 (위)
     });
+
+    }); // ★ v18.67 BlockOperatorFromApp 그룹 끝
 });

@@ -1,6 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePlanLockStore } from '../store/planLockStore';
+import { useAppUpdateStore } from '../store/appUpdateStore';
+import { APP_VERSION_ENDPOINT, getAppVersionHeaders, parseUpdateDetails } from '../utils/appVersionInfo';
 
 // ─────────────────────────────────────────────────────────
 // ★ 10.0.2.2 = Android 에뮬레이터에서 내 PC의 localhost를 가리키는 주소
@@ -27,6 +29,10 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    // ★ v18.69 — 모든 요청에 앱 버전 정보: X-App-Version(1.1.0) · X-App-Platform(android|ios) · X-App-Build(빌드 번호)
+    //   서버가 최소 버전보다 낮으면 426(ERR_APP_001)으로 막음 → 아래 응답 인터셉터가 강제 업데이트 화면으로.
+    //   버전을 모르는 빌드면 헤더를 안 붙임(서버는 헤더 없는 요청 = 옛 앱(v18.68 이하)으로 보고 막지 않음)
+    ...getAppVersionHeaders(),
   },
 });
 
@@ -73,6 +79,16 @@ axiosInstance.interceptors.response.use(
     //   다른 401(예: 로그인 연결 때 소셜 토큰 확인 실패 ERR_AUTH_011)은 로그인은 그대로라 화면이 메시지만 보여 주고
     //   다시 시도하게 둠(예전엔 저장된 토큰까지 지워져 본인 확인 표가 남아 있어도 로그아웃됐음).
     const code = data && typeof data === 'object' ? data.error_code : undefined;
+    // ★ v18.69 — 서버가 "이 앱 버전은 더 이상 못 씀"(426 ERR_APP_001) → 강제 업데이트 화면(App.tsx AppBody)
+    //   로그아웃·화면별 실패 알림이 뜨지 않게 이 요청은 끝나지 않은 채로 둠(앱 화면 대신 업데이트 화면만 그려짐).
+    //   버전 확인 요청(/app/version)만은 평소처럼 실패로 돌려줘서 확인 로직이 멈춰 있지 않게 함.
+    if (error.response?.status === 426 && code === 'ERR_APP_001') {
+      useAppUpdateStore.getState().setRequired(parseUpdateDetails(data));
+      if (!String(error.config?.url ?? '').startsWith(APP_VERSION_ENDPOINT)) {
+        return new Promise(() => {});
+      }
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401 && (!code || code === 'ERR_AUTH_003')) {
       await AsyncStorage.removeItem('token');
       // 토큰을 실어 보낸 요청이 401이면 로그인이 끝난 것 → 로그인 화면으로(로그인 실패 401은 제외)

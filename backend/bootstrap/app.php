@@ -44,6 +44,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ★ v18.43 — 일일 접속자 기록(운영자 통계)
         $middleware->api(append: [\App\Http\Middleware\TrackDailyActive::class]);
+
+        // ★ v18.69 — 최소 버전보다 낮은 앱은 426(ERR_APP_001). X-App-Version·X-App-Platform 헤더가 있을 때만 판단(옛 앱은 헤더가 없어 안 막음).
+        //   prepend: 인증·라우트 바인딩·접속자 기록보다 먼저 돌아서, 막힐 앱이면 다른 오류(401·404 등)보다 업데이트 안내가 먼저 나감
+        $middleware->api(prepend: [\App\Http\Middleware\RequireMinAppVersion::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // ═══════════════════════════════════════════════════════════

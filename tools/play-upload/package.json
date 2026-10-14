@@ -1,0 +1,17 @@
+{
+  "name": "play-upload",
+  "version": "1.0.0",
+  "private": true,
+  "description": "현장메이트 안드로이드 앱(AAB)을 이 PC에서 바로 Google Play에 올리는 도구 (★ v18.69)",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "next-version-code": "node next-version-code.mjs",
+    "upload": "node upload.mjs"
+  },
+  "dependencies": {
+    "@googleapis/androidpublisher": "^42.2.0"
+  }
+}

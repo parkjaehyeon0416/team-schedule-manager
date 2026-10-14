@@ -78,6 +78,24 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+/**
+ * ★ v18.69 — 앱 버전
+ *   versionName = 사용자에게 보이는 버전(MAJOR.MINOR.PATCH). 아이폰 MARKETING_VERSION과 같은 숫자로 맞출 것.
+ *     앱이 X-App-Version 헤더로 보내고, 서버가 최소·최신 버전과 비교(강제·선택 업데이트)하는 값.
+ *   versionCode = 구글 플레이용 빌드 번호(올릴 때마다 커져야 함, 플레이에 1이 이미 있어 기본값 2).
+ *     빌드할 때 지정: ./gradlew bundleRelease -PversionCode=3  또는  환경변수 VERSION_CODE=3
+ */
+def appVersionName = "1.1.0"
+def appVersionCode = {
+    def raw = project.findProperty('versionCode') ?: System.getenv('VERSION_CODE')
+    def s = raw == null ? '' : raw.toString().trim()
+    if (s.isEmpty()) return 2
+    if (!s.isInteger() || s.toInteger() < 1) {
+        throw new GradleException("versionCode(-PversionCode / VERSION_CODE)는 1 이상의 정수여야 합니다: '${s}'")
+    }
+    return s.toInteger()
+}()
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -89,8 +107,8 @@ android {
         applicationId "com.workmatekr.app" // ★ v18.59 com.workmate.app은 다른 회사 앱이 이미 사용
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode // ★ v18.69 (위 appVersionCode 참고)
+        versionName appVersionName // ★ v18.69 1.0 → 1.1.0
         // ★ v18.18 — 카카오 로그인: redirect scheme(kakao{NATIVE_APP_KEY}://oauth)과
         //   strings.xml의 kakao_app_key 값을 gradle.properties 하나로 관리
         manifestPlaceholders = [kakaoNativeAppKey: KAKAO_NATIVE_APP_KEY]

@@ -46,6 +46,9 @@ Route::prefix('auth')->group(function () {
     Route::post('/signup/phone/verify', [AuthController::class, 'signupPhoneVerify'])->middleware('throttle:10,1,auth-signup-verify');
 });
 
+// ★ v18.69 — 앱 업데이트 확인(로그인 불필요). 최소 버전 강제(RequireMinAppVersion)에서도 빠져 있어 옛 앱도 항상 받음
+Route::get('/app/version', [\App\Http\Controllers\Api\AppVersionController::class, 'show'])->middleware('throttle:60,1,app-version');
+
 // ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.
 Route::get('/report/{token}', [SiteReportController::class, 'publicView']);
 

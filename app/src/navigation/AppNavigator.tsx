@@ -5,6 +5,7 @@ import { navigationRef, flushPendingNavigation, handleAppLink, flushPendingLink 
 import { registerPush } from '../utils/push';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
+import { useAppUpdateStore } from '../store/appUpdateStore'; // ★ v18.69
 import BottomTabNavigator from './BottomTabNavigator';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -106,6 +107,12 @@ export default function AppNavigator() {
   useEffect(() => {
     if (isLoggedIn) flushPendingLink();
   }, [isLoggedIn]);
+
+  // ★ v18.69 — 스플래시가 끝나면 선택 업데이트 안내 시트를 띄워도 됨(강제 업데이트면 App.tsx가 이 화면 대신 업데이트 화면을 바로 그림)
+  const splashDone = !isLoading && minSplashDone;
+  useEffect(() => {
+    if (splashDone) useAppUpdateStore.getState().setPromptReady();
+  }, [splashDone]);
 
   if (isLoading || !minSplashDone) {
     return <SplashScreen />;

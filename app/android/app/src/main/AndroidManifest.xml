@@ -1,8 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 사진 갤러리 접근 권한 (v9 또는 v10에서 추가) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- ★ v18.68 — 구글 플레이 "사진·동영상 권한" 정책 대응: 갤러리 전체 읽기 권한을 쓰지 않음.
+         (예전 v9~v10에 넣은 READ_EXTERNAL_STORAGE / READ_MEDIA_IMAGES는 이 파일에만 있었고 라이브러리가 넣은 게 아니었음)
+         - 사진 고르기: react-native-image-picker launchImageLibrary = 시스템 사진 선택기(Photo Picker, 없는 기기는 문서 선택기) → 권한 필요 없음
+         - 갤러리에 저장(명함 이미지·팀 앨범 사진): Android 10+는 MediaStore로 권한 없이 저장, 9 이하만 아래 WRITE_EXTERNAL_STORAGE(maxSdk 28)
+         나중에 라이브러리가 다시 넣어도 최종 앱에 안 들어가게 tools:node="remove"로 막아 둠 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
     <!-- ★ 2026-10-02 추가 — 명함 이미지 저장(갤러리). API 29+는 MediaStore로 권한 없이 저장되고,
          28 이하 기기에서만 이 권한이 실제로 필요함. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />

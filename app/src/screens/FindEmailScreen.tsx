@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
 } from 'react-native';
@@ -16,6 +15,13 @@ import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 import AppHeader from '../components/AppHeader';
 import { colors, radius, spacing } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
+
+// ★ v18.68 — 서버가 준 안내(429 횟수 제한·잠금, 422 입력 오류, 404 등)는 그대로 보여주고,
+//   응답 자체가 없을 때(인터넷 끊김·시간 초과)만 네트워크 오류로 안내
+function errorMessage(error: any, fallback: string): string {
+  if (!error?.response) return '네트워크 오류가 발생했습니다.';
+  return error.response.data?.message || fallback;
+}
 
 // 2단계: ① 이름+전화번호로 계정 확인 후 인증번호 발송 → ② 인증번호 확인 후 이메일 공개
 export default function FindEmailScreen() {
@@ -43,8 +49,7 @@ export default function FindEmailScreen() {
         setStep(2);
       }
     } catch (error: any) {
-      const message = error.response?.data?.message;
-      Alert.alert('찾기 실패', message ?? '일치하는 계정을 찾을 수 없습니다.');
+      Alert.alert('찾기 실패', errorMessage(error, '일치하는 계정을 찾을 수 없습니다.'));
     } finally {
       setLoading(false);
     }
@@ -66,8 +71,7 @@ export default function FindEmailScreen() {
         setFoundEmail(res.data.data.email);
       }
     } catch (error: any) {
-      const message = error.response?.data?.message;
-      Alert.alert('인증 실패', message ?? '인증번호를 확인해주세요.');
+      Alert.alert('인증 실패', errorMessage(error, '인증번호를 확인해주세요.'));
     } finally {
       setLoading(false);
     }

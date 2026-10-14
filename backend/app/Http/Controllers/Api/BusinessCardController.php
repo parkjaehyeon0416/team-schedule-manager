@@ -8,6 +8,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\BusinessCard;
 use App\Models\CardView;
 use App\Models\SiteFile;
+use App\Support\CardShowcase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -19,6 +20,12 @@ use Illuminate\Support\Str;
  * ★ v18.67 개인정보 — 최근 사진 자동 선택을 없앰. 공개 명함 웹페이지에 다른 고객 집 사진이 본인도 모르게 올라갔음.
  *   이제 사용자가 showcase_photo_ids로 직접 고른 사진만 공개(앱에 사진 고르기 화면은 디자인 후 추가 예정).
  *   공개 여부(is_public) 기본값은 그대로(DB 기본값 true) — 공개/비공개 토글 화면도 디자인 후 추가 예정.
+ * ★ v18.68 — '내 명함' 화면에 공개 토글 + 현장 사진 공개(showcase_mode: none/after/both) 추가.
+ *   PUT은 부분 갱신이라 { is_public }이나 { showcase_mode }만 보내도 됨(나머지 칸은 그대로). 응답은 늘 명함 전체.
+ *   공개 명함 웹페이지에 어떤 사진이 나가는지는 BusinessCardPageController 참고.
+ * ★ v18.68 — 응답(GET·PUT)에 showcase_photos 추가: 지금 공개 명함 웹페이지에 보이는 사진 [{url, category, pair_index?}].
+ *   웹페이지와 같은 코드(App\Support\CardShowcase)·같은 사진 주소(/c/{code}/p/{id}, EXIF 없는 640px)라 앱 '프로필' 화면과
+ *   웹페이지에 늘 같은 사진이 보임. 비공개 명함·사진 공개 안 함·보여줄 사진 없음이면 [].
  */
 class BusinessCardController extends Controller
 {
@@ -32,7 +39,7 @@ class BusinessCardController extends Controller
     {
         $card = BusinessCard::where('user_id', $request->user()->id)->first();
 
-        return ApiResponse::success($card, $card ? '명함 조회 성공' : '아직 명함이 없습니다.');
+        return ApiResponse::success($card ? $this->withShowcase($card) : null, $card ? '명함 조회 성공' : '아직 명함이 없습니다.');
     }
 
     /**
@@ -52,10 +59,20 @@ class BusinessCardController extends Controller
             'specialty'          => 'nullable|string|max:255',
             'tagline'            => 'nullable|string|max:255',
             'is_public'          => 'nullable|boolean',
+            // ★ v18.68 — 현장 사진 공개 범위(보낼 때만 바꿈)
+            'showcase_mode'      => 'sometimes|string|in:' . implode(',', BusinessCard::SHOWCASE_MODES),
             // 수동으로 명함에 표시할 사진 id를 지정하고 싶을 때만 전달 (선택)
             'showcase_photo_ids' => 'nullable|array|max:' . self::FREE_SHOWCASE_LIMIT,
             'showcase_photo_ids.*' => 'integer|exists:site_files,id',
+        ], [
+            'showcase_mode.*' => '현장 사진 공개는 공개 안 함·시공 후만·전 · 후 모두 중에서 골라주세요.',
+            'is_public.boolean' => '명함 공개 값이 올바르지 않아요.',
         ]);
+
+        // ★ v18.68 — is_public: null은 '안 보냄'으로 취급(예전엔 null이 그대로 저장되려다 DB 오류 500)
+        if (array_key_exists('is_public', $data) && $data['is_public'] === null) {
+            unset($data['is_public']);
+        }
 
         $card = BusinessCard::where('user_id', $user->id)->first();
 
@@ -92,8 +109,10 @@ class BusinessCardController extends Controller
                 //   처음 만드는 명함은 기존대로 DB 기본값(공개)을 따름. 공개/비공개 토글 화면은 디자인 후 추가 예정.
                 ...($recreated ? ['is_public' => (bool) ($data['is_public'] ?? false)] : []),
             ]);
+            // ★ v18.68 — DB 기본값(is_public·조회수 등)까지 담아 명함 전체를 돌려줌(앱이 응답 값을 그대로 화면에 씀)
+            $card->refresh();
 
-            return ApiResponse::success($card, '명함이 생성되었습니다.', 201);
+            return ApiResponse::success($this->withShowcase($card), '명함이 생성되었습니다.', 201);
         }
 
         $card->update([
@@ -101,7 +120,7 @@ class BusinessCardController extends Controller
             ...($sentShowcase ? ['showcase_photo_ids' => $showcaseIds] : []),
         ]);
 
-        return ApiResponse::success($card, '명함이 수정되었습니다.');
+        return ApiResponse::success($this->withShowcase($card), '명함이 수정되었습니다.');
     }
 
     /**
@@ -124,6 +143,15 @@ class BusinessCardController extends Controller
     // ─────────────────────────────────────────────
     // 내부 헬퍼
     // ─────────────────────────────────────────────
+
+    /**
+     * ★ v18.68 — 명함 + 지금 공개 명함 웹페이지에 보이는 사진(showcase_photos)
+     *   모델 속성으로 넣지 않고 배열로 합침(나중에 save()해도 없는 칸에 쓰려다 오류 나지 않게)
+     */
+    private function withShowcase(BusinessCard $card): array
+    {
+        return [...$card->toArray(), 'showcase_photos' => CardShowcase::forApp($card)];
+    }
 
     private function generateShareCode(): string
     {

@@ -37,6 +37,8 @@ class User extends Authenticatable
         // ★ v18.47 요금제(free·pro·team·team_pro) — config/plans.php, PlanService
         'plan',
         'plan_expires_at',
+        // ★ v18.68 회원가입 '주요 공정'(복수 선택, 선택 안 하면 null)
+        'main_work_types',
     ];
     protected $hidden = ['password', 'remember_token', 'operator_phone', 'apple_refresh_token'];
 
@@ -50,6 +52,7 @@ class User extends Authenticatable
         'password_set_at' => 'datetime', // ★ v18.56 운영자 관리
         'last_login_at' => 'datetime',
         'plan_expires_at' => 'datetime',
+        'main_work_types' => 'array', // ★ v18.68 json 컬럼 → 문자열 배열
         'password' => 'hashed',
     ];
 

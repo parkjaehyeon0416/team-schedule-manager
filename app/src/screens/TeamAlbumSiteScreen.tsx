@@ -21,6 +21,7 @@ import { pickImages, toPhotoFile } from '../utils/pickImage';
 import type { PhotoFile } from '../utils/pickImage';
 import { uploadSequentially, showUploadSummary } from '../utils/uploadPhotos';
 import { Avatar } from '../components/TeamUi';
+import { useLightStatusBarWhile } from '../components/FocusStatusBar';
 import { STAGE_LABEL, STAGE_BG } from './TeamAlbumScreen';
 import { colors, spacing } from '../theme/designTokens';
 
@@ -39,6 +40,8 @@ export default function TeamAlbumSiteScreen() {
   const [items, setItems] = useState<AlbumPhoto[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [view, setView] = useState<AlbumPhoto | null>(null);
+  // ★ v18.68 — 크게 보기(어두운 남색 화면)가 떠 있는 동안만 밝은 상태바 아이콘
+  const lightStatusBar = useLightStatusBarWhile(!!view);
   const [saving, setSaving] = useState(false);
   const shotRef = useRef<any>(null);
   // ★ v18.66 — 단계 고르기를 기다리는 사진들, 올리는 중 진행 상황(2/5), 중복 실행 방지
@@ -165,7 +168,7 @@ export default function TeamAlbumSiteScreen() {
           )}
           <View style={[styles.grid, styles.bleed]}>
             {items.map(p => (
-              <Pressable key={p.id} onPress={() => setView(p)} style={styles.cell}
+              <Pressable key={p.id} onPress={() => { lightStatusBar(); setView(p); }} style={styles.cell}
                 accessibilityLabel={`${STAGE_LABEL[p.category]} 사진 · ${p.uploader?.name ?? ''} · ${dayjs(p.created_at).format('M월 D일')}`}>
                 <Image source={{ uri: `${SERVER_BASE_URL}${p.url}` }} style={styles.cellImg} />
                 <View style={[styles.stageTag, { backgroundColor: STAGE_BG[p.category] }]}>

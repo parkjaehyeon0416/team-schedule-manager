@@ -13,6 +13,7 @@ import type { InquiryDetail } from '../api/inquiryApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { colors, spacing } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
+import { useLightStatusBarWhile } from '../components/FocusStatusBar';
 
 export default function InquiryDetailScreen() {
   const navigation = useNavigation<any>();
@@ -21,6 +22,8 @@ export default function InquiryDetailScreen() {
   const [item, setItem] = useState<InquiryDetail | null>(null);
   const [failed, setFailed] = useState(false);
   const [viewing, setViewing] = useState<string | null>(null);
+  // ★ v18.68 — 첨부 사진 크게 보기(검은 화면)가 떠 있는 동안만 밝은 상태바 아이콘
+  const lightStatusBar = useLightStatusBarWhile(!!viewing);
 
   useFocusEffect(
     useCallback(() => {
@@ -65,7 +68,7 @@ export default function InquiryDetailScreen() {
           {item.files.length > 0 && (
             <View style={styles.photoRow}>
               {item.files.map(path => (
-                <Pressable key={path} onPress={() => setViewing(path)}>
+                <Pressable key={path} onPress={() => { lightStatusBar(); setViewing(path); }}>
                   <Image source={{ uri: `${SERVER_BASE_URL}${path}` }} style={styles.photo} />
                 </Pressable>
               ))}

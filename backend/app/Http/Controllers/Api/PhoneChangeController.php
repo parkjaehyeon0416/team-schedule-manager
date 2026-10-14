@@ -17,7 +17,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 /**
  * ★ v18.66 — 휴대폰 번호 변경(없던 번호 등록 포함)은 인증을 거쳐야 함 (디자인: 프로필 설정 › 휴대폰 번호 [변경])
@@ -134,8 +133,10 @@ class PhoneChangeController extends Controller
 
         // ① 계정 주인 확인 — 틀려도 ②는 통과 기록이 남아서 ①만 고쳐 다시 보내면 됨
         if ($user->password) {
-            if (!Hash::check((string) $request->input('password'), $user->password)) {
-                return ApiResponse::error('현재 비밀번호가 맞지 않아요.', ErrorCode::AUTH_LOGIN_FAILED, 422);
+            // ★ v18.68 리뷰 반영 — 틀린 횟수·잠금을 /me/reauth·비밀번호 변경·탈퇴와 같이 셈(Reauth::checkPassword, 잠기면 429 ERR_AUTH_017).
+            //   예전엔 ②를 자기 번호로 한 번 통과해 두고 ①의 비밀번호만 분당 10번씩 계속 맞혀 볼 수 있었음.
+            if ($fail = Reauth::checkPassword($user, (string) $request->input('password'), '현재 비밀번호가 맞지 않아요.')) {
+                return $fail;
             }
         } elseif ($request->filled('provider')) {
             // ★ v18.66 소셜 다시 로그인 — 문자·이메일 수단이 있어도 받음(지금 번호를 못 쓰는 경우)

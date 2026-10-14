@@ -20,9 +20,7 @@ import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { formatPhoneInput, stripPhoneFormatting } from '../utils/phone';
 import type { WorkType } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
-
-const AVATAR_COLORS = ['#FFE3C2', '#D6ECFF', '#D9F6F1', '#ECE5FF', '#FFE0E0'];
-const AVATAR_FG = ['#B95E00', '#0A6CE0', '#0B8574', '#6B4FD8', '#C03A3E'];
+import { avatarColors } from '../components/TeamUi';
 
 export default function ProfileEditScreen() {
   const navigation = useNavigation<any>();
@@ -55,7 +53,8 @@ export default function ProfileEditScreen() {
   if (!user) return null;
 
   const avatarUri = avatarImagePath ? `${SERVER_BASE_URL}/storage/${avatarImagePath}` : null;
-  const avatarIdx = user.id % AVATAR_COLORS.length;
+  // ★ v18.68 — 내정보·팀 화면과 같은 색 규칙(TeamUi avatarColors). 예전엔 이 화면만 5색(id % 5)이라 같은 사람도 화면마다 색이 달랐음
+  const [avatarBg, avatarFg] = avatarColors(user.id, user.avatar_color);
 
   const toggleType = (name: string) => {
     setSelectedTypes(prev => (prev.includes(name) ? prev.filter(t => t !== name) : [...prev, name]));
@@ -110,8 +109,8 @@ export default function ProfileEditScreen() {
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
             ) : (
-              <View style={[styles.avatarFallback, { backgroundColor: AVATAR_COLORS[avatarIdx] }]}>
-                <Text style={[styles.avatarFallbackText, { color: AVATAR_FG[avatarIdx] }]}>{user.name.charAt(0)}</Text>
+              <View style={[styles.avatarFallback, { backgroundColor: avatarBg }]}>
+                <Text style={[styles.avatarFallbackText, { color: avatarFg }]}>{user.name.charAt(0)}</Text>
               </View>
             )}
             <Pressable style={styles.avatarEditBtn} onPress={handlePickImage} disabled={uploadingImage}>

@@ -33,7 +33,16 @@ return [
     // 전체 상한을 다 써 버려서 아이디·비밀번호 찾기 문자까지 막히는 일이 없게 따로 묶음
     'global_purpose_daily' => [
         'new_phone' => (int) env('VERIFY_GLOBAL_NEW_PHONE_DAILY', 200),
+        // ★ v18.68 회원가입 휴대폰 인증 — 로그인 없이 아무 번호로나 보낼 수 있어서 따로 묶음(가입이 몰리는 날은 env로 올림)
+        'signup'    => (int) env('VERIFY_GLOBAL_SIGNUP_DAILY', 200),
     ],
+
+    // ★ v18.68 위 용도별 상한이 있는 용도(새 번호·회원가입)는 서비스 전체 문자 상한에서 이만큼 뺀 데까지만 씀(SmsGuard가 강제)
+    //   → 둘이 다 차도 아이디 찾기·비밀번호 재설정·본인 확인 문자 몫으로 하루 이만큼은 항상 남음.
+    //   규칙: new_phone + signup ≤ global_sms_daily − global_reserved_daily (기본 200 + 200 ≤ 500 − 100)
+    //   가입이 몰리는 날 VERIFY_GLOBAL_SIGNUP_DAILY를 올리면 VERIFY_GLOBAL_SMS_DAILY도 같이 올릴 것
+    //   (안 올려도 찾기 몫은 지켜지지만, 새 번호 인증 남용분만큼 가입 문자가 먼저 막힘)
+    'global_reserved_daily' => (int) env('VERIFY_GLOBAL_RESERVED_DAILY', 100),
 
     // 서비스 전체 사용량이 이 비율을 넘으면 하루 한 번 경고 로그
     'warn_ratio' => 0.8,

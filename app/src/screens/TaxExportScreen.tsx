@@ -31,6 +31,18 @@ const ITEMS = [
   { key: 'schedule', label: '원본 일정', defaultOn: false },
 ] as const;
 
+// ★ v18.68 — 서버(TaxSummaryController::validateExport)와 같은 기간 규칙을 생성 전에 미리 확인
+const MAX_MONTHS = 24;
+function periodError(from: Date, to: Date): string | null {
+  const f = dayjs(from);
+  const t = dayjs(to);
+  const months = (t.year() * 12 + t.month()) - (f.year() * 12 + f.month()) + 1;
+  if (f.year() < 2020 || t.year() > 2099) return '2020년 1월부터 2099년 12월 사이 기간만 내보낼 수 있어요.';
+  if (months < 1) return '끝 달이 시작 달보다 빠를 수 없어요. 기간을 확인해주세요.';
+  if (months > MAX_MONTHS) return `기간은 최대 ${MAX_MONTHS}개월까지 선택할 수 있어요.`;
+  return null;
+}
+
 export default function TaxExportScreen() {
   const route = useRoute<any>();
   const now = new Date();
@@ -47,6 +59,11 @@ export default function TaxExportScreen() {
   const toggleItem = (key: string) => setItems(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleGenerate = async () => {
+    const invalid = periodError(from, to); // ★ v18.68
+    if (invalid) {
+      Alert.alert('기간 확인', invalid);
+      return;
+    }
     if (format === 'pdf') {
       // ★ v18.36 — 서버 PDF는 연 단위 정리본이라 기간 끝 연도 기준으로 받음
       setGenerating(true);

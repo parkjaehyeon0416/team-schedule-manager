@@ -2,14 +2,27 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Constants\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Models\UserWageSetting;
+use App\Models\WorkType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class UserWageSettingController extends Controller
 {
+    /**
+     * ★ v18.68 보안 — 단가 행에 붙여 내려주는 공정 정보는 "지금 내가 볼 수 있는 공정"만.
+     *   예전(검사 없던 때) 남의 개인 공정·다른 팀 공정 번호로 저장된 행이 남아 있어도
+     *   그 공정 이름·색상은 안 나가고 work_type: null 로 내려감(단가 값·work_type_id 는 그대로 —
+     *   팀을 나간 사람도 예전 단가 유지). 앱은 work_type_id 로 /work-types 목록과 맞춰 쓰므로 화면 영향 없음.
+     */
+    private function visibleWorkType($user): array
+    {
+        return ['workType' => fn ($q) => $q->forUser($user)->select('id', 'name', 'code', 'color', 'icon')];
+    }
+
     /**
      * 내 단가 목록 조회
      * GET /api/wage-settings
@@ -19,7 +32,7 @@ class UserWageSettingController extends Controller
         $user = Auth::user();
 
         $settings = UserWageSetting::where('user_id', $user->id)
-            ->with('workType:id,name,code,color,icon')
+            ->with($this->visibleWorkType($user)) // ★ v18.68 볼 수 없는 공정은 이름·색상 안 내보냄
             ->orderBy('id', 'asc')
             ->get();
 
@@ -63,6 +76,19 @@ class UserWageSettingController extends Controller
         }
 
         $workTypeId       = (int) $request->input('work_type_id');
+
+        // ★ v18.68 보안 — 내가 볼 수 있는 공정(공용 + 소속 팀 공정 + 내 개인 공정)에만 단가를 둘 수 있음.
+        //   예전엔 "DB에 있는 번호"인지만 봐서 남의 개인 공정·다른 팀 공정 번호로 단가를 저장하면
+        //   목록(GET /wage-settings)에 그 공정 이름·색상이 같이 내려왔음. 지운 공정도 forUser에서 빠짐.
+        if (!WorkType::forUser($user)->whereKey($workTypeId)->exists()) {
+            return response()->json([
+                'success'    => false,
+                'message'    => '선택할 수 없는 공정입니다.',
+                'data'       => null,
+                'error_code' => ErrorCode::WORKTYPE_NOT_FOUND,
+            ], 422);
+        }
+
         $defaultWage      = $request->input('default_wage');
         $defaultWorkUnits = $request->input('default_work_units', 1.0);
         $memo             = $request->input('memo');
@@ -94,7 +120,7 @@ class UserWageSettingController extends Controller
         }
 
         // 3) workType 관계 데이터 함께 로드
-        $setting->load('workType:id,name,code,color,icon');
+        $setting->load($this->visibleWorkType($user)); // ★ v18.68 목록과 같은 기준
 
         return response()->json([
             'success'    => true,

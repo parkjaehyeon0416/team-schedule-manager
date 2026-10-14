@@ -20,6 +20,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { SiteFile } from '../types/api';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
+import { useLightStatusBarWhile } from './FocusStatusBar';
 
 // ─────────────────────────────────────────────────────────────────
 // 화면 가로폭에 맞춰 사진 한 칸 크기 계산
@@ -59,6 +60,8 @@ export default function PhotoGrid({
   emptyText = '아직 등록된 사진이 없습니다',
 }: Props) {
   const [viewing, setViewing] = useState<SiteFile | null>(null);
+  // ★ v18.68 — 크게 보기는 검은 화면이 상태바까지 덮어서 그동안만 밝은 아이콘(열기 전에 불러야 Modal 창에 적용됨)
+  const lightStatusBar = useLightStatusBarWhile(!!viewing);
 
   // ─── 빈 상태 ───
   if (photos.length === 0) {
@@ -162,7 +165,11 @@ export default function PhotoGrid({
               { width: ITEM_SIZE, height: ITEM_SIZE },
               !isLastInRow && { marginRight: GAP },
             ]}
-            onPress={() => (onPress ? onPress(photo) : setViewing(photo))}
+            onPress={() => {
+              if (onPress) return onPress(photo);
+              lightStatusBar();
+              setViewing(photo);
+            }}
             onLongPress={() => handleLongPress(photo)}
             activeOpacity={0.8}
           >

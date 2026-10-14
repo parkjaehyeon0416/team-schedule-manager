@@ -21,6 +21,7 @@ import { colors, radius, spacing, typography } from '../theme/designTokens';
 import { scheduleAddress, scheduleLocationLabel } from '../utils/scheduleLocation';
 import { ICONS } from '../assets/icons';
 import type { IconKey } from '../assets/icons';
+import { Avatar, stableNameId } from '../components/TeamUi';
 import dayjs from 'dayjs';
 
 // ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체. 마지막 공지·이벤트는 디자인처럼 선 아이콘 유지
@@ -33,12 +34,6 @@ const MENU_ITEMS: { key: string; label: string; image?: IconKey; icon?: string; 
   { key: 'tax', label: '세무 자료', image: 'tax', route: 'TaxSummary' },
   { key: 'site', label: '현장 목록', image: 'site', route: 'SiteList' },
   { key: 'notice', label: '공지·이벤트', icon: 'bullhorn-outline', route: 'NoticeList' },
-];
-
-// 팀 활동 아바타 색 (디자인 HOME의 주황/민트 번갈아)
-const ACTIVITY_COLORS = [
-  { bg: '#FFE3C2', fg: '#B95E00' },
-  { bg: '#D9F6F1', fg: '#0B8574' },
 ];
 
 // "10분 전", "1시간 전", "3일 전", 일주일 넘으면 "9.28"
@@ -319,7 +314,6 @@ export default function HomeDashboardScreen() {
       ) : (
         <View style={styles.listCard}>
           {teamActivities.map((a, i) => {
-            const palette = ACTIVITY_COLORS[i % ACTIVITY_COLORS.length];
             return (
               <React.Fragment key={`${a.type}-${a.schedule_id ?? a.team_id}-${a.created_at}`}>
                 {i > 0 && <View style={styles.hairline} />}
@@ -331,9 +325,8 @@ export default function HomeDashboardScreen() {
                       : navigation.navigate('TeamDetail', { teamId: a.team_id })
                   }
                 >
-                  <View style={[styles.activityAvatar, { backgroundColor: palette.bg }]}>
-                    <Text style={[styles.activityAvatarText, { color: palette.fg }]}>{a.actor_name.charAt(0)}</Text>
-                  </View>
+                  {/* ★ v18.68 — 예전엔 줄마다 주황/민트 번갈아(같은 사람도 색이 바뀜) → 팀 화면과 같은 규칙(사용자 id·고른 색·사진) */}
+                  <Avatar id={a.actor_id ?? stableNameId(a.actor_name)} name={a.actor_name} color={a.actor_color} image={a.actor_avatar} size={36} />
                   <View style={styles.scheduleTextBox}>
                     <Text style={styles.scheduleTitle} numberOfLines={1}>
                       {a.actor_name}님이 {a.type === 'schedule' ? '일정을 추가했어요' : '팀에 참여했어요'}
@@ -444,8 +437,6 @@ const styles = StyleSheet.create({
   eventLabel: { fontSize: 12, fontWeight: '700', color: '#B95E00' },
   eventTitle: { fontSize: 15, fontWeight: '800', lineHeight: 21, color: colors.textPrimary },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  activityAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  activityAvatarText: { fontSize: 13, fontWeight: '700' },
   eventImage: { width: 64, height: 64, resizeMode: 'contain' },
   menuLabel: { fontSize: 12, color: colors.textPrimary },
 

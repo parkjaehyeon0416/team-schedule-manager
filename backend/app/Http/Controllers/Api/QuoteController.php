@@ -12,6 +12,7 @@ use App\Models\Schedule;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\UserMaterial;
+use App\Models\WorkType;
 use App\Services\XlsxBuilder;
 use App\Support\SafeSheet;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -71,6 +72,26 @@ class QuoteController extends Controller
         $memo = $request->input('memo');
         if (is_string($memo) && mb_strlen($memo) > self::MEMO_MAX) {
             return ApiResponse::error(self::LIMIT_MESSAGES['memo.max'], ErrorCode::VALID_GENERAL, 422);
+        }
+        return null;
+    }
+
+    /**
+     * ★ v18.68 보안 — 공정(work_type_id)은 내가 볼 수 있는 공정만(공용 + 소속 팀 공정 + 내 개인 공정).
+     *   예전엔 "DB에 있는 번호"인지만 봐서 남의 개인 공정·다른 팀 공정 번호를 견적에 붙이면, 견적 승인 때
+     *   그 공정으로 일정이 만들어져 이름·색상을 알아낼 수 있었음(ScheduleController::checkWorkType과 같은 기준).
+     *   수정할 때 원래 붙어 있던 값을 그대로 보내는 건 통과(팀을 나간 뒤에도 예전 견적을 고칠 수 있게).
+     */
+    private function workTypeError($user, $workTypeId, $current = null)
+    {
+        if ($workTypeId === null || $workTypeId === '') {
+            return null;
+        }
+        if ($current !== null && (int) $workTypeId === (int) $current) {
+            return null;
+        }
+        if (!WorkType::forUser($user)->whereKey((int) $workTypeId)->exists()) {
+            return ApiResponse::error('선택할 수 없는 공정입니다.', ErrorCode::WORKTYPE_NOT_FOUND, 422);
         }
         return null;
     }
@@ -143,6 +164,9 @@ class QuoteController extends Controller
         // ★ v18.62 보안 — 내가 볼 수 있는 현장만 연결(예전엔 아무 현장 번호나 넣어 남의 현장 주소를 견적서로 볼 수 있었음)
         if (!empty($data['site_id']) && !Site::forUser($request->user())->whereKey($data['site_id'])->exists()) {
             return ApiResponse::error('선택할 수 없는 현장입니다.', ErrorCode::QUOTE_NOT_FOUND, 422);
+        }
+        if ($fail = $this->workTypeError($user, $data['work_type_id'] ?? null)) { // ★ v18.68
+            return $fail;
         }
 
         // ★ v18.47 — 무료는 월 3건(지운 견적도 셈 — 지우고 다시 만드는 걸 막기 위해). 개인 프로는 무제한
@@ -259,6 +283,9 @@ class QuoteController extends Controller
         if (!empty($data['site_id']) && !Site::forUser($request->user())->whereKey($data['site_id'])->exists()) {
             return ApiResponse::error('선택할 수 없는 현장입니다.', ErrorCode::QUOTE_NOT_FOUND, 422);
         }
+        if ($fail = $this->workTypeError($request->user(), $data['work_type_id'] ?? null, $quote->work_type_id)) { // ★ v18.68
+            return $fail;
+        }
 
         DB::transaction(function () use ($quote, $data, $request) {
             $subtotal = 0;
@@ -354,6 +381,13 @@ class QuoteController extends Controller
             return ApiResponse::error('이미 승인된 견적서입니다.', ErrorCode::QUOTE_ALREADY_APPROVED, 409);
         }
 
+        // ★ v18.68 — 희망 시공일이 없을 때 앱에서 고른 날짜를 함께 받음
+        //   (예전엔 날짜를 골라도 서버로 안 넘어가서 "희망 시공일을 먼저 입력해주세요"로 승인이 항상 실패했음)
+        $data = $request->validate(['desired_date' => 'nullable|date']);
+        if (!$quote->desired_date && !empty($data['desired_date'])) {
+            $quote->desired_date = $data['desired_date'];
+        }
+
         if (!$quote->desired_date) {
             return ApiResponse::error('희망 시공일을 먼저 입력해주세요.', ErrorCode::QUOTE_MISSING_DATE, 422);
         }
@@ -364,8 +398,18 @@ class QuoteController extends Controller
         if ($quote->site_id && !Site::forUser($user)->whereKey($quote->site_id)->exists()) {
             $quote->site_id = null;
         }
+        // ★ v18.68 보안 — 지금 볼 수 없는 공정(예전에 검사 없이 붙은 남의 공정, 나간 팀 공정, 지운 공정)은 일정에 안 넘김
+        $workTypeId = $quote->work_type_id && WorkType::forUser($user)->whereKey($quote->work_type_id)->exists()
+            ? $quote->work_type_id : null;
+        // ★ v18.68 — 승인으로 만든 일정에 제목이 없어 일정 목록·상세에 '일정'으로만 보였음
+        //   → "{고객명} 견적 시공", 고객명이 없으면 "견적 E-{번호} 시공"(견적서의 No. E-번호와 같게). 제목 칸은 100자까지
+        $suffix = ' 견적 시공';
+        $clientName = trim((string) $quote->client_name);
+        $title = $clientName !== ''
+            ? mb_substr($clientName, 0, 100 - mb_strlen($suffix)) . $suffix
+            : "견적 E-{$quote->id} 시공";
 
-        $schedule = DB::transaction(function () use ($quote, $user, $teamId, $ownerId) {
+        $schedule = DB::transaction(function () use ($quote, $user, $teamId, $ownerId, $workTypeId, $title) {
             $siteId = $quote->site_id;
 
             // 연결된 현장이 없고 주소만 있으면 현장을 새로 만들어 연결
@@ -381,12 +425,15 @@ class QuoteController extends Controller
 
             $schedule = Schedule::create([
                 'date'          => $quote->desired_date,
+                'title'         => $title, // ★ v18.68
                 'site_id'       => $siteId,
                 'team_id'       => $teamId,
                 'owner_id'      => $ownerId,
                 'created_by'    => $user->id,
-                'work_type_id'  => $quote->work_type_id,
-                'daily_wage'    => $quote->total_amount,
+                'work_type_id'  => $workTypeId, // ★ v18.68
+                // ★ v18.68 — 일당은 비워 둠(사용자 결정). 예전엔 견적 총액을 하루 일당으로 넣어서
+                //   내 수입·예상 원천세에 견적 총액이 한 사람의 일당처럼 잡혔음. 필요하면 일정에서 직접 입력
+                'daily_wage'    => null,
                 'work_units'    => 1,
                 'memo'          => trim(($quote->client_name ?? '') . ' 견적 승인건'),
                 'status'        => 'pending',
@@ -406,7 +453,7 @@ class QuoteController extends Controller
         return ApiResponse::success([
             'quote'    => $quote->fresh(),
             'schedule' => $schedule,
-        ], '견적이 승인되어 일정이 등록되었습니다.');
+        ], '견적이 승인되어 일정이 등록되었어요. 일당은 일정에서 직접 입력해 주세요.');
     }
 
     /**
@@ -500,7 +547,14 @@ class QuoteController extends Controller
             $rows[] = ['', '', '', '', '할인', -1 * (float) $quote->discount_amount];
         }
         $rows[] = ['', '', '', '', '공급가액', $quote->supply_amount];
-        $rows[] = ['', '', '', '', "부가세({$quote->tax_label})", $quote->tax_type === 'exempt' ? '면세' : ($quote->vat_amount ?? 0)];
+        // ★ v18.68 — 부가세 줄 이름: tax_label("부가세 별도")을 "부가세(…)"로 한 번 더 감싸 "부가세(부가세 별도)"로 보이던 것
+        //   (앱 미리보기·PDF와 같은 규칙). 별도 → "부가세(별도)", 포함 → "부가세(포함)", 면세 → "부가세" + 금액 칸 "면세"
+        $vatRowLabel = match ($quote->tax_type) {
+            'included' => '부가세(포함)',
+            'exempt'   => '부가세',
+            default    => '부가세(별도)',
+        };
+        $rows[] = ['', '', '', '', $vatRowLabel, $quote->tax_type === 'exempt' ? '면세' : ($quote->vat_amount ?? 0)];
         $rows[] = ['', '', '', '', '합계', $quote->total_amount];
         $rows[] = [];
         $rows[] = ['고객명', SafeSheet::text($quote->client_name ?? '-')];

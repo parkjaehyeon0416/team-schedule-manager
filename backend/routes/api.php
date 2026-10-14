@@ -41,6 +41,9 @@ Route::prefix('auth')->group(function () {
     // 인증번호 확인 — 맞혀 보기 횟수는 VerificationCode가 대상별로 막음(1시간 10번), 여기선 IP당 분당 10번
     Route::post('/find-email/verify',  [AuthController::class, 'findEmailVerify'])->middleware('throttle:10,1,auth-verify');
     Route::post('/reset-password',     [AuthController::class, 'resetPassword'])->middleware('throttle:10,1,auth-verify');
+    // ★ v18.68 회원가입 휴대폰 인증 — 발송 제한은 SmsGuard(번호별 대기·하루 상한, IP별 하루 20번, 서비스 전체 상한), 여기선 IP당 분당
+    Route::post('/signup/phone/send',   [AuthController::class, 'signupPhoneSend'])->middleware('throttle:5,1,auth-signup-send');
+    Route::post('/signup/phone/verify', [AuthController::class, 'signupPhoneVerify'])->middleware('throttle:10,1,auth-signup-verify');
 });
 
 // ★ v13 — 공유 링크(비로그인 고객 열람). 인증 불필요, share_token 자체가 접근 키 역할.
@@ -75,6 +78,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/login-links',               [\App\Http\Controllers\Api\LoginLinkController::class, 'index']);
     Route::post('/me/login-links',              [\App\Http\Controllers\Api\LoginLinkController::class, 'link']);
     Route::delete('/me/login-links/{provider}', [\App\Http\Controllers\Api\LoginLinkController::class, 'unlink']);
+    // ★ v18.68 — 로그인 연결·해제 전 본인 확인(비밀번호 | 문자·이메일 인증번호 | 소셜 다시 로그인) → reauth_token(10분, 한 번)
+    Route::post('/me/reauth/send', [\App\Http\Controllers\Api\LoginLinkController::class, 'reauthSend'])
+        ->middleware([\App\Http\Middleware\BlockOperatorFromApp::class, 'throttle:5,1,me-reauth-send']);
+    Route::post('/me/reauth',      [\App\Http\Controllers\Api\LoginLinkController::class, 'reauth'])
+        ->middleware([\App\Http\Middleware\BlockOperatorFromApp::class, 'throttle:10,1,me-reauth']);
     Route::put('/me/password',                  [\App\Http\Controllers\Api\LoginLinkController::class, 'setPassword'])->middleware('throttle:10,1'); // ★ v18.52
     Route::post('/me/password/verify',          [\App\Http\Controllers\Api\LoginLinkController::class, 'verifyRequest'])->middleware('throttle:5,1'); // ★ v18.63 처음 설정 전 본인 확인
 
@@ -181,6 +189,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // ★ v18.47 — 팀 요금제 기능(부팀장·팀 공지·팀원 정산표·팀 현장 앨범) + 요금제 안내
     Route::get('/plans', [\App\Http\Controllers\Api\PlanController::class, 'index']);
     Route::put('/teams/{id}/members/{userId}/sub-leader', [TeamController::class, 'setSubLeader']);
+    // ★ v18.68 — 팀원 내보내기(그 팀 팀장만) · 초대 코드 새로 만들기(팀장·부팀장, 옛 코드·링크 즉시 막힘)
+    Route::delete('/teams/{id}/members/{userId}',        [TeamController::class, 'kickMember'])->middleware('throttle:20,1,team-kick');
+    Route::post('/teams/{id}/invite/regenerate',         [TeamController::class, 'regenerateInvite'])->middleware('throttle:5,1,team-invite-regen');
     Route::get('/teams/{id}/notices',                    [\App\Http\Controllers\Api\TeamNoticeController::class, 'index']);
     Route::post('/teams/{id}/notices',                   [\App\Http\Controllers\Api\TeamNoticeController::class, 'store'])->middleware('throttle:20,1');
     Route::patch('/teams/{id}/notices/{noticeId}/pin',   [\App\Http\Controllers\Api\TeamNoticeController::class, 'togglePin']);

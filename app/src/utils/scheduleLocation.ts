@@ -5,7 +5,7 @@ import type { Schedule } from '../types/api';
 
 type ScheduleLike = Pick<Schedule, 'site'> & { address?: string | null; address_detail?: string | null };
 
-// "래미안 101동 1203호" 같은 짧은 이름 — 목록 제목 등에 사용
+// "OO아파트 101동 1203호" 같은 짧은 이름 — 목록 제목 등에 사용
 export function scheduleLocationLabel(s: ScheduleLike): string | null {
   if (s.site) {
     const site = s.site;

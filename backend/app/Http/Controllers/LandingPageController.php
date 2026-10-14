@@ -62,6 +62,21 @@ class LandingPageController extends Controller
         return $this->legal('개인정보 처리방침', 'privacy.txt');
     }
 
+    /**
+     * ★ v18.68 — 계정 삭제 안내(구글 플레이 "데이터 삭제" 필수 URL: https://workmatekr.com/account-delete).
+     *   앱 안 탈퇴 경로 + 앱 없이 메일로 요청하는 방법 + 지우는 정보·남는 정보·보관 기간.
+     *   지우는/남는 정보는 AuthController::withdraw() · AccountCleanupService · 개인정보 처리방침 3항과 같게 유지할 것.
+     */
+    public function accountDelete()
+    {
+        return view('web.account-delete', [
+            'developer'    => config('workmate.developer_name') ?: '박재현',
+            'supportEmail' => config('workmate.support_email') ?: 'workmatekr@gmail.com',
+            'codeMinutes'  => \App\Services\VerificationCode::TTL_MINUTES,
+            'processDays'  => 7, // 메일 요청은 본인 확인 뒤 7일 이내 처리
+        ]);
+    }
+
     private function legal(string $title, string $file)
     {
         return view('web.legal', [

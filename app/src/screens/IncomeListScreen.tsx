@@ -16,6 +16,8 @@ import { getMyTeams } from '../api/teamApi';
 import type { Schedule, Team } from '../types/api';
 import { scheduleLocationLabel } from '../utils/scheduleLocation'; // ★ v18.66 제목·현장 없으면 '일정'만 보이던 것
 import { formatMoney } from '../utils/format';
+import { isMyIncomeSchedule } from '../utils/tax';
+import { useAuthStore } from '../store/authStore';
 import { colors, radius, spacing } from '../theme/designTokens';
 
 // 일정 1건의 수입 = 일당 × 공수 (서버 월 집계와 같은 식 — 0.5공수면 절반)
@@ -28,6 +30,7 @@ const TABS = ['전체', '현장별', '팀별'] as const;
 export default function IncomeListScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const myId = useAuthStore(s => s.user?.id);
   const now = new Date();
   const [year, setYear] = useState(route.params?.year ?? now.getFullYear());
   const [month, setMonth] = useState(route.params?.month ?? now.getMonth() + 1);
@@ -42,12 +45,13 @@ export default function IncomeListScreen() {
     setLoading(true);
     Promise.all([getSchedules(year, month), getTaxSummary(year), getMyTeams().catch(() => [])])
       .then(([list, summary, teamList]) => {
-        setSchedules(list.filter(s => Number(s.daily_wage ?? 0) > 0).sort((a, b) => b.date.localeCompare(a.date)));
+        // ★ v18.68 QA — 내가 투입된 일정만(팀원만 배정한 팀 일정이 팀장 수입으로 잡혀 홈 카드와 안 맞던 것)
+        setSchedules(list.filter(s => isMyIncomeSchedule(s, myId)).sort((a, b) => b.date.localeCompare(a.date)));
         setMonthlyTotals(summary.months.map(m => m.total_income));
         setTeams(teamList);
       })
       .finally(() => setLoading(false));
-  }, [year, month]);
+  }, [year, month, myId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

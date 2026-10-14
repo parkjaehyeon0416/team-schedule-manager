@@ -25,6 +25,7 @@ import WorkTypePicker from '../components/WorkTypePicker';
 import SitePickerModal from '../components/SitePickerModal';
 import AddressSearchModal from '../components/AddressSearchModal';
 import AppHeader from '../components/AppHeader';
+import { FocusStatusBar } from '../components/FocusStatusBar';
 import { formatMoney, parseMoney } from '../utils/format';
 import type { TeamMember, WageSetting, WorkType, Site, Team } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
@@ -239,9 +240,18 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
     }
   };
 
+  // ★ v18.68 — iOS는 이 화면이 시트(presentation: 'modal')로 떠서 상태바 자리에 검은 배경이 보임 → 밝은 아이콘.
+  //   안드로이드는 일반 화면처럼 꽉 차게 떠서(흰 헤더) 앱 기본값(어두운 아이콘) 그대로
+  //   현장 선택·주소 검색은 화면 전체를 덮는 흰 Modal이라(이 화면은 포커스 유지) 열려 있는 동안엔 빼서 기본값(어두운 아이콘)으로 —
+  //   iOS는 UIViewControllerBasedStatusBarAppearance=false라 값이 Modal 위에도 그대로 적용돼 흰 바탕에 흰 아이콘이 됨
+  const iosSheetStatusBar = Platform.OS === 'ios' && !sitePickerVisible && !addressSearchVisible
+    ? <FocusStatusBar barStyle="light-content" />
+    : null;
+
   if (loadingData) {
     return (
       <View style={styles.screen}>
+        {iosSheetStatusBar}
         <AppHeader leftType="back" title={isEditMode ? '일정 수정' : '일정 등록'} />
         <View style={styles.centerBox}><ActivityIndicator color={colors.primary} /></View>
       </View>
@@ -252,6 +262,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
 
   return (
     <View style={styles.screen}>
+      {iosSheetStatusBar}
       <AppHeader leftType="back" title={isEditMode ? '일정 수정' : '일정 등록'} />
       <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {hasTeam && (
@@ -331,7 +342,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
               style={styles.input}
               value={addressDetail}
               onChangeText={setAddressDetail}
-              placeholder="상세 주소 (예: 래미안 101동 1203호)"
+              placeholder="상세 주소 (예: OO아파트 101동 1203호)"
               placeholderTextColor={colors.muted}
               maxLength={100}
             />

@@ -4,6 +4,8 @@
  * 대신 CSV/엑셀(CSV)로만 저장 가능하도록 변경함 — 견적 내용을 클라이언트에서 바로 CSV로
  * 만들어 OS 공유 시트로 전달(세무자료 내보내기와 동일한 패턴, 별도 백엔드 호출 불필요).
  * v18.36 이후 엑셀·PDF 둘 다 고를 수 있어 버튼 이름을 "파일 저장"으로 바꿈.
+ * ★ v18.68 — 공급자 전화번호 하이픈(숫자만 보이던 것), 부가세 줄 "부가세(부가세 별도)" → "부가세(별도)/(포함)"·"면세",
+ *   긴 항목명이 수량·단가 칸으로 넘어가던 것(칸마다 minWidth: 0 + 자기 칸 안에서 줄바꿈, 숫자 칸은 오른쪽 정렬).
  */
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView, Share } from 'react-native';
@@ -16,7 +18,15 @@ import { downloadQuotePdf, downloadQuoteXlsx, getQuoteShareUrl } from '../api/pd
 import { useAuthStore } from '../store/authStore';
 import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
+import { formatPhoneInput } from '../utils/phone';
 import { colors, radius, spacing } from '../theme/designTokens';
+
+/** ★ v18.68 — 부가세 줄: 서버 tax_label("부가세 별도")을 "부가세(…)"로 한 번 더 감싸 "부가세(부가세 별도)"로 보이던 것 */
+function vatLine(quote: Quote): string {
+  if (quote.tax_type === 'exempt') return '면세 (부가세 없음)';
+  const kind = quote.tax_type === 'included' ? '포함' : '별도';
+  return `부가세(${kind}) ${formatMoney(quote.vat_amount ?? 0)}원`;
+}
 
 export default function QuotePreviewScreen() {
   const route = useRoute<any>();
@@ -61,7 +71,8 @@ export default function QuotePreviewScreen() {
         `[견적서] ${quote.client_name ? `${quote.client_name}님, ` : ''}요청하신 견적서를 보내드립니다.`,
         `총 견적가: ${formatMoney(quote.total_amount)}원${quote.tax_type === 'exempt' ? ' (면세)' : ' (부가세 포함)'}`,
         `견적서 보기(PDF, 3일간 열려요): ${url}`,
-        user?.name ? `- ${user.name}${user.phone ? ` (${user.phone})` : ''} 드림` : '',
+        // ★ v18.68 — 번호는 하이픈 넣어서(서버엔 숫자만 저장)
+        user?.name ? `- ${user.name}${user.phone ? ` (${formatPhoneInput(user.phone)})` : ''} 드림` : '',
       ].filter(Boolean).join('\n');
 
       const result = await Share.share({ message });
@@ -99,7 +110,6 @@ export default function QuotePreviewScreen() {
     );
   }
 
-  const taxLabel = quote.tax_label ?? '부가세 별도';
   const supplyAmount = quote.supply_amount ?? Number(quote.total_amount) - Number(quote.vat_amount ?? 0);
   const siteLabel = quote.site ? [quote.site.apt_name, quote.site.dong, quote.site.ho].filter(Boolean).join(' ') || quote.site.address : quote.address;
 
@@ -121,7 +131,7 @@ export default function QuotePreviewScreen() {
             <View style={styles.partyCol}>
               <Text style={styles.partyLabel}>공급자</Text>
               <Text style={styles.partyBold}>{user?.name ?? '-'}</Text>
-              <Text style={styles.partyText}>{user?.phone ?? ''}</Text>
+              <Text style={styles.partyText}>{user?.phone ? formatPhoneInput(user.phone) : ''}</Text>
             </View>
           </View>
           <View style={styles.totalLine}>
@@ -129,16 +139,17 @@ export default function QuotePreviewScreen() {
             <Text style={styles.totalLineValue}>{formatMoney(quote.total_amount)}원</Text>
           </View>
           <View style={styles.table}>
+            {/* ★ v18.68 — 칸 너비 고정(colName/colQty/colAmount, 모두 minWidth: 0) → 긴 항목명은 자기 칸 안에서 줄바꿈, 숫자는 오른쪽 정렬로 줄 맞춤 */}
             <View style={styles.tableHeadRow}>
-              <Text style={[styles.tableHeadCell, { flex: 1.2 }]}>항목</Text>
-              <Text style={[styles.tableHeadCell, { flex: 1.4 }]}>수량·단가</Text>
-              <Text style={[styles.tableHeadCell, { flex: 1, textAlign: 'right' }]}>금액</Text>
+              <Text style={[styles.tableHeadCell, styles.colName]}>항목</Text>
+              <Text style={[styles.tableHeadCell, styles.colQty, styles.numText]}>수량·단가</Text>
+              <Text style={[styles.tableHeadCell, styles.colAmount, styles.numText]}>금액</Text>
             </View>
             {(quote.lines ?? []).map((l, i) => (
               <View key={l.id ?? i} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { flex: 1.2 }]}>{l.name}</Text>
-                <Text style={[styles.tableCellSub, { flex: 1.4 }]}>{Number(l.quantity).toLocaleString()}{l.unit} × {formatMoney(l.unit_price)}원</Text>
-                <Text style={[styles.tableCell, { flex: 1, textAlign: 'right', fontWeight: '600' }]}>{formatMoney(l.amount ?? Number(l.quantity) * Number(l.unit_price))}원</Text>
+                <Text style={[styles.tableCell, styles.colName]}>{l.name}</Text>
+                <Text style={[styles.tableCellSub, styles.colQty, styles.numText]}>{Number(l.quantity).toLocaleString()}{l.unit} × {formatMoney(l.unit_price)}원</Text>
+                <Text style={[styles.tableCell, styles.colAmount, styles.numText, styles.amountText]}>{formatMoney(l.amount ?? Number(l.quantity) * Number(l.unit_price))}원</Text>
               </View>
             ))}
           </View>
@@ -148,9 +159,7 @@ export default function QuotePreviewScreen() {
               <Text style={styles.sumSub}>소계 {formatMoney(quote.subtotal_amount)}원 · 할인 -{formatMoney(quote.discount_amount)}원</Text>
             )}
             <Text style={styles.sumText}>공급가액 {formatMoney(supplyAmount)}원</Text>
-            <Text style={styles.sumSub}>
-              부가세({taxLabel}) {quote.tax_type === 'exempt' ? '없음' : `${formatMoney(quote.vat_amount ?? 0)}원`}
-            </Text>
+            <Text style={styles.sumSub}>{vatLine(quote)}</Text>
           </View>
           {!!quote.memo && <Text style={styles.remark}>비고: {quote.memo}</Text>}
         </View>
@@ -194,11 +203,17 @@ const styles = StyleSheet.create({
   totalLineLabel: { fontSize: 13, fontWeight: '700', color: colors.textPrimary },
   totalLineValue: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
   table: { gap: 0 },
-  tableHeadRow: { flexDirection: 'row', backgroundColor: '#EEF5FD', paddingVertical: 7, paddingHorizontal: 6 },
+  tableHeadRow: { flexDirection: 'row', gap: 6, backgroundColor: '#EEF5FD', paddingVertical: 7, paddingHorizontal: 6 },
   tableHeadCell: { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  tableRow: { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: '#E8EEF5' },
+  tableRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingVertical: 8, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: '#E8EEF5' },
   tableCell: { fontSize: 12, color: colors.textPrimary },
   tableCellSub: { fontSize: 11, color: colors.textSecondary },
+  // ★ v18.68 — minWidth: 0이 있어야 긴 글자가 옆 칸을 밀지 않고 자기 칸 안에서 줄바꿈됨
+  colName: { flex: 1.3, minWidth: 0 },
+  colQty: { flex: 1.4, minWidth: 0 },
+  colAmount: { flex: 1, minWidth: 0 },
+  numText: { textAlign: 'right' },
+  amountText: { fontWeight: '600' },
   sumBox: { alignItems: 'flex-end', gap: 4 },
   sumText: { fontSize: 12, color: colors.textPrimary },
   sumSub: { fontSize: 12, color: colors.textSecondary },

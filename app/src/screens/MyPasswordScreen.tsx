@@ -125,7 +125,8 @@ export default function MyPasswordScreen() {
     } catch (e: any) {
       const body = e?.response?.data;
       if (body?.error_code === 'ERR_AUTH_001') setWrong(true);
-      else if (['ERR_AUTH_017', 'ERR_AUTH_018'].includes(body?.error_code) || body?.error_code === 'ERR_AUTH_005' || /인증번호|다시 로그인/.test(body?.message ?? '')) {
+      // ★ v18.68 비밀번호 변경(isChange)에선 인증번호 칸이 없어서 잠금(ERR_AUTH_017 "비밀번호를 N번 틀려서…")은 아래 공용 오류로 보여 줌
+      else if (!isChange && (['ERR_AUTH_017', 'ERR_AUTH_018'].includes(body?.error_code) || body?.error_code === 'ERR_AUTH_005' || /인증번호|다시 로그인/.test(body?.message ?? ''))) {
         setCodeErr(body?.message ?? '본인 확인에 실패했어요.');
         setSocial(null);
       }

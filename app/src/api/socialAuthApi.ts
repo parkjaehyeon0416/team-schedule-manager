@@ -99,12 +99,23 @@ export function isSocialCancel(error: any): boolean {
 }
 
 // ── 로그인 연결 관리 (내 정보) ──
+/** ★ v18.68 — 연결·해제 전 본인 확인에 쓸 수 있는 방법(target은 가린 값: 010-****-5678 / chu****@gmail.com) */
+export type ReauthChannel = { type: 'phone' | 'email'; target: string };
+export type ReauthInfo = {
+  has_password: boolean;
+  channels: ReauthChannel[];
+  /** 연결된 소셜 — 비밀번호도 인증번호 받을 곳도 없을 때만 다시 로그인으로 확인 */
+  providers: SocialProvider[];
+  minutes: number;
+};
+
 export type LoginLinks = {
   kakao: { linked: boolean; linked_at: string | null };
   google: { linked: boolean; linked_at: string | null };
   apple: { linked: boolean; linked_at: string | null };
   email: { set: boolean; email: string | null };
   count: number;
+  reauth?: ReauthInfo; // ★ v18.68
 };
 
 export async function getLoginLinks(): Promise<LoginLinks> {
@@ -112,9 +123,34 @@ export async function getLoginLinks(): Promise<LoginLinks> {
   return res.data.data;
 }
 
-export async function linkSocial(provider: SocialProvider): Promise<LoginLinks> {
+// ── ★ v18.68 본인 확인(reauth) — 성공하면 한 번만 쓸 수 있는 reauth_token(10분) ──
+export type ReauthPurpose = 'login_link';
+export type ReauthPayload =
+  | { purpose: ReauthPurpose; password: string }
+  | { purpose: ReauthPurpose; channel: ReauthChannel['type']; code: string }
+  | { purpose: ReauthPurpose; provider: SocialProvider; token: string };
+
+/** 문자·이메일로 본인 확인 인증번호 보내기 */
+export async function reauthSend(purpose: ReauthPurpose, channel: ReauthChannel['type']): Promise<{ minutes: number }> {
+  const res = await axiosInstance.post('/me/reauth/send', { purpose, channel });
+  return res.data.data;
+}
+
+/** 비밀번호 / 인증번호 / 소셜 다시 로그인 중 하나로 확인 → reauth_token */
+export async function reauthVerify(payload: ReauthPayload): Promise<string> {
+  const res = await axiosInstance.post('/me/reauth', payload);
+  return res.data.data.reauth_token;
+}
+
+/** ★ v18.68 reauthToken — 본인 확인에서 받은 토큰(없거나 만료·사용됨이면 서버가 422 ERR_AUTH_018) */
+export async function linkSocial(provider: SocialProvider, reauthToken?: string): Promise<LoginLinks> {
   const { token, authCode } = await getSocialCredential(provider);
-  const res = await axiosInstance.post('/me/login-links', { provider, token, ...(authCode ? { auth_code: authCode } : {}) });
+  const res = await axiosInstance.post('/me/login-links', {
+    provider,
+    token,
+    ...(authCode ? { auth_code: authCode } : {}),
+    ...(reauthToken ? { reauth_token: reauthToken } : {}),
+  });
   return res.data.data;
 }
 
@@ -140,7 +176,10 @@ export async function verifyPasswordSetup(channel?: 'phone' | 'email'): Promise<
   return res.data.data;
 }
 
-export async function unlinkSocial(provider: SocialProvider): Promise<LoginLinks> {
-  const res = await axiosInstance.delete(`/me/login-links/${provider}`);
+export async function unlinkSocial(provider: SocialProvider, reauthToken?: string): Promise<LoginLinks> {
+  const res = await axiosInstance.delete(
+    `/me/login-links/${provider}`,
+    reauthToken ? { data: { reauth_token: reauthToken } } : undefined,
+  );
   return res.data.data;
 }

@@ -50,7 +50,17 @@
     .btn-secondary { background: #FEE500; color: #3C1E1E; }
     .gallery-title { padding: 20px 20px 8px; font-size: 14px; font-weight: 700; color: #1F3864; }
     .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 20px; }
-    .gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; background: #eee; }
+    .gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; background: #eee; display: block; }
+    /* ★ v18.68 — 시공 전·후 나란히 */
+    .pairs { display: flex; flex-direction: column; gap: 8px; padding: 0 20px; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .shot { position: relative; margin: 0; }
+    .shot img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: #eee; display: block; }
+    .shot figcaption {
+        position: absolute; left: 6px; top: 6px; padding: 2px 7px; border-radius: 10px;
+        font-size: 11px; font-weight: 700; color: #fff; background: rgba(16, 42, 86, 0.72);
+    }
+    .shot.after figcaption { background: rgba(10, 108, 224, 0.88); }
     .footer {
         text-align: center; padding: 28px 20px; color: #999; font-size: 11px; margin-top: 12px;
         border-top: 1px solid #eee;
@@ -93,13 +103,33 @@
         @endif
     </div>
 
-    @if($showcasePhotos->count() > 0)
+    {{-- ★ v18.68 현장 사진 공개 — 명함 주인이 고른 범위(시공 후만 / 전·후 모두)만.
+         원본(/storage/…, 촬영 위치 EXIF 포함) 대신 /c/{code}/p/{id}의 줄인 사진만 씀.
+         고객 이름·현장 주소·날짜·사진 설명은 넣지 않음 --}}
+    @if(count($showcase) > 0)
     <div class="gallery-title">📷 시공 포트폴리오</div>
-    <div class="gallery">
-        @foreach($showcasePhotos as $url)
-        <img src="{{ $url }}" alt="시공 사진">
+    @if(isset($showcase[0]['before']))
+    <div class="pairs">
+        @foreach($showcase as $pair)
+        <div class="pair">
+            <figure class="shot before">
+                <img src="/c/{{ $card->share_code }}/p/{{ $pair['before']->id }}" alt="시공 전 사진" loading="lazy" decoding="async">
+                <figcaption>시공 전</figcaption>
+            </figure>
+            <figure class="shot after">
+                <img src="/c/{{ $card->share_code }}/p/{{ $pair['after']->id }}" alt="시공 후 사진" loading="lazy" decoding="async">
+                <figcaption>시공 후</figcaption>
+            </figure>
+        </div>
         @endforeach
     </div>
+    @else
+    <div class="gallery">
+        @foreach($showcase as $item)
+        <img src="/c/{{ $card->share_code }}/p/{{ $item['after']->id }}" alt="시공 후 사진" loading="lazy" decoding="async">
+        @endforeach
+    </div>
+    @endif
     @endif
 
     <div class="footer">

@@ -13,9 +13,13 @@ use App\Services\Sms\SmsServiceInterface;
  *   - 전화번호(문자) 또는 진짜 이메일로 6자리 인증번호(VerificationCode: 3분, 5번 틀리면 5분 잠금 · ★ v18.67 1시간 10번이면 1시간 잠금)
  *   - ★ v18.67 발송은 SmsGuard로 제한(60초 대기·하루 상한·서비스 전체 상한)
  *   - 둘 다 없으면 연결된 소셜 계정으로 다시 로그인(provider + token)
+ * ★ v18.68 로그인 연결 관리(용도 login_link)는 비밀번호로도 확인 — checkPassword(): 틀린 횟수를 인증번호와 똑같이
+ *   VerificationCode 잠금으로 셈(용도 reauth_pw, 대상 user:{id}). 통과하면 ReauthToken(10분, 한 번)을 줌.
  */
 class Reauth
 {
+    public const PASSWORD_PURPOSE = 'reauth_pw'; // ★ v18.68 비밀번호 틀린 횟수·잠금 묶음 이름
+
     /** 인증번호를 받을 수 있는 곳 [phone => 가린 번호, email => 가린 이메일] */
     public static function channels(User $user): array
     {
@@ -112,6 +116,71 @@ class Reauth
             return ApiResponse::error('이 계정에 연결된 소셜 계정으로 다시 로그인해주세요.', ErrorCode::AUTH_REAUTH_REQUIRED, 422);
         }
         return null;
+    }
+
+    /**
+     * ★ v18.68 로그인 연결 관리 화면에 줄 본인 확인 정보.
+     *   info()와 달리 비밀번호 유무를 같이 주고, providers는 연결된 소셜 전부(앱은 비밀번호·받을 곳이 둘 다 없을 때만 씀)
+     */
+    public static function loginLinkInfo(User $user): array
+    {
+        return [
+            'has_password' => (bool) $user->password,
+            'channels'     => self::info($user)['channels'],
+            'providers'    => array_values(array_filter(
+                SocialAuthService::PROVIDERS,
+                fn($p) => !empty($user->{SocialAuthService::column($p)})
+            )),
+            'minutes'      => VerificationCode::TTL_MINUTES,
+        ];
+    }
+
+    /**
+     * ★ v18.68 비밀번호로 본인 확인. 통과하면 null, 아니면 에러 응답(비밀번호 없는 계정은 부르는 곳에서 먼저 막음).
+     *   틀린 횟수는 인증번호와 같은 VerificationCode 잠금 — 1시간 안 누적 5번째 틀림 → 5분, 10번째 → 1시간 잠금(429 ERR_AUTH_017).
+     *   잠긴 동안엔 맞는 비밀번호도 안 받음. 맞히면 틀린 횟수 지움.
+     *   VerificationCode는 "저장된 번호와 비교"할 때만 횟수를 세고 지우므로, 고정된 표시값을 저장한 뒤
+     *   틀렸으면 다른 값으로, 맞혔으면 같은 값으로 consume() — 잠금 규칙·키를 따로 만들지 않고 그대로 씀.
+     *   (성공·실패 모두 같은 표시값을 저장해서 동시에 들어와도 맞는 비밀번호가 실패로 세이지 않음)
+     * ★ v18.68 리뷰 반영 — 로그인한 상태에서 지금 비밀번호를 묻는 곳은 전부 이걸로 확인(틀린 횟수·잠금을 같이 셈):
+     *   /me/reauth, PUT /me/password(비밀번호 변경), DELETE /account(탈퇴), PUT /profile/phone(번호 변경).
+     *   예전엔 /me/reauth만 잠기고 나머지는 Hash::check만 해서, 잠긴 뒤에도 다른 화면으로 시간당 600번쯤 맞혀 볼 수 있었음.
+     *   $wrongMessage — 틀렸을 때 안내(화면마다 예전 문구 유지). 빈 비밀번호는 맞을 수 없어서 횟수에 안 넣음.
+     *   맞혀도 bcrypt 확인하는 사이 동시에 들어온 틀린 시도들로 잠겼으면 안 받음(잠금 응답).
+     */
+    public static function checkPassword(User $user, string $password, string $wrongMessage = '비밀번호가 맞지 않아요. 다시 입력해주세요.')
+    {
+        $target = "user:{$user->id}";
+        if ($locked = self::passwordLocked($target)) {
+            return $locked;
+        }
+        if ($password === '') {
+            return ApiResponse::error($wrongMessage, ErrorCode::AUTH_LOGIN_FAILED, 422);
+        }
+        $mark = 'password';
+        VerificationCode::store(self::PASSWORD_PURPOSE, $target, $mark);
+        if ($user->password && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            if ($locked = self::passwordLocked($target)) {
+                return $locked; // ★ v18.68 확인하는 사이 잠김
+            }
+            VerificationCode::consume(self::PASSWORD_PURPOSE, $target, $mark); // 틀린 횟수 지움
+            return null;
+        }
+        VerificationCode::consume(self::PASSWORD_PURPOSE, $target, ''); // 틀린 횟수 +1 (5·10번째면 잠금)
+        return self::passwordLocked($target)
+            ?? ApiResponse::error($wrongMessage, ErrorCode::AUTH_LOGIN_FAILED, 422);
+    }
+
+    /** ★ v18.68 비밀번호 잠금 응답 — 안내 문구만 "비밀번호를 N번 틀려서…"로 */
+    private static function passwordLocked(string $target)
+    {
+        $locked = VerificationCode::lockedResponse(self::PASSWORD_PURPOSE, $target);
+        if ($locked) {
+            $body = $locked->getData(true);
+            $body['message'] = str_replace('인증번호를', '비밀번호를', (string) ($body['message'] ?? ''));
+            $locked->setData($body);
+        }
+        return $locked;
     }
 
     /** 실제로 메일이 나가는 설정인지(log·array는 기록만 하고 안 보냄) */

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * ★ v18.67 — 인증번호(문자·이메일) 발송 공용 관문. 인증번호를 보내는 모든 곳이 이걸 거침:
  *   아이디 찾기(find_email) · 비밀번호 재설정(reset_password) · 본인 확인 Reauth(withdraw / set_password / change_phone)
- *   · 새 번호 인증(new_phone)
+ *   · 새 번호 인증(new_phone) · ★ v18.68 회원가입 휴대폰 인증(signup)
  *
  * 왜: 예전엔 새 번호 인증에만 대기·하루 상한이 있어서, 아이디·비밀번호 찾기로 남의 번호에 문자 폭탄(IP당 하루 7,200통),
  *   새 계정을 계속 만들어 아무 번호로나 새 번호 인증 문자, 본인 확인 메일로 Gmail 하루 한도 소진이 가능했음.
@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  *      - IP별 하루 요청 수(20)
  *   2) 대상 단위 sendCode() — 실제로 보낼 때
  *      - 같은 대상+용도 60초 대기(Cache::add라 동시 요청도 하나만 통과)
- *      - 서비스 전체 하루 상한(문자·메일, 새 번호 인증은 따로 200) / 계정별 하루(10) / 대상별 하루(10, 용도 합산) / 대상+용도별 하루(5)
+ *      - 서비스 전체 하루 상한(문자·메일, 새 번호 인증 200·회원가입 200은 따로 + 둘은 전체에서 예약분 100을 뺀 데까지만) / 계정별 하루(10) / 대상별 하루(10, 용도 합산) / 대상+용도별 하루(5)
  *      - 보내기에 성공한 뒤에만 인증번호 저장 — 발송이 실패하면 번호도 안 남고 센 횟수도 되돌림
  *        (예전엔 저장 후 발송이라, 문자 잔액이 떨어져도 번호가 계속 새로 생겨 조용히 대입할 수 있었음)
  */
@@ -151,6 +151,11 @@ class SmsGuard
             : [["vguard_global:sms:{$day}", (int) config('verification.global_sms_daily', 500), '서비스 전체 인증 문자']];
         $per = config("verification.global_purpose_daily.{$purpose}");
         if ($purpose && $per !== null) {
+            // ★ v18.68 따로 묶은 용도(새 번호·회원가입 — 아무 번호로나 보낼 수 있음)는 서비스 전체 상한에서 예약분을 뺀 데까지만.
+            //   용도별 상한을 합치면 전체 상한에 닿아도(env를 올려도) 아이디·비밀번호 찾기·본인 확인 몫은 항상 남음
+            $reserve = max(0, (int) config('verification.global_reserved_daily', 100));
+            $limits[0][1] = max(0, $limits[0][1] - $reserve);
+            $limits[0][2] .= '(예약분 제외)';
             $limits[] = ["vguard_global_purpose:{$purpose}:{$day}", (int) $per, "서비스 전체 {$purpose} 인증"];
         }
         return $limits;

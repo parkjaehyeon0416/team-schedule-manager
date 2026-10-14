@@ -22,7 +22,10 @@ use Illuminate\Support\Facades\Storage;
  *   - 명함 조회 기록(방문자 IP 해시), 프로필 사진 파일
  *   - 내가 만든 보고서의 공유 링크(즉시 만료)
  *   - 고객 문의 첨부 사진 파일
- *   - 휴대폰 번호·카카오톡 아이디, 푸시 기기 등록
+ *   - 휴대폰 번호·카카오톡 아이디·주요 공정(★ v18.68), 푸시 기기 등록
+ *   (★ v18.68 비밀번호 해시·remember_token은 본인 확인이 끝난 뒤 AuthController::withdraw()가 직접 비움 — 여기서 지우면
+ *    이 함수를 본인 확인 전에 불렀을 때 비밀번호 확인이 깨짐. 탈퇴 회원의 접속 기록·마지막 로그인 시각은 3개월 뒤
+ *    routes/console.php 'prune-withdrawn-login-records'가 지움)
  *   - 원래 이메일 → 알아볼 수 없는 값(withdrawn_{id}_{시각}@deleted.local)으로 바꿈
  * 남기는 것 (기존 정책 그대로)
  *   - 이름: 팀원들의 과거 일정·정산 기록에 표시
@@ -129,6 +132,9 @@ class AccountCleanupService
         }
         if ($user->kakao_talk_id !== null) {
             $changes['kakao_talk_id'] = null;
+        }
+        if ($user->main_work_types !== null) {
+            $changes['main_work_types'] = null; // ★ v18.68 회원가입 '주요 공정'(선택 항목)도 탈퇴 때 지움
         }
         if (!self::isPlaceholderEmail((string) $user->email)) {
             $changes['email'] = 'withdrawn_' . $user->id . '_' . time() . '@' . self::EMAIL_DOMAIN;

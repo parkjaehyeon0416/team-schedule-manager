@@ -56,3 +56,18 @@ export function estimateWithholding(
 
   return { pay, incomeTax, localTax, total: incomeTax + localTax, exempt };
 }
+
+/**
+ * ★ v18.68 QA — 이 일정이 '내 수입'인가: 단가가 있고 내가 투입 인원(users)에 들어 있을 때만.
+ *   서버 월 집계(MonthlySummaryService::recalculate — schedule_users에 내가 있는 일정만)와 같은 기준이라
+ *   홈 '이번 달 수입'·세무 자료와 금액이 맞음. 일정 목록(GET /schedules)은 팀장이 팀원만 배정한 팀 일정도
+ *   내려주므로 단가만 보고 합치면 남의 수입까지 내 수입으로 잡혔음.
+ *   (개인 일정은 v18.40부터 등록할 때 주인이 투입 인원에 자동으로 들어감)
+ */
+export function isMyIncomeSchedule(
+  s: { daily_wage?: string | number | null; users?: { id: number }[] },
+  myId: number | null | undefined,
+): boolean {
+  if (!myId || !(Number(s.daily_wage ?? 0) > 0)) return false;
+  return (s.users ?? []).some(u => u.id === myId);
+}

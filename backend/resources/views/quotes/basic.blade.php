@@ -31,13 +31,29 @@
 </style>
 </head>
 <body>
+@php
+    // ★ v18.68 — 부가세 줄 이름: tax_label("부가세 별도")을 "부가세 (…)"로 한 번 더 감싸 "부가세 (부가세 별도)"로 보이던 것.
+    //   별도 → "부가세 (별도)", 포함 → "부가세 (포함)", 면세 → "부가세" + 금액 칸 "면세"
+    $vatRowLabel = match ($quote->tax_type) {
+        'included' => '부가세 (포함)',
+        'exempt'   => '부가세',
+        default    => '부가세 (별도)',
+    };
+    // ★ v18.68 — 고객 연락처가 숫자만 저장돼 있으면(예전 견적·직접 입력) 하이픈을 넣어 보여줌. 다른 형식은 쓴 그대로
+    $contact = trim((string) $quote->client_contact);
+    if (preg_match('/^\d{9,11}$/', $contact)) {
+        $contact = str_starts_with($contact, '02')
+            ? preg_replace('/^(02)(\d{3,4})(\d{4})$/', '$1-$2-$3', $contact)
+            : preg_replace('/^(\d{3})(\d{3,4})(\d{4})$/', '$1-$2-$3', $contact);
+    }
+@endphp
 
 <h1>견 적 서</h1>
 
 <table class="meta-table">
     <tr>
         <td class="label">고객명</td><td>{{ $quote->client_name ?? '-' }}</td>
-        <td class="label">연락처</td><td>{{ $quote->client_contact ?? '-' }}</td>
+        <td class="label">연락처</td><td>{{ $contact !== '' ? $contact : '-' }}</td>
     </tr>
     <tr>
         <td class="label">현장 주소</td>
@@ -93,7 +109,7 @@
             <td>{{ number_format($quote->supply_amount) }}원</td>
         </tr>
         <tr class="total-row">
-            <td colspan="5">부가세 ({{ $quote->tax_label }})</td>
+            <td colspan="5">{{ $vatRowLabel }}</td>
             <td>{{ $quote->tax_type === 'exempt' ? '면세' : number_format($quote->vat_amount ?? 0) . '원' }}</td>
         </tr>
         <tr class="total-row">

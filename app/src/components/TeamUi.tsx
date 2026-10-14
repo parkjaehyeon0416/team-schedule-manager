@@ -18,8 +18,14 @@ export const ROLE_COLORS: Record<string, [string, string]> = {
   '나간 팀원': ['#F3F4F6', '#8A96A8'],
 };
 
-/** 사람마다 같은 색 — 직접 고른 아바타 색이 있으면 그 색, 없으면 id로 팔레트 선택 */
+/** users.avatar_color의 DB 기본값 — 아무도 고르지 않은 값이라 '고른 색 없음'으로 봄 */
+const DEFAULT_AVATAR_COLOR = '#1F3864';
+
+/** 사람마다 같은 색 — 직접 고른 아바타 색이 있으면 그 색, 없으면 id로 팔레트 선택
+ *  ★ v18.68 QA — 가입하면 누구나 DB 기본값(#1F3864)이 들어 있어서 팀원 아바타가 전부 같은 남색이었음
+ *    → 기본값은 고른 색이 아닌 것으로 보고 디자인처럼 팀원마다 다른 파스텔(AVB/AVT)로 */
 export function avatarColors(id: number, picked?: string | null): [string, string] {
+  if (picked && picked.toUpperCase() === DEFAULT_AVATAR_COLOR) picked = null;
   const i = picked ? AVB.indexOf(picked.toUpperCase()) : -1;
   if (i >= 0) return [AVB[i], AVT[i]];
   if (picked) {
@@ -29,6 +35,14 @@ export function avatarColors(id: number, picked?: string | null): [string, strin
     return [picked, r * 0.299 + g * 0.587 + b * 0.114 < 150 ? '#FFFFFF' : colors.textPrimary];
   }
   return [AVB[id % AVB.length], AVT[id % AVT.length]];
+}
+
+/** ★ v18.68 — 사용자 id를 모를 때(옛 서버 응답 등) 이름으로 늘 같은 번호를 만들어 avatarColors에 넘김
+ *  (팀 활동 아바타가 "이름 길이 + 줄 번호"로 색을 골라 같은 사람도 줄마다 색이 달랐던 문제의 대비책) */
+export function stableNameId(name: string): number {
+  let h = 0;
+  for (let k = 0; k < name.length; k++) h = (h * 31 + name.charCodeAt(k)) % 1000003;
+  return h;
 }
 
 export function Avatar({ id, name, color, image, size = 40 }: {

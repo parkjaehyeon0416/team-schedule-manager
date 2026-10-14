@@ -50,15 +50,28 @@ export default function QuoteDetailScreen() {
     ]);
   };
 
+  // ★ v18.68 — 고른 날짜(희망 시공일이 없던 견적)를 승인 요청에 같이 보냄.
+  //   예전엔 날짜를 골라도 서버로 안 넘어가서 승인이 항상 실패했고, 승인 전에 '발송'으로 바꾸면서 발송 알림이 잘못 쌓였음
   const doApprove = async (date?: string) => {
     try {
-      if (date) await updateQuoteStatus(quoteId, 'sent').catch(() => {});
-      await approveQuote(quoteId);
-      Alert.alert('완료', '견적이 승인되어 일정이 등록되었습니다.');
+      const res = await approveQuote(quoteId, date);
+      Alert.alert('완료', res.message || '견적이 승인되어 일정이 등록되었어요. 일당은 일정에서 직접 입력해 주세요.');
       load();
     } catch (e: any) {
       Alert.alert('실패', e?.response?.data?.message || '완료 처리에 실패했습니다.');
     }
+  };
+
+  // ★ v18.68 — 승인하면 일정은 일당 없이 등록된다는 안내를 먼저 보여 줌(견적 총액이 하루 일당으로 잡히던 문제)
+  const confirmApprove = (date: string) => {
+    Alert.alert(
+      '견적 승인',
+      `견적을 승인하면 ${dayjs(date).format('M월 D일')}에 일정이 등록돼요.\n\n일당은 비워 두고 등록되니, 필요하면 일정에서 직접 입력해 주세요.`,
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '승인', onPress: () => doApprove(quote?.desired_date ? undefined : date) },
+      ],
+    );
   };
 
   const handleComplete = () => {
@@ -71,10 +84,7 @@ export default function QuoteDetailScreen() {
       ]);
       return;
     }
-    Alert.alert('완료 처리', '견적을 승인하고 일정을 등록할까요?', [
-      { text: '취소', style: 'cancel' },
-      { text: '완료', onPress: () => doApprove() },
-    ]);
+    confirmApprove(quote.desired_date);
   };
 
   const handleDelete = () => {
@@ -127,7 +137,7 @@ export default function QuoteDetailScreen() {
           locale="ko-KR"
           onChange={(_e, d) => {
             setDatePickerVisible(Platform.OS === 'ios');
-            if (d) doApprove(dayjs(d).format('YYYY-MM-DD'));
+            if (d) confirmApprove(dayjs(d).format('YYYY-MM-DD'));
           }}
         />
       )}

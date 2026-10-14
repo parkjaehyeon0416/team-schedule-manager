@@ -31,6 +31,7 @@ footer a { color: #0A6CE0; text-decoration: none; margin: 0 8px; }
   <h1>{{ $title }}</h1>
   <div class="doc">{{ $body }}</div>
 </main>
-<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/">현장메이트 소개</a></footer>
+{{-- ★ v18.68 계정 삭제 안내 링크 추가(구글 플레이) --}}
+<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/account-delete">계정 삭제</a> · <a href="/">현장메이트 소개</a></footer>
 </body>
 </html>

@@ -45,13 +45,16 @@ export async function updateQuoteStatus(
   return res.data.data;
 }
 
+/** ★ v18.68 desiredDate — 희망 시공일이 없는 견적은 고른 날짜를 같이 보냄. 응답 message에 "일당은 직접 입력" 안내 */
 export async function approveQuote(
   id: number,
-): Promise<{ quote: Quote; schedule: unknown }> {
+  desiredDate?: string,
+): Promise<{ quote: Quote; schedule: unknown; message?: string }> {
   const res = await axios.post<ApiResponse<{ quote: Quote; schedule: unknown }>>(
     `/quotes/${id}/approve`,
+    desiredDate ? { desired_date: desiredDate } : {},
   );
-  return res.data.data;
+  return { ...res.data.data, message: res.data.message };
 }
 
 export async function deleteQuote(id: number): Promise<void> {

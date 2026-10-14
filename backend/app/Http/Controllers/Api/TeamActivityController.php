@@ -30,7 +30,10 @@ class TeamActivityController extends Controller
         }
         $limit = max(1, min(30, (int) $request->query('limit', 5)));
 
+        // ★ v18.68 — actor_id(사용자 id) 추가: 앱이 아바타 색을 사람마다 고정으로 고름(팀원 탭과 같은 색).
+        //   예전엔 id가 없어 앱이 "이름 길이 + 줄 번호"로 골라서 같은 사람도 줄마다 색이 달랐음
         $base = fn($cols) => array_merge([
+            'users.id as actor_id',
             'users.name as actor_name', 'users.avatar_color as actor_color', 'users.avatar_image_path as actor_avatar',
             'teams.id as team_id', 'teams.name as team_name',
         ], $cols);
@@ -83,6 +86,7 @@ class TeamActivityController extends Controller
             ->take($limit)
             ->map(function ($row) {
                 $row->created_at = \Carbon\Carbon::parse($row->created_at)->toIso8601String();
+                $row->actor_id = (int) $row->actor_id;
                 $row->count = $row->count !== null ? (int) $row->count : null;
                 return $row;
             })

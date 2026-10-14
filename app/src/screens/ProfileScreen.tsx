@@ -18,6 +18,7 @@ import { getMyInquiries } from '../api/inquiryApi';
 import { getPlans } from '../api/planApi';
 import { getLoginLinks } from '../api/socialAuthApi';
 import { ProviderBadge } from '../components/AuthUi';
+import { avatarColors } from '../components/TeamUi';
 import dayjs from 'dayjs';
 import { APP_VERSION } from '../constants/appVersion';
 import { colors, radius, spacing, typography } from '../theme/designTokens';
@@ -71,6 +72,9 @@ export default function ProfileScreen() {
   if (!user) return null;
 
   const avatarUri = user.avatar_image_path ? `${SERVER_BASE_URL}/storage/${user.avatar_image_path}` : null;
+  // ★ v18.68 — 아바타 색은 팀 화면과 같은 규칙(TeamUi avatarColors). 예전엔 avatar_color를 그대로 써서
+  //   가입하면 누구나 들어 있는 DB 기본값(#1F3864)이라 늘 남색 + 흰 글자였음
+  const [avatarBg, avatarFg] = avatarColors(user.id, user.avatar_color);
   // ★ v18.65 — 역할은 한글로(예전엔 내부 값 manager/member가 그대로 보였음). 팀이 없으면 '개인'
   const roleLabel = teamCount === 0 ? '개인' : ({ superadmin: '운영자', manager: '팀장', member: '팀원' } as Record<string, string>)[user.role?.name ?? ''];
   const roleLine = [user.team?.name, roleLabel].filter(Boolean).join(' · ');
@@ -174,8 +178,8 @@ export default function ProfileScreen() {
               <Avatar.Text
                 size={64}
                 label={user.name.charAt(0)}
-                style={[styles.avatar, user.avatar_color ? { backgroundColor: user.avatar_color } : null]}
-                labelStyle={styles.avatarLabel}
+                style={{ backgroundColor: avatarBg }}
+                labelStyle={[styles.avatarLabel, { color: avatarFg }]}
               />
             )}
             <View style={styles.profileText}>
@@ -237,9 +241,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  avatar: { backgroundColor: colors.primary },
   avatarImage: { width: 64, height: 64, borderRadius: 32 },
-  avatarLabel: { color: '#FFFFFF', fontWeight: 'bold' },
+  avatarLabel: { fontWeight: 'bold' },
   profileText: { flex: 1, gap: 4 },
   name: { fontSize: 19, fontWeight: '800', color: colors.textPrimary },
   roleLine: { fontSize: 13, color: colors.textSecondary },

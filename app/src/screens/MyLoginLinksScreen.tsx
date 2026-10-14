@@ -1,6 +1,9 @@
 // ★ v18.51 — 디자인 MY_LOGIN_LINKS: 내 정보 › 로그인 연결 관리 (카카오·구글 연결/해제, 이메일·비밀번호 표시)
 //   ★ v18.60 Apple 줄 — 아이폰에서만(안드로이드는 이미 연결된 경우에만 보여서 해제 가능)
-import React, { useCallback, useEffect, useState } from 'react';
+//   ★ v18.68 MY_LOGIN_LINKS_VERIFY* — [연결]·[해제] 전에 본인 확인 시트(비밀번호 | 인증번호) →
+//     해제: 확인 대화상자 → DELETE(reauth_token) / 연결: 소셜 로그인 → POST(reauth_token).
+//     서버가 ERR_AUTH_018(본인 확인 필요·만료)로 돌려주면 시트를 다시 열어 서버 메시지를 보여줌.
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
@@ -8,13 +11,20 @@ import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import GradientButton from '../components/GradientButton';
 import { ProviderBadge } from '../components/AuthUi';
+import ReauthSheet from '../components/ReauthSheet';
 import {
   getLoginLinks, linkSocial, unlinkSocial, isSocialCancel, LoginLinks, PROVIDER_NAME, SocialProvider, APPLE_LOGIN_AVAILABLE,
+  ReauthInfo,
 } from '../api/socialAuthApi';
 
 const GA: Record<SocialProvider, string> = { kakao: '카카오가', google: '구글이', apple: 'Apple이' };
 const REUL: Record<SocialProvider, string> = { kakao: '카카오를', google: '구글을', apple: 'Apple을' };
 const fmt = (d: string | null) => (d ? d.replace(/-/g, '.') : '');
+const linkedProviders = (l: LoginLinks | null) => (['kakao', 'google', 'apple'] as SocialProvider[]).filter(p => !!l?.[p]?.linked);
+// 본인 확인 시트가 내려간 뒤에 다음 창(확인 대화상자·소셜 로그인)을 띄움 — iOS는 모달이 닫히는 중엔 새 창을 못 띄움
+const SHEET_CLOSE_MS = 350;
+
+type VerifyTarget = { act: 'unlink' | 'connect'; p: SocialProvider; n: number; notice?: string };
 
 export default function MyLoginLinksScreen() {
   const navigation = useNavigation<any>();
@@ -24,6 +34,12 @@ export default function MyLoginLinksScreen() {
   const [confirm, setConfirm] = useState<SocialProvider | null>(null);
   const [fail, setFail] = useState<SocialProvider | null>(null);
   const [toast, setToast] = useState('');
+  // ★ v18.68 본인 확인 — verify는 닫히는 동안에도 제목이 남도록 유지하고 열림은 verifyOpen으로
+  const [verify, setVerify] = useState<VerifyTarget | null>(null);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const unlinkToken = useRef<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -41,30 +57,86 @@ export default function MyLoginLinksScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.params?.toast]);
 
-  const connect = async (p: SocialProvider) => {
+  const askVerify = (act: VerifyTarget['act'], p: SocialProvider, notice?: string) => {
+    setVerify(v => ({ act, p, n: (v?.n ?? 0) + 1, notice })); // n이 바뀌면 시트 입력값 초기화
+    setVerifyOpen(true);
+  };
+
+  // 서버가 reauth를 아직 안 주면(구버전) 화면에 있는 정보로 추정 — 인증번호 받을 곳은 알 수 없어 비움
+  const reauthInfo: ReauthInfo = links?.reauth ?? {
+    has_password: !!links?.email.set,
+    channels: [],
+    providers: linkedProviders(links),
+    minutes: 3,
+  };
+
+  // 계약상 reauth는 GET에만 보장 — 연결·해제 응답에 없으면 이전 값을 유지(연결된 소셜 목록만 새 상태로)
+  const applyLinks = (next: LoginLinks) => {
+    setLinks(prev => ({
+      ...next,
+      reauth: next.reauth ?? (prev?.reauth ? { ...prev.reauth, providers: linkedProviders(next) } : undefined),
+    }));
+  };
+
+  // 시트를 닫은 뒤 늦게 온 성공은 ReauthSheet가 버림(onVerified 안 부름)
+  const onVerified = (token: string) => {
+    const v = verify;
+    setVerifyOpen(false);
+    if (!v) return;
+    // 시트가 내려가는 동안(0.35초)에도 다른 줄의 [연결]·[해제]를 못 누르게
+    setBusy(v.p);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      if (v.act === 'unlink') {
+        setBusy(null);
+        unlinkToken.current = token;
+        setConfirm(v.p);
+      } else {
+        connect(v.p, token);
+      }
+    }, SHEET_CLOSE_MS);
+  };
+
+  const openForgotPassword = () => {
+    setVerifyOpen(false);
+    navigation.navigate('ForgotPassword');
+  };
+
+  const connect = async (p: SocialProvider, reauthToken: string) => {
     setBusy(p);
     try {
-      setLinks(await linkSocial(p));
+      applyLinks(await linkSocial(p, reauthToken));
       showToast(`${GA[p]} 연결됐어요`);
     } catch (e: any) {
       if (isSocialCancel(e)) return;
-      if (e?.response?.data?.error_code === 'ERR_AUTH_014') setFail(p);
-      else showToast(e?.response?.data?.message ?? '연결하지 못했어요. 다시 시도해주세요.');
+      const body = e?.response?.data;
+      if (body?.error_code === 'ERR_AUTH_018') askVerify('connect', p, body?.message ?? '본인 확인이 필요해요. 다시 확인해주세요.');
+      else if (body?.error_code === 'ERR_AUTH_014') setFail(p);
+      else showToast(body?.message ?? '연결하지 못했어요. 다시 시도해주세요.');
     } finally {
       setBusy(null);
     }
   };
 
+  const cancelUnlink = () => {
+    unlinkToken.current = null;
+    setConfirm(null);
+  };
+
   const doUnlink = async () => {
     const p = confirm;
     if (!p) return;
+    const reauthToken = unlinkToken.current ?? undefined;
+    unlinkToken.current = null; // 한 번만 쓸 수 있는 토큰
     setConfirm(null);
     setBusy(p);
     try {
-      setLinks(await unlinkSocial(p));
+      applyLinks(await unlinkSocial(p, reauthToken));
       showToast(`${PROVIDER_NAME[p]} 연결을 해제했어요`);
     } catch (e: any) {
-      showToast(e?.response?.data?.message ?? '해제하지 못했어요.');
+      const body = e?.response?.data;
+      if (body?.error_code === 'ERR_AUTH_018') askVerify('unlink', p, body?.message ?? '본인 확인이 필요해요. 다시 확인해주세요.');
+      else showToast(body?.message ?? '해제하지 못했어요.');
     } finally {
       setBusy(null);
     }
@@ -90,8 +162,8 @@ export default function MyLoginLinksScreen() {
             <ActivityIndicator color="#0A6CE0" style={{ width: 56 }} />
           ) : row.linked ? (
             <Pressable
-              onPress={() => setConfirm(p)}
-              disabled={locked}
+              onPress={() => askVerify('unlink', p)}
+              disabled={locked || busy !== null}
               style={[styles.smallBtn, locked ? styles.btnLocked : styles.btnGhost]}
               accessibilityRole="button"
               accessibilityState={{ disabled: locked }}
@@ -100,7 +172,7 @@ export default function MyLoginLinksScreen() {
               <Text style={[styles.smallText, { color: locked ? '#A9B6C8' : '#3B4F70' }]}>해제</Text>
             </Pressable>
           ) : (
-            <Pressable onPress={() => connect(p)} disabled={busy !== null} accessibilityRole="button">
+            <Pressable onPress={() => askVerify('connect', p)} disabled={busy !== null} accessibilityRole="button">
               <LinearGradient colors={['#2492FF', '#0A6CE0']} style={[styles.smallBtn, { borderWidth: 0 }]}>
                 <Text style={[styles.smallText, { color: '#FFFFFF' }]}>연결</Text>
               </LinearGradient>
@@ -187,13 +259,28 @@ export default function MyLoginLinksScreen() {
       )}
 
       {/* 해제 확인 */}
-      <Modal transparent statusBarTranslucent visible={!!confirm} animationType="fade" onRequestClose={() => setConfirm(null)}>
+      {/* ★ v18.68 본인 확인 — [연결]·[해제] 전에 */}
+      {verify && (
+        <ReauthSheet
+          key={verify.n}
+          visible={verifyOpen}
+          subtitle={`${verify.act === 'unlink' ? `${PROVIDER_NAME[verify.p]} 연결을 해제하기 전에` : `${REUL[verify.p]} 연결하기 전에`} 본인인지 확인할게요.`}
+          info={reauthInfo}
+          purpose="login_link"
+          notice={verify.notice}
+          onClose={() => setVerifyOpen(false)}
+          onVerified={onVerified}
+          onForgotPassword={openForgotPassword}
+        />
+      )}
+
+      <Modal transparent statusBarTranslucent visible={!!confirm} animationType="fade" onRequestClose={cancelUnlink}>
         <View style={styles.dim}>
           <View style={styles.dialog} accessibilityRole="alert">
             <Text style={styles.dTitle}>{confirm ? PROVIDER_NAME[confirm] : ''} 연결을 해제할까요?</Text>
             <Text style={styles.dDesc}>해제하면 {confirm ? PROVIDER_NAME[confirm] : ''}로 로그인할 수 없어요.</Text>
             <View style={styles.dBtns}>
-              <Pressable onPress={() => setConfirm(null)} style={[styles.dBtn, { borderColor: '#DDEAF7', backgroundColor: '#FFFFFF' }]}>
+              <Pressable onPress={cancelUnlink} style={[styles.dBtn, { borderColor: '#DDEAF7', backgroundColor: '#FFFFFF' }]}>
                 <Text style={[styles.dBtnText, { color: '#3B4F70' }]}>취소</Text>
               </Pressable>
               <Pressable onPress={doUnlink} style={[styles.dBtn, { borderColor: '#FFD5D6', backgroundColor: '#FFF2F2' }]}>

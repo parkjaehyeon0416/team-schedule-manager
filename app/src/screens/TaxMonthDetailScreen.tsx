@@ -13,7 +13,8 @@ import { getSchedules } from '../api/schedulesApi';
 import AppHeader from '../components/AppHeader';
 import type { Schedule, TaxMonthRow } from '../types/api';
 import { formatMoney } from '../utils/format';
-import { TAX_NOTE } from '../utils/tax';
+import { TAX_NOTE, isMyIncomeSchedule } from '../utils/tax';
+import { useAuthStore } from '../store/authStore';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { scheduleLocationLabel } from '../utils/scheduleLocation';
 
@@ -25,6 +26,7 @@ export default function TaxMonthDetailScreen() {
   const route = useRoute<any>();
   const year: number = route.params.year;
   const month: number = route.params.month;
+  const myId = useAuthStore(s => s.user?.id);
   const [row, setRow] = useState<TaxMonthRow | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,10 +36,11 @@ export default function TaxMonthDetailScreen() {
     Promise.all([getTaxSummary(year), getSchedules(year, month)])
       .then(([summary, list]) => {
         setRow(summary.months.find(m => m.month === month) ?? null);
-        setSchedules(list.filter(s => Number(s.daily_wage ?? 0) > 0).sort((a, b) => b.date.localeCompare(a.date)));
+        // ★ v18.68 QA — 위 총 수입(서버 집계)과 같은 기준: 내가 투입된 일정만(IncomeListScreen과 같음)
+        setSchedules(list.filter(s => isMyIncomeSchedule(s, myId)).sort((a, b) => b.date.localeCompare(a.date)));
       })
       .finally(() => setLoading(false));
-  }, [year, month]);
+  }, [year, month, myId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 

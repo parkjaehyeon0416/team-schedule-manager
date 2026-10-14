@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [\App\Http\Controllers\LandingPageController::class, 'show']);
 Route::get('/terms', [\App\Http\Controllers\LandingPageController::class, 'terms']);
 Route::get('/privacy', [\App\Http\Controllers\LandingPageController::class, 'privacy']);
+// ★ v18.68 — 계정 삭제 안내(구글 플레이 등록정보의 "계정 삭제 URL"). 입력 폼 없는 안내문이라 열 때마다 세션 행이 쌓이지 않게 세션 미들웨어는 뺌
+//   (PreventRequestForgery도 같이 빼야 함 — GET에도 XSRF 쿠키를 붙이려고 세션을 찾다가 500)
+Route::get('/account-delete', [\App\Http\Controllers\LandingPageController::class, 'accountDelete'])
+    ->withoutMiddleware([\Illuminate\Session\Middleware\StartSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);
 
 // ★ v14 — 명함 공개 웹페이지. 앱 설치 없이 누구나 볼 수 있어야 하므로(설계 원칙 2-3절)
 //   /api 프리픽스가 붙는 api.php가 아니라 이 web.php에 등록한다.
@@ -15,6 +19,12 @@ Route::get('/privacy', [\App\Http\Controllers\LandingPageController::class, 'pri
 //   드러나지 않았던 환경 설정 누락. session:table로 마이그레이션 추가해서 해결함
 //   (php artisan session:table && php artisan migrate).
 Route::get('/c/{code}', [BusinessCardPageController::class, 'show']);
+// ★ v18.68 — 공개 명함의 현장 사진(원본 대신 EXIF 없는 줄인 JPEG). 지금 그 명함에 보이는 사진만 열림.
+//   사진마다 세션 행이 생기지 않게 세션 미들웨어는 뺌. IP당 분당 120장(한 페이지 최대 6장)
+Route::get('/c/{code}/p/{photo}', [BusinessCardPageController::class, 'photo'])->whereNumber('photo')
+    ->middleware('throttle:120,1,card-photo')
+    // (PreventRequestForgery도 빼야 함 — GET에도 XSRF 쿠키를 붙이려고 세션을 찾다가 500)
+    ->withoutMiddleware([\Illuminate\Session\Middleware\StartSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);
 
 // ★ v18.43 — 팀 초대 링크(카톡·문자로 공유) + 최신 APK 고정 주소
 // ★ v18.67 IP당 분당 10번 — API(/teams/preview·join, v18.62)의 초대코드 맞히기 방지를 이 웹페이지로 우회하던 것 막음

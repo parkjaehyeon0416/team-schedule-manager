@@ -30,6 +30,8 @@ class ErrorCode
     public const AUTH_LOGIN_LINK_LAST       = 'ERR_AUTH_016'; // v18.51 — 마지막 남은 로그인 방법은 해제 불가
     public const AUTH_CODE_LOCKED           = 'ERR_AUTH_017'; // v18.63 — 인증번호 5번 틀려서 5분간 요청·확인 막힘
     public const AUTH_REAUTH_REQUIRED       = 'ERR_AUTH_018'; // v18.63 — 탈퇴 등 중요한 작업 전 본인 확인 필요(인증번호·소셜 재로그인)
+    public const AUTH_PHONE_TAKEN           = 'ERR_AUTH_019'; // ★ v18.68 — 회원가입 휴대폰 인증: 이미 가입된 휴대폰 번호
+    public const AUTH_PHONE_UNVERIFIED      = 'ERR_AUTH_020'; // ★ v18.68 — 회원가입: 휴대폰 인증을 안 했거나 만료됨(phone_token 없음·만료·번호 다름)
 
     // ═══════════════════════════════════════════════
     // 입력 검증 (v6)
@@ -56,6 +58,9 @@ class ErrorCode
     public const ATTEND_ALREADY_OUT      = 'ERR_ATTEND_003';
     public const TEAM_NOT_FOUND          = 'ERR_TEAM_001';
     public const TEAM_ALREADY_JOINED     = 'ERR_TEAM_002';
+    // ★ v18.68 팀원 내보내기 (ERR_TEAM_003은 옛 정의서에 "팀 관리 권한 없음"으로 잡혀 있어 건너뜀 — 권한 없음은 ERR_AUTH_002)
+    public const TEAM_NOT_MEMBER         = 'ERR_TEAM_004'; // 내보내려는 사람이 지금 이 팀 팀원이 아님(이미 나감 등)
+    public const TEAM_KICK_NOT_ALLOWED   = 'ERR_TEAM_005'; // 본인이나 팀장은 내보낼 수 없음
 
     // ═══════════════════════════════════════════════
     // ★ v10.1 공수·급여 자동 계산 ★

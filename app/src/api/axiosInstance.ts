@@ -68,13 +68,17 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   response => response,
   async error => {
-    if (error.response?.status === 401) {
+    const data = error.response?.data;
+    // ★ v18.68 — 로그인이 끝난 401(ERR_AUTH_003 토큰 없음·만료, 또는 error_code 없는 401)만 로그아웃.
+    //   다른 401(예: 로그인 연결 때 소셜 토큰 확인 실패 ERR_AUTH_011)은 로그인은 그대로라 화면이 메시지만 보여 주고
+    //   다시 시도하게 둠(예전엔 저장된 토큰까지 지워져 본인 확인 표가 남아 있어도 로그아웃됐음).
+    const code = data && typeof data === 'object' ? data.error_code : undefined;
+    if (error.response?.status === 401 && (!code || code === 'ERR_AUTH_003')) {
       await AsyncStorage.removeItem('token');
       // 토큰을 실어 보낸 요청이 401이면 로그인이 끝난 것 → 로그인 화면으로(로그인 실패 401은 제외)
       if (error.config?.headers?.Authorization && onUnauthorized) onUnauthorized();
     }
     // ★ v18.48 — 요금제 한도(무료 견적 월 3건 등)에 걸리면 잠금 안내 시트(PLAN_LOCKED)를 띄움
-    const data = error.response?.data;
     if (error.response?.status === 403 && data?.error_code === 'ERR_PLAN_001') {
       usePlanLockStore.getState().show({ ...(data.plan ?? {}), message: data.message });
     }

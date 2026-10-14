@@ -10,24 +10,19 @@ use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class TeamController extends Controller
 {
     /**
      * ─── ① 팀 목록 조회 ───
-     *   superadmin: 전체 팀 목록
-     *   manager/member: 본인이 소속된 모든 팀(★ v18.21 — 여러 팀 동시 소속 지원)
+     *   본인이 소속된 모든 팀(★ v18.21 — 여러 팀 동시 소속 지원)
      *   각 팀에 active(지금 활성 팀인지) 플래그를 같이 내려줌.
+     *   ★ v18.68 보안 — 예전엔 role_id=1(superadmin)이면 전체 팀 목록을 줬음. 운영자는 앱 API가 막혀 있고
+     *   (BlockOperatorFromApp), 일반 계정의 role_id가 1이 돼도 남의 팀이 보이면 안 되므로 그 우회를 없앰.
      */
     public function index(Request $request)
     {
         $user = $request->user();
-
-        if ($user->role_id === 1) {
-            $teams = Team::orderByDesc('id')->get();
-            return ApiResponse::success($teams, '전체 팀 목록 조회 성공');
-        }
 
         $teams = $user->teams()->orderByDesc('teams.id')->get();
         $teams->each(function ($team) use ($user) {
@@ -90,11 +85,11 @@ class TeamController extends Controller
             'created_by'    => $user->id,
         ]);
 
-        // superadmin은 팀 안에서도 그대로, 그 외는 팀 생성과 동시에 그 팀의 manager
-        $roleInTeam = $user->role_id === 1 ? 1 : 2;
-
+        // 팀 생성과 동시에 그 팀의 manager
+        //   ★ v18.68 — 예전엔 superadmin(role_id=1)이면 팀 안 역할도 1로 넣었음 → 활성 팀 전환 때 전역 role_id=1이
+        //   다시 생겨 우회 권한의 씨앗이 됐음. 누구든 팀장(2)으로.
         $team->members()->attach($user->id, [
-            'role_id'    => $roleInTeam,
+            'role_id'    => 2,
             'joined_at'  => now(),
             'created_at' => now(),
             'updated_at' => now(),
@@ -118,8 +113,8 @@ class TeamController extends Controller
     {
         $user = $request->user();
 
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->teamIds()))
-            ->find($id);
+        // ★ v18.68 보안 — role_id=1 우회 제거: 지금 소속된 팀만(나갔거나 내보내진 팀은 404)
+        $team = Team::whereIn('id', $user->teamIds())->find($id);
 
         if (!$team) {
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
@@ -241,6 +236,10 @@ class TeamController extends Controller
         if (!$team) {
             return ApiResponse::error('초대 코드가 유효하지 않거나 만료되었습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
+        // ★ v18.68 — 내보내진 사람이 그 전 코드를 넣으면 참여 화면에서 바로 안내(가입 단계에서도 같은 검사)
+        if ($blocked = $this->rejoinBlocked($team, $request->user())) {
+            return $blocked;
+        }
 
         $leader = DB::table('team_members')
             ->join('users', 'users.id', '=', 'team_members.user_id')
@@ -340,17 +339,9 @@ class TeamController extends Controller
             ->whereNull('deleted_at')
             ->first();
 
-        if (!$membership) {
+        // ★ v18.68 — 팀장이 내보내기(kickMember)와 같은 처리(removeMembership)로 통일
+        if (!$membership || !$this->removeMembership($user, (int) $teamId)) {
             return ApiResponse::error('소속된 팀이 없습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
-        }
-
-        DB::table('team_members')
-            ->where('id', $membership->id)
-            ->update(['deleted_at' => now()]);
-
-        // 나간 팀이 활성 팀이었으면 남은 팀 중 하나로 전환(없으면 개인으로)
-        if ($user->team_id === (int) $teamId) {
-            $this->switchActiveTeam($user, $this->pickFallbackTeamId($user, (int) $teamId));
         }
 
         return ApiResponse::success($user->fresh(), '팀에서 탈퇴했습니다. 그동안의 일정·현장 기록은 "팀" 필터에서 계속 조회할 수 있습니다.');
@@ -376,14 +367,18 @@ class TeamController extends Controller
             return ApiResponse::error('초대 코드가 유효하지 않거나 만료되었습니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
-        $alreadyMember = DB::table('team_members')
+        // ★ v18.68 — 나간(내보내진) 기록까지 같이 찾음: team_members는 (team_id, user_id)가 고유라서
+        //   예전엔 나갔다가 다시 들어오면 새 행을 넣다가 500이었음 → 아래에서 옛 행을 되살림
+        $previous = DB::table('team_members')
             ->where('team_id', $team->id)
             ->where('user_id', $user->id)
-            ->whereNull('deleted_at')
-            ->exists();
+            ->first();
 
-        if ($alreadyMember) {
+        if ($previous && $previous->deleted_at === null) {
             return ApiResponse::error('이미 가입된 팀입니다.', ErrorCode::TEAM_ALREADY_JOINED, 409);
+        }
+        if ($blocked = $this->rejoinBlocked($team, $user, $previous)) {
+            return $blocked;
         }
 
         // ★ v18.47 — 무료 팀은 3명까지(팀장 포함). 팀장이 팀 요금제면 무제한
@@ -394,14 +389,28 @@ class TeamController extends Controller
         }
 
         // 초대코드로 들어온 사람은 팀장이 아니라 팀원
-        DB::table('team_members')->insert([
-            'team_id'    => $team->id,
-            'user_id'    => $user->id,
-            'role_id'    => 3,
-            'joined_at'  => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        if ($previous) {
+            // ★ v18.68 — 다시 들어오면 처음 들어온 것처럼: 팀원부터, 부팀장·공지 읽음 표시 초기화
+            DB::table('team_members')->where('id', $previous->id)->update([
+                'deleted_at'         => null,
+                'role_id'            => 3,
+                'is_sub_leader'      => false,
+                'notices_read_at'    => null,
+                'kicked_at'          => null,
+                'kicked_invite_code' => null,
+                'joined_at'          => now(),
+                'updated_at'         => now(),
+            ]);
+        } else {
+            DB::table('team_members')->insert([
+                'team_id'    => $team->id,
+                'user_id'    => $user->id,
+                'role_id'    => 3,
+                'joined_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         // 새로 가입한 팀을 활성 팀으로 전환 — 남의 팀에 들어가면서 manager 등급을
         // 유지한 채면 권한 상승이 되므로 반드시 member로 강등해야 함
@@ -479,7 +488,8 @@ class TeamController extends Controller
             return ApiResponse::success([], '소속된 팀이 없습니다.');
         }
 
-        if (!in_array((int) $teamId, $user->teamIds(), true) && $user->role_id !== 1) {
+        // ★ v18.68 보안 — role_id=1 우회 제거(지금 소속된 팀만)
+        if (!in_array((int) $teamId, array_map('intval', $user->teamIds()), true)) {
             return ApiResponse::error('소속되지 않은 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
 
@@ -579,10 +589,181 @@ class TeamController extends Controller
             $data['enabled'] ? '부팀장으로 지정했어요.' : '부팀장을 해제했어요.');
     }
 
-    /** ★ v18.44 — 내가 팀장인 팀만 찾음(superadmin은 전체). 팀원이거나 남의 팀이면 null */
+    /**
+     * ─── 팀원 내보내기 ───  ★ v18.68 (TEAM_DETAIL_KICK)
+     *   DELETE /teams/{id}/members/{userId}
+     *   그 팀의 팀장만(팀별 역할 isLeaderOf — 활성 팀·전역 role_id와 무관). 본인·팀장은 못 내보냄.
+     *   처리는 스스로 나가기(leave)와 같음(removeMembership): 소속에 나간 때 표시 + 부팀장 해제 + 활성 팀 전환.
+     *   지난 일정·정산 기록은 그대로 남고(정산표엔 "나간 팀원"), 다시 오려면 내보낸 뒤에 만든 새 초대 코드로
+     *   가입해야 함(그 전 코드는 이 사람에게만 막힘 — rejoinBlocked).
+     *   앞으로의 팀 일정에서는 빠짐(releaseFutureSchedules — 배정·만든 사람). 소속 해제와 한 트랜잭션.
+     *   내보내진 사람에게는 앱 알림(+푸시)을 보냄 — 이미 못 들어가는 팀이라 눌러도 팀 화면으로 안 보냄(link 없음).
+     */
+    public function kickMember(Request $request, string $id, string $userId)
+    {
+        $user = $request->user();
+
+        // 지금 소속된 팀이 아니면(남의 팀·해체된 팀·나간 팀) 팀이 있는지도 알려주지 않음
+        $team = Team::whereIn('id', $user->teamIds())->find($id);
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀이에요.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+        if (!$user->isLeaderOf((int) $team->id)) {
+            return ApiResponse::error('팀장만 팀원을 내보낼 수 있어요.', ErrorCode::AUTH_NO_PERMISSION, 403);
+        }
+        if ((int) $userId === (int) $user->id) {
+            return ApiResponse::error('본인은 내보낼 수 없어요. 팀을 나가려면 팀 나가기를 이용해 주세요.', ErrorCode::TEAM_KICK_NOT_ALLOWED, 422);
+        }
+
+        $membership = ctype_digit($userId) ? DB::table('team_members')
+            ->where('team_id', $team->id)->where('user_id', (int) $userId)->whereNull('deleted_at')->first() : null;
+        $target = $membership ? User::find($membership->user_id) : null;
+        if (!$membership || !$target) {
+            return ApiResponse::error('이 팀의 팀원이 아니에요. 이미 나갔을 수 있어요.', ErrorCode::TEAM_NOT_MEMBER, 422);
+        }
+        if ((int) $membership->role_id <= 2) {
+            return ApiResponse::error('팀장은 내보낼 수 없어요.', ErrorCode::TEAM_KICK_NOT_ALLOWED, 422);
+        }
+
+        // 동시에 두 번 눌렀거나 그 사이 스스로 나갔으면 이미 빠진 것 → 팀원이 아님
+        //   ★ v18.68 — 소속 해제 + 앞으로의 일정에서 빼기는 함께(중간에 실패하면 둘 다 안 된 것으로)
+        $kicked = DB::transaction(function () use ($target, $team, $user) {
+            if (!$this->removeMembership($target, (int) $team->id, kicked: true)) {
+                return false;
+            }
+            $this->releaseFutureSchedules($team, $target, $user);
+            return true;
+        });
+        if (!$kicked) {
+            return ApiResponse::error('이 팀의 팀원이 아니에요. 이미 나갔을 수 있어요.', ErrorCode::TEAM_NOT_MEMBER, 422);
+        }
+
+        // 알림은 덤 — 실패해도 내보내기는 그대로 성공
+        try {
+            \App\Models\Notification::create([
+                'user_id'   => $target->id,
+                'category'  => 'team',
+                'title'     => '팀 활동',
+                'body'      => "'{$team->name}' 팀에서 나가게 됐어요",
+                'link_type' => null,
+                'link_id'   => null,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[Team] 내보내기 알림 실패', ['team_id' => $team->id, 'user_id' => $target->id, 'error' => $e->getMessage()]);
+        }
+
+        return ApiResponse::success(null, "{$target->name}님을 팀에서 내보냈어요");
+    }
+
+    /**
+     * ★ v18.68 — 팀에서 빠지는 공통 처리(스스로 나가기 leave · 팀장이 내보내기 kickMember)
+     *   - 소속 기록은 지우지 않고 deleted_at만 찍음(= 나간 때. 나간 뒤 올라온 사진·보고서를 가리는 기준 Site::leftTeamAt,
+     *     다시 들어오면 join이 이 행을 되살림)
+     *   - 부팀장 표시도 끔
+     *   - 내보낸 거면 kicked_at + kicked_invite_code(그 순간의 팀 초대 코드 — 이 코드로는 다시 못 들어옴, rejoinBlocked)
+     *   - 그 팀이 활성 팀이었으면 남은 팀 중 하나로 전환(없으면 개인으로)
+     *   일정·현장·정산의 team_id는 손대지 않음 — 지난 기록은 "팀" 필터·정산표에 그대로 남음.
+     *   이미 빠진 뒤였으면(동시에 두 번 요청 등) false.
+     */
+    private function removeMembership(User $member, int $teamId, bool $kicked = false): bool
+    {
+        $removed = DB::table('team_members')
+            ->where('team_id', $teamId)
+            ->where('user_id', $member->id)
+            ->whereNull('deleted_at')
+            ->update([
+                'deleted_at'         => now(),
+                'is_sub_leader'      => false,
+                'kicked_at'          => $kicked ? now() : null,
+                // ★ v18.68 — 같은 UPDATE 안에서 그 순간의 코드를 읽음(사이에 새 코드 만들기가 끼어도 어긋나지 않게)
+                'kicked_invite_code' => $kicked ? DB::raw('(select invite_code from teams where id = ' . (int) $teamId . ')') : null,
+                'updated_at'         => now(),
+            ]);
+
+        if (!$removed) {
+            return false;
+        }
+
+        if ((int) $member->team_id === $teamId) {
+            $this->switchActiveTeam($member, $this->pickFallbackTeamId($member, $teamId));
+        }
+
+        return true;
+    }
+
+    /**
+     * ★ v18.68 — 내보낸 사람을 그 팀의 "앞으로의" 일정에서 뺌(지난 일정·정산은 그대로). kickMember 트랜잭션 안에서 호출.
+     *   예전엔 소속만 지워서, 앞으로의 팀 일정에 계속 배정·작성자로 남아 그 일정(팀장이 나중에 바꾼 주소·메모까지)을
+     *   계속 보고(Schedule::forUser가 배정·created_by로도 보여 줌), 일정 알림 푸시(현장 주소)를 받고,
+     *   그 일당이 내 수입(월별 집계)과 팀 정산표("나간 팀원")에 잡혔음.
+     *   - 투입 인원: 내일부터의 일정에서 뺌 + 빠진 달 공수 집계 재계산(ScheduleController::update v18.20과 같은 방식).
+     *     오늘 일정은 남김 — 이미 일했을 수 있는데 한 번 빼면 팀원이 아니라 다시 넣을 수 없음(checkRefs).
+     *     안 왔으면 팀장이 일정 수정에서 빼면 됨.
+     *   - 만든 사람(created_by, 부팀장 때 등록한 일정): 오늘부터의 일정은 내보낸 팀장으로 넘김. created_by로도
+     *     보기 범위·배정 없는 일정의 알림 대상(SendScheduleReminders)·현장 자동 생성 주인(ensureSite)이 정해지기 때문.
+     *     (그래서 이 일정들의 홈 "팀 활동" 등록자 표시는 팀장이 됨)
+     */
+    private function releaseFutureSchedules(Team $team, User $member, User $leader): void
+    {
+        $today = now()->toDateString();
+
+        $assigned = DB::table('schedules')
+            ->join('schedule_users', 'schedule_users.schedule_id', '=', 'schedules.id')
+            ->where('schedules.team_id', $team->id)
+            ->where('schedules.date', '>', $today)
+            ->where('schedule_users.user_id', $member->id)
+            ->whereNull('schedule_users.deleted_at')
+            ->get(['schedules.id', 'schedules.date']);
+
+        if ($assigned->isNotEmpty()) {
+            $ids = $assigned->pluck('id')->all();
+            DB::table('schedule_users')
+                ->whereIn('schedule_id', $ids)
+                ->where('user_id', $member->id)
+                ->whereNull('deleted_at')
+                ->delete();
+            // 투입 인원이 바뀐 일정 표시만(남은 사람 공수는 그대로라 Observer 재계산은 필요 없음)
+            DB::table('schedules')->whereIn('id', $ids)->update(['updated_at' => now()]);
+
+            $months = $assigned->map(fn($s) => substr((string) $s->date, 0, 7))->unique();
+            foreach ($months as $yearMonth) {
+                \App\Services\MonthlySummaryService::recalculate((int) $member->id, $yearMonth);
+            }
+        }
+
+        DB::table('schedules')
+            ->where('team_id', $team->id)
+            ->where('date', '>=', $today)
+            ->where('created_by', $member->id)
+            ->update(['created_by' => $leader->id]);
+    }
+
+    /**
+     * ★ v18.68 — 팀장이 내보낸 사람이 "내보낼 때 쓰이던" 초대 코드로 다시 들어오려 하면 막음
+     *   (예전 단톡방 링크로 바로 돌아오면 내보내기가 의미 없음). 그 뒤에 팀장·부팀장이 새 코드를 만들었거나
+     *   만료돼 새로 발급된 코드면 들어올 수 있음. 스스로 나간 사람(kicked_at 없음)은 예전처럼 같은 코드로 다시 들어옴.
+     *   코드 자체를 비교함(kicked_invite_code) — 예전엔 만든 때(만료일 − 7일)와 내보낸 때를 초 단위로 비교해서
+     *   내보낸 그 초에 만든 새 코드도 막혔음.
+     *   막을 땐 403 응답, 아니면 null. $previous: 이미 조회한 이 팀 소속 행(없으면 여기서 찾음)
+     */
+    private function rejoinBlocked(Team $team, User $user, ?object $previous = null)
+    {
+        $previous ??= DB::table('team_members')->where('team_id', $team->id)->where('user_id', $user->id)->first();
+        if (!$previous || $previous->deleted_at === null || !$previous->kicked_at
+            || $previous->kicked_invite_code === null || $previous->kicked_invite_code !== $team->invite_code) {
+            return null;
+        }
+        return ApiResponse::error('이 팀에서 내보내진 뒤라 예전 초대 코드로는 다시 들어갈 수 없어요. 팀장에게 새 초대 링크를 받아 주세요.',
+            ErrorCode::AUTH_NO_PERMISSION, 403);
+    }
+
+    /**
+     * ★ v18.44 — 내가 팀장인 팀만 찾음. 팀원이거나 남의 팀이면 null
+     *   ★ v18.68 보안 — 예전엔 superadmin(role_id=1)이면 아무 팀이나 통과 → 우회 제거(운영자는 앱 API 자체가 막힘)
+     */
     private function ledTeam(User $user, string $id): ?Team
     {
-        return Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->ledTeamIds()))->find($id);
+        return Team::whereIn('id', $user->ledTeamIds())->find($id);
     }
 
     /**
@@ -604,11 +785,12 @@ class TeamController extends Controller
      * ─── 초대 코드 조회 ───  ★ v18.43 (TEAM_INVITE)
      *   팀원이면 누구나 초대 링크를 받을 수 있음. 만료됐으면 새 코드를 만들어 7일 연장
      *   (예전에 보낸 링크는 더 이상 동작하지 않음).
+     *   ★ v18.68 — can_regenerate(팀장·부팀장만 "새 코드 만들기" 버튼), role_id=1 우회 제거(지금 소속된 팀만)
      */
     public function invite(Request $request, string $id)
     {
         $user = $request->user();
-        $team = Team::when($user->role_id !== 1, fn($q) => $q->whereIn('id', $user->teamIds()))->find($id);
+        $team = Team::whereIn('id', $user->teamIds())->find($id);
         if (!$team) {
             return ApiResponse::error('존재하지 않는 팀입니다.', ErrorCode::TEAM_NOT_FOUND, 404);
         }
@@ -620,21 +802,65 @@ class TeamController extends Controller
             ]);
         }
 
-        return ApiResponse::success([
-            'team_id'      => $team->id,
-            'team_name'    => $team->name,
-            'member_count' => $team->members()->count(),
-            'invite_code'  => $team->invite_code,
-            'expires_at'   => $team->invite_expires_at->toIso8601String(),
-            'invite_url'   => url('/join/' . $team->invite_code),
-        ], '초대 코드 조회 성공');
+        return ApiResponse::success($this->invitePayload($team, $user), '초대 코드 조회 성공');
     }
+
+    /**
+     * ─── 초대 코드 새로 만들기 ───  ★ v18.68 (TEAM_INVITE_NEW_CODE)
+     *   POST /teams/{id}/invite/regenerate — 코드·링크가 엉뚱한 사람에게 갔을 때. 팀장·부팀장만.
+     *   새 6자리 코드(7일 유효)로 바꾸면 옛 코드는 그 즉시 /teams/join·/teams/preview·웹 /join/{코드} 전부에서 안 됨
+     *   (셋 다 Team::findByValidInvite로 "지금 코드"만 찾음). 응답은 GET invite와 같은 모양.
+     */
+    public function regenerateInvite(Request $request, string $id)
+    {
+        $user = $request->user();
+        $team = Team::whereIn('id', $user->teamIds())->find($id);
+        if (!$team) {
+            return ApiResponse::error('존재하지 않는 팀이에요.', ErrorCode::TEAM_NOT_FOUND, 404);
+        }
+        if (!$user->canAssignIn((int) $team->id)) {
+            return ApiResponse::error('팀장이나 부팀장만 초대 코드를 새로 만들 수 있어요.', ErrorCode::AUTH_NO_PERMISSION, 403);
+        }
+
+        $team->update([
+            'invite_code'       => $this->generateInviteCode(),
+            'invite_expires_at' => now()->addDays(Team::INVITE_DAYS),
+        ]);
+
+        return ApiResponse::success($this->invitePayload($team, $user), '새 초대 코드를 만들었어요.');
+    }
+
+    /** ★ v18.68 — 초대 코드 응답(GET invite · 새로 만들기 공용) */
+    private function invitePayload(Team $team, User $user): array
+    {
+        return [
+            'team_id'        => $team->id,
+            'team_name'      => $team->name,
+            'member_count'   => $team->members()->count(),
+            'invite_code'    => $team->invite_code,
+            'expires_at'     => $team->invite_expires_at->toIso8601String(),
+            'invite_url'     => url('/join/' . $team->invite_code),
+            'can_regenerate' => $user->canAssignIn((int) $team->id),
+        ];
+    }
+
+    /**
+     * ★ v18.68 QA — 초대 코드에 쓰는 글자: 헷갈리는 0/O, 1/I/L을 뺀 대문자 + 숫자(디자인 예시 K8M2TD처럼)
+     *   말로 불러 주거나 손으로 옮겨 적을 때 틀리지 않게. 31글자 6자리 ≈ 8.9억 가지.
+     *   (예전 코드는 Str::random을 대문자로 바꿔 0/O, 1/I가 섞였음 — 이미 만든 코드는 만료·새로 만들기 전까지 그대로 동작)
+     */
+    private const INVITE_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
     private function generateInviteCode(): string
     {
+        // ★ v18.68 — 해체된(soft delete) 팀의 코드도 DB 고유 키에 걸리므로 같이 피함(예전엔 겹치면 500)
+        $max = strlen(self::INVITE_CODE_CHARS) - 1;
         do {
-            $code = strtoupper(Str::random(6));
-        } while (Team::where('invite_code', $code)->exists());
+            $code = '';
+            for ($i = 0; $i < 6; $i++) {
+                $code .= self::INVITE_CODE_CHARS[random_int(0, $max)];
+            }
+        } while (Team::withTrashed()->where('invite_code', $code)->exists());
 
         return $code;
     }

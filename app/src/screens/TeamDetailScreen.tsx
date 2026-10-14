@@ -2,9 +2,10 @@
  * 팀 상세 화면 — DESIGN-CANVAS 기준, TEAM_DETAIL.dc.html (★ v18.48 재구성)
  * 메뉴 타일(팀 공지 · 정산표[팀장] · 현장 앨범 · 근태 현황[팀장·부팀장]) + 탭(팀 정보 / 팀원 / 팀 일정 / 활동).
  * 팀원을 누르면 연락하기 시트, 팀장은 거기서 부팀장 지정/해제. 팀 나가기는 오른쪽 위 ⋯ 메뉴.
+ * ★ v18.68 — 팀장은 시트에서 "팀에서 내보내기"(TEAM_DETAIL_MEMBER_MENU / _KICK / _KICKED).
  */
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, ScrollView, Image, Linking } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, ScrollView, Image, Linking, Modal, Platform } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -12,7 +13,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import AppHeader from '../components/AppHeader';
-import { getMyTeams, getTeamMembers, leaveTeam, setSubLeader, getTeamActivities } from '../api/teamApi';
+import { getMyTeams, getTeamMembers, leaveTeam, setSubLeader, getTeamActivities, kickTeamMember } from '../api/teamApi';
 import type { TeamActivity } from '../api/teamApi';
 import { getSchedules } from '../api/schedulesApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
@@ -21,12 +22,15 @@ import type { Team, TeamMember, Schedule } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
 import { scheduleLocationLabel } from '../utils/scheduleLocation';
-import { Avatar, RoleTag, SegTabs, BottomSheet, ROLE_COLORS } from '../components/TeamUi';
+import { Avatar, RoleTag, SegTabs, BottomSheet, ROLE_COLORS, stableNameId } from '../components/TeamUi';
 import { isPlanLocked } from '../utils/planLock';
+import { formatPhoneInput } from '../utils/phone';
 
 dayjs.extend(relativeTime);
 
 const roleOf = (m: TeamMember) => (m.role_id <= 2 ? '팀장' : m.is_sub_leader ? '부팀장' : '팀원');
+// ★ v18.68 QA — 번호는 숫자만 저장돼 있어서(가입·번호 변경 모두) 디자인처럼 010-1234-5678로 보여줌
+const phoneText = (p?: string | null) => (p ? formatPhoneInput(p) : '연락처 없음');
 
 export default function TeamDetailScreen() {
   const navigation = useNavigation<any>();
@@ -43,10 +47,21 @@ export default function TeamDetailScreen() {
   const [pick, setPick] = useState<TeamMember | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [kick, setKick] = useState<TeamMember | null>(null); // 내보내기 확인 대상(닫히는 동안에도 이름 유지)
+  const [kickOpen, setKickOpen] = useState(false);
+  const [kicking, setKicking] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    if (kickTimer.current) clearTimeout(kickTimer.current);
+  }, []);
 
   const showToast = (t: string) => {
     setToast(t);
-    setTimeout(() => setToast(''), 2200);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 2200);
   };
 
   const load = useCallback(async () => {
@@ -104,6 +119,37 @@ export default function TeamDetailScreen() {
       showToast(`${target.name}님이 ${next ? '부팀장' : '팀원'}(으)로 바뀌었어요`);
     } catch (e: any) {
       if (!isPlanLocked(e)) Alert.alert('변경 실패', e?.response?.data?.message || '다시 시도해주세요.');
+    }
+  };
+
+  // ★ v18.68 — 팀원 내보내기: 시트를 닫고 확인 대화상자를 띄움
+  const askKick = () => {
+    if (!pick) return;
+    const target = pick;
+    setPick(null);
+    // 시트(Modal)가 닫히는 도중 다른 Modal을 바로 띄우면 iOS에서 안 뜰 수 있어 닫힘 애니메이션 뒤에 띄움
+    // (iOS 슬라이드 닫힘은 300~500ms라 여유 있게 500ms, Android는 Dialog 방식이라 320ms)
+    if (kickTimer.current) clearTimeout(kickTimer.current);
+    kickTimer.current = setTimeout(() => { setKick(target); setKickOpen(true); }, Platform.OS === 'ios' ? 500 : 320);
+  };
+
+  const doKick = async () => {
+    if (!kick || !kickOpen || !team || kicking) return;
+    const target = kick;
+    setKicking(true);
+    try {
+      const msg = await kickTeamMember(team.id, target.id);
+      setKickOpen(false);
+      setMembers(ms => ms.filter(m => m.id !== target.id));
+      showToast(msg || `${target.name}님을 팀에서 내보냈어요`);
+      load(); // 팀원 수 · 팀 일정 수 다시 맞춤
+    } catch (e: any) {
+      setKickOpen(false);
+      // 403(권한 없음) · 404(팀 없음) · 422(이미 팀원이 아님 / 팀장) — 서버 메시지 그대로
+      if (!isPlanLocked(e)) Alert.alert('내보내기 실패', e?.response?.data?.message || '다시 시도해주세요.');
+      load(); // 이미 나간 팀원 등 화면과 서버가 어긋났을 수 있어 다시 불러옴
+    } finally {
+      setKicking(false);
     }
   };
 
@@ -227,7 +273,7 @@ export default function TeamDetailScreen() {
                     <Avatar id={m.id} name={m.name} color={m.avatar_color} image={m.avatar_image_path} />
                     <View style={styles.rowTextBox}>
                       <Text style={styles.memberName}>{m.name} <Text style={styles.meTag}>{mine ? '(나)' : ''}</Text></Text>
-                      <Text style={styles.memberSub}>{m.phone || '연락처 없음'}</Text>
+                      <Text style={styles.memberSub}>{phoneText(m.phone)}</Text>
                     </View>
                     <RoleTag role={roleOf(m)} />
                     <Icon name="dots-horizontal" size={18} color={colors.muted} />
@@ -269,7 +315,8 @@ export default function TeamDetailScreen() {
             <View style={[styles.card, { paddingVertical: 2 }]}>
               {activities.map((a, i) => (
                 <View key={`${a.type}-${a.created_at}-${i}`} style={[styles.scheduleRow, i !== activities.length - 1 && styles.rowDivider]}>
-                  <Avatar id={a.actor_name.length + i} name={a.actor_name} color={a.actor_color} image={a.actor_avatar} size={32} />
+                  {/* ★ v18.68 — 사용자 id로 색을 골라 같은 사람은 늘 같은 색(팀원 탭과 동일). 예전엔 이름 길이+줄 번호라 줄마다 달랐음 */}
+                  <Avatar id={a.actor_id ?? stableNameId(a.actor_name)} name={a.actor_name} color={a.actor_color} image={a.actor_avatar} size={32} />
                   <View style={styles.rowTextBox}>
                     <Text style={styles.memberName}>{activityText(a)}</Text>
                     <Text style={styles.memberSub}>{dayjs(a.created_at).locale('ko').fromNow()}</Text>
@@ -309,32 +356,53 @@ export default function TeamDetailScreen() {
               <Avatar id={pick.id} name={pick.name} color={pick.avatar_color} image={pick.avatar_image_path} size={48} />
               <View style={{ gap: 2 }}>
                 <Text style={styles.sheetName}>{pick.name}</Text>
-                <Text style={styles.memberSub}>{roleOf(pick)} · {pick.phone || '연락처 없음'}</Text>
+                <Text style={styles.memberSub}>{roleOf(pick)} · {phoneText(pick.phone)}</Text>
               </View>
             </View>
             <View>
-              {!!pick.phone && (
-                <Pressable style={[styles.sheetRow, styles.rowDivider]} onPress={() => { setPick(null); Linking.openURL(`tel:${pick.phone}`); }}>
-                  <View style={styles.sheetIcon}><Image source={ICONS.bell} style={{ width: 28, height: 28 }} resizeMode="contain" /></View>
-                  <Text style={[styles.memberName, { flex: 1 }]}>전화하기</Text>
-                  <Icon name="chevron-right" size={16} color={colors.muted} />
-                </Pressable>
-              )}
-              {!!pick.kakao_talk_id && (
-                <Pressable style={[styles.sheetRow, styles.rowDivider]}
-                  onPress={() => { Clipboard.setString(pick.kakao_talk_id!); setPick(null); showToast('카카오톡 ID를 복사했어요'); }}>
-                  <View style={styles.sheetIcon}><Image source={ICONS.megaphone} style={{ width: 28, height: 28 }} resizeMode="contain" /></View>
-                  <Text style={[styles.memberName, { flex: 1 }]}>카카오톡 ID 복사</Text>
-                </Pressable>
-              )}
+              {/* ★ v18.68 QA — 디자인처럼 전화하기 · 카카오톡 ID 복사 줄은 늘 보임(예전엔 정보가 없으면 줄째 숨겨
+                  카카오톡 ID를 등록 안 한 팀원은 메뉴가 빠져 보였음). 없으면 눌리지 않고 '등록된 …가 없어요'.
+                  전화하기 아이콘이 종 그림인 건 디자인 에셋 그대로(TEAM_DETAIL_MEMBER_MENU의 이미지 = icons/bell.png) */}
+              <Pressable style={[styles.sheetRow, styles.rowDivider]} disabled={!pick.phone}
+                accessibilityRole="button" accessibilityState={{ disabled: !pick.phone }}
+                onPress={() => { setPick(null); Linking.openURL(`tel:${pick.phone}`); }}>
+                <View style={styles.sheetIcon}><Image source={ICONS.bell} style={{ width: 28, height: 28 }} resizeMode="contain" /></View>
+                <View style={styles.sheetTextBox}>
+                  <Text style={[styles.memberName, !pick.phone && styles.rowOffText]}>전화하기</Text>
+                  {!pick.phone && <Text style={styles.memberSub}>등록된 번호가 없어요</Text>}
+                </View>
+                {!!pick.phone && <Icon name="chevron-right" size={16} color={colors.muted} />}
+              </Pressable>
+              <Pressable style={[styles.sheetRow, styles.rowDivider]} disabled={!pick.kakao_talk_id}
+                accessibilityRole="button" accessibilityState={{ disabled: !pick.kakao_talk_id }}
+                onPress={() => { Clipboard.setString(pick.kakao_talk_id!); setPick(null); showToast('카카오톡 ID를 복사했어요'); }}>
+                <View style={styles.sheetIcon}><Image source={ICONS.megaphone} style={{ width: 28, height: 28 }} resizeMode="contain" /></View>
+                <View style={styles.sheetTextBox}>
+                  <Text style={[styles.memberName, !pick.kakao_talk_id && styles.rowOffText]}>카카오톡 ID 복사</Text>
+                  {!pick.kakao_talk_id && <Text style={styles.memberSub}>등록된 카카오톡 ID가 없어요</Text>}
+                </View>
+              </Pressable>
               {isLeader && pick.role_id > 2 && (
                 <Pressable style={styles.sheetRow} onPress={toggleSub}>
                   <View style={[styles.sheetIcon, { backgroundColor: '#E8F3FF' }]}><Image source={ICONS.profile} style={{ width: 28, height: 28 }} resizeMode="contain" /></View>
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={styles.subLabel}>{pick.is_sub_leader ? '부팀장 해제' : '부팀장으로 지정'}</Text>
+                    {/* 디자인 문구('팀 공지 쓰기 · 근태 현황 보기 권한이 생겨요')에 '팀 일정 배정'을 더한 건 일부러 —
+                        부팀장은 실제로 팀 일정·현장 등록과 팀원 배정도 할 수 있어서(서버 User::canAssignIn) 빼면 권한을 덜 알려 줌 */}
                     <Text style={styles.memberSub}>
                       {pick.is_sub_leader ? '팀원으로 바뀌고 일정 배정 · 근태 현황 권한이 없어져요' : '팀 일정 배정 · 팀 공지 쓰기 · 근태 현황 보기 권한이 생겨요'}
                     </Text>
+                  </View>
+                </Pressable>
+              )}
+              {isLeader && pick.role_id > 2 && pick.id !== me?.id && (
+                <Pressable style={[styles.sheetRow, styles.kickRow]} onPress={askKick} accessibilityRole="button">
+                  <View style={[styles.sheetIcon, styles.kickIcon]}>
+                    <Icon name="logout" size={20} color={colors.danger} />
+                  </View>
+                  <View style={styles.sheetTextBox}>
+                    <Text style={styles.kickLabel}>팀에서 내보내기</Text>
+                    <Text style={styles.memberSub}>팀 일정 · 공지 · 앨범을 더 이상 볼 수 없게 돼요</Text>
                   </View>
                 </Pressable>
               )}
@@ -345,6 +413,27 @@ export default function TeamDetailScreen() {
           </>
         )}
       </BottomSheet>
+
+      {/* ── 팀원 내보내기 확인 (TEAM_DETAIL_KICK) ── */}
+      <Modal transparent statusBarTranslucent visible={kickOpen} animationType="fade" onRequestClose={() => { if (!kicking) setKickOpen(false); }}>
+        <View style={styles.dim}>
+          <View style={styles.dialog} accessibilityRole="alert" accessibilityLabel="팀원 내보내기 확인">
+            <View style={styles.dialogIcon}><Icon name="logout" size={26} color={colors.danger} /></View>
+            <Text style={styles.dialogTitle}>{kick?.name}님을 팀에서 내보낼까요?</Text>
+            <Text style={styles.dialogDesc}>내보내면 팀 일정 · 공지 · 앨범을 더 이상 볼 수 없어요.{'\n'}지금까지 함께한 일정과 정산 기록은 남아요.</Text>
+            <Text style={styles.dialogNote}>다시 함께하려면 초대 링크를 새로 보내야 해요.</Text>
+            <View style={styles.dialogBtns}>
+              <Pressable onPress={() => setKickOpen(false)} disabled={kicking} style={[styles.dialogBtn, styles.dialogCancel]} accessibilityRole="button">
+                <Text style={[styles.dialogBtnText, styles.dialogCancelText]}>취소</Text>
+              </Pressable>
+              <Pressable onPress={doKick} disabled={kicking} style={[styles.dialogBtn, styles.dialogDanger]} accessibilityRole="button"
+                accessibilityLabel="내보내기" accessibilityState={{ disabled: kicking, busy: kicking }}>
+                {kicking ? <ActivityIndicator color="#FFFFFF" /> : <Text style={[styles.dialogBtnText, styles.dialogDangerText]}>내보내기</Text>}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -407,6 +496,28 @@ const styles = StyleSheet.create({
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   sheetIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F2F7FE', alignItems: 'center', justifyContent: 'center' },
   subLabel: { fontSize: 14, fontWeight: '700', color: colors.primaryDark },
+  kickRow: { borderTopWidth: 1, borderTopColor: colors.borderHairline },
+  kickIcon: { backgroundColor: '#FFECEC' },
+  sheetTextBox: { flex: 1, gap: 2 },
+  rowOffText: { color: colors.muted },
+  kickLabel: { fontSize: 14, fontWeight: '700', color: colors.danger },
+
+  dim: { flex: 1, backgroundColor: 'rgba(16,42,86,0.45)', justifyContent: 'center', padding: 24 },
+  dialog: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, paddingTop: 24, paddingHorizontal: 22, paddingBottom: 20, alignItems: 'center', gap: 10,
+    shadowColor: '#102A56', shadowOpacity: 0.25, shadowRadius: 25, shadowOffset: { width: 0, height: 20 }, elevation: 8,
+  },
+  dialogIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#FFECEC', alignItems: 'center', justifyContent: 'center' },
+  dialogTitle: { marginTop: 4, fontSize: 18, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
+  dialogDesc: { fontSize: 14, lineHeight: 22, color: colors.textSecondary, textAlign: 'center' },
+  dialogNote: { fontSize: 12, lineHeight: 18, color: colors.muted, textAlign: 'center' },
+  dialogBtns: { flexDirection: 'row', gap: 8, alignSelf: 'stretch', marginTop: 8 },
+  dialogBtn: { flex: 1, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  dialogCancel: { borderWidth: 1, borderColor: colors.border, backgroundColor: '#FFFFFF' },
+  dialogBtnText: { fontSize: 15, fontWeight: '700' },
+  dialogCancelText: { color: '#3B4F70' },
+  dialogDanger: { backgroundColor: colors.danger },
+  dialogDangerText: { color: '#FFFFFF' },
   closeBtn: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   closeBtnText: { fontSize: 15, fontWeight: '700', color: '#3B4F70' },
 });

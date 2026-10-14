@@ -355,6 +355,9 @@ export interface ReportContext {
 // ═══════════════════════════════════════════════════════════════
 // ★ v14 추가 — 모바일 명함
 // ═══════════════════════════════════════════════════════════════
+/** ★ v18.68 — 공개 프로필 아래 현장 사진 공개 범위 (none: 안 함 / after: 시공 후만 / both: 전·후 모두) */
+export type BusinessCardShowcaseMode = 'none' | 'after' | 'both';
+
 export interface BusinessCard {
   id: number;
   user_id: number;
@@ -367,6 +370,8 @@ export interface BusinessCard {
   specialty: string | null;
   tagline: string | null;
   is_public: boolean;
+  /** ★ v18.68 — 없으면 'none'으로 취급 */
+  showcase_mode?: BusinessCardShowcaseMode;
   view_count: number;
   monthly_view_count: number;
   last_viewed_at: string | null;

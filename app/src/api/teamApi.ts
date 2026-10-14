@@ -16,6 +16,7 @@ export interface TeamFormPayload {
 //   ★ v18.48 — teamId를 주면 그 팀만(팀 상세 "활동" 탭) + 공지 작성·사진 올림도 포함
 export interface TeamActivity {
   type: 'schedule' | 'join' | 'notice' | 'photos';
+  actor_id?: number; // ★ v18.68 — 아바타 색을 사람마다 고정(팀원 탭과 같은 색). 옛 서버 응답엔 없을 수 있음
   actor_name: string;
   actor_color?: string | null;
   actor_avatar?: string | null;
@@ -40,6 +41,13 @@ export type TeamRoleLabel = '팀장' | '부팀장' | '팀원' | '나간 팀원';
 
 export async function setSubLeader(teamId: number, userId: number, enabled: boolean): Promise<void> {
   await axios.put(`/teams/${teamId}/members/${userId}/sub-leader`, { enabled });
+}
+
+// ★ v18.68 — 팀장이 팀원 내보내기 (팀장·본인은 못 내보냄). 지난 일정·정산 기록은 남고, 다시 오려면 새 초대가 필요.
+//   성공 시 서버 메시지("{이름}님을 팀에서 내보냈어요")를 돌려줌
+export async function kickTeamMember(teamId: number, userId: number): Promise<string | undefined> {
+  const res = await axios.delete<ApiResponse<null>>(`/teams/${teamId}/members/${userId}`);
+  return res.data?.message || undefined;
 }
 
 export interface TeamNotice {
@@ -251,9 +259,16 @@ export interface TeamInviteInfo {
   invite_code: string;
   expires_at: string;
   invite_url: string;
+  can_regenerate?: boolean; // ★ v18.68 — 팀장·부팀장만 "새 코드 만들기" 가능
 }
 
 export async function getTeamInvite(teamId: number): Promise<TeamInviteInfo> {
   const res = await axios.get<ApiResponse<TeamInviteInfo>>(`/teams/${teamId}/invite`);
+  return res.data.data;
+}
+
+// ★ v18.68 — 초대 코드 새로 만들기 (기존 코드·링크는 바로 막힘, 새 코드는 7일 유효). 응답은 GET invite와 같은 모양
+export async function regenerateTeamInvite(teamId: number): Promise<TeamInviteInfo> {
+  const res = await axios.post<ApiResponse<TeamInviteInfo>>(`/teams/${teamId}/invite/regenerate`);
   return res.data.data;
 }

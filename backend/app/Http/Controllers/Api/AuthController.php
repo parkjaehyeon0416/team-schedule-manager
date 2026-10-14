@@ -14,6 +14,7 @@ use App\Services\Reauth;
 use App\Services\SmsGuard;
 use App\Support\PasswordPolicy;
 use App\Services\Sms\SmsServiceInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,14 @@ class AuthController extends Controller
         'phone.regex' => '휴대폰 번호는 숫자만 입력해주세요.',
     ];
 
+    // ★ v18.68 회원가입 휴대폰 인증(디자인 AUTH_SIGNUP_PROFILE) — 가입 전에 문자 인증 필수
+    //   ① send: 인증번호 문자(SmsGuard 거침) → ② verify: 맞히면 phone_token(30분, 한 번만) → ③ register: phone_token 같이 보냄
+    private const SIGNUP_PURPOSE       = 'signup';
+    private const SIGNUP_TOKEN_MINUTES = 30;
+    private const MOBILE_RE            = '/^01[016789][0-9]{7,8}$/D'; // 숫자만 남긴 휴대폰 번호(앱 MOBILE_RE와 같음)
+    private const MSG_PHONE_FORMAT     = '휴대폰 번호 형식이 맞지 않아요.';
+    private const MSG_PHONE_TAKEN      = '이미 가입된 휴대폰 번호예요. 아이디 찾기에서 확인해주세요.';
+
     public function __construct(private readonly SmsServiceInterface $sms)
     {
     }
@@ -72,6 +81,9 @@ class AuthController extends Controller
     // ────────────────────────────────────
     // 회원가입
     // POST /api/auth/register
+    // ★ v18.68 휴대폰 문자 인증을 마친 번호로만 가입(phone_token 필수) + 주요 공정(main_work_types, 선택)
+    //   예전엔 전화번호 칸에 아무 값이나 넣어도 가입돼서, 남의 번호로 가입해 두면 그 번호 주인은 가입이 막히고
+    //   (번호 고유값) 아이디 찾기·비밀번호 재설정 문자가 엉뚱한 계정 기준으로 나갔음.
     // ────────────────────────────────────
     public function register(Request $request)
     {
@@ -81,12 +93,18 @@ class AuthController extends Controller
             // ★ v18.67 출력 가능한 ASCII만 — 로그인이 ASCII 이메일만 받으므로 가입도 같게(악센트 이메일로 가입하면 로그인 불가)
             'email'        => ['required', 'email', self::ASCII_EMAIL_RULE, 'unique:users,email'],
             // ★ 아이디(이메일) 찾기를 이름+전화번호로 지원하기 위해 필수로 수집
-            'phone'        => 'required|string|max:20|unique:users,phone',
+            // ★ v18.68 숫자·하이픈만(아이디 찾기와 같은 규칙). 이미 가입된 번호인지는 아래에서 숫자만 남겨 비교(하이픈 저장된 옛 번호까지)
+            'phone'        => ['required', 'string', 'max:20', self::PHONE_INPUT_RULE],
             'password'     => PasswordPolicy::rules(), // ★ v18.62 영문+특수문자 8~16자
             // ★ platform 필드 추가 — 'web' 또는 'mobile'
             'platform'     => 'required|in:web,mobile',
             // ★ 이용약관/개인정보처리방침 동의 — 체크 안 하면 가입 자체가 안 됨
             'agree_terms'  => 'required|accepted',
+            // ★ v18.68 휴대폰 인증 토큰 — 없을 때는 아래에서 "앱 업데이트" 안내(예전 앱)라 여기선 nullable
+            'phone_token'  => 'nullable|string|max:200',
+            // ★ v18.68 주요 공정(디자인 칩: 도배·타일·필름·도장·목공·기타) — 선택 안 해도 됨, 최대 10개·각 30자
+            'main_work_types'   => 'nullable|array|max:10',
+            'main_work_types.*' => 'required|string|max:30',
         ], PasswordPolicy::messages() + self::INPUT_MESSAGES);
 
         // 2. web으로 가입은 허용하지 않음 (운영자는 콘솔에서 수동 생성)
@@ -98,19 +116,51 @@ class AuthController extends Controller
             );
         }
 
+        // ★ v18.68 휴대폰 인증 확인 — 인증한 번호(숫자만)와 지금 입력한 번호가 같아야 함.
+        //   토큰은 가입이 끝난 뒤에만 지움 → 이메일 중복 같은 입력 오류는 고쳐서 다시 보내면 됨(30분 안)
+        if (empty($validated['phone_token'])) {
+            return ApiResponse::error('휴대폰 인증을 먼저 해주세요. 앱을 최신 버전으로 업데이트해야 할 수 있어요.', ErrorCode::AUTH_PHONE_UNVERIFIED, 422);
+        }
+        $tokenKey = self::signupTokenKey($validated['phone_token']);
+        $verified = Cache::get($tokenKey);
+        $digits = self::phoneDigits($validated['phone']);
+        if (!is_array($verified) || !hash_equals((string) ($verified['phone'] ?? ''), $digits)) {
+            return ApiResponse::error('휴대폰 인증이 만료됐어요. 다시 인증해주세요.', ErrorCode::AUTH_PHONE_UNVERIFIED, 422);
+        }
+        // 인증한 뒤에 같은 번호로 다른 가입이 먼저 끝난 경우 — 이 토큰은 더 쓸 데가 없으니 지움(앱은 인증을 풀고 처음부터)
+        if (self::phoneTaken($digits)) {
+            Cache::forget($tokenKey);
+            return ApiResponse::error(self::MSG_PHONE_TAKEN, ErrorCode::AUTH_PHONE_TAKEN, 409);
+        }
+
+        // ★ v18.68 주요 공정 — 같은 값 두 번은 하나로, 선택 안 했으면 null
+        $workTypes = array_values(array_unique($validated['main_work_types'] ?? []));
+
         // 모든 모바일 가입자는 일단 '팀 없는 개인'으로 시작함 — team/freelancer는
         // 가입 시점에 고르는 게 아니라, 이후 팀을 만들거나(store) 가입하면(join)
         // 자연스럽게 바뀌는 상태값일 뿐임.
         // '팀 없는 개인'은 스스로가 자기 데이터의 manager이므로 role_id=2를 줘야
         // 일정/현장 CUD(manager 이상 전용)를 본인 힘으로 할 수 있음.
-        $user = User::create([
-            'name'      => $validated['name'],
-            'email'     => $validated['email'],
-            'phone'     => $validated['phone'],
-            'password'  => Hash::make($validated['password']),
-            'role_id'   => 2,
-            'user_type' => 'freelancer',
-        ]);
+        try {
+            $user = User::create([
+                'name'      => $validated['name'],
+                'email'     => $validated['email'],
+                'phone'     => $digits, // ★ v18.68 숫자만 저장(인증한 번호)
+                'password'  => Hash::make($validated['password']),
+                'role_id'   => 2,
+                'user_type' => 'freelancer',
+                'main_work_types' => $workTypes ?: null,
+            ]);
+        } catch (UniqueConstraintViolationException $e) {
+            // ★ v18.68 검사와 저장 사이에 같은 번호·이메일로 먼저 가입된 경우(같은 토큰으로 동시에 두 번 보낸 요청 등)
+            if (self::phoneTaken($digits)) {
+                Cache::forget($tokenKey);
+                return ApiResponse::error(self::MSG_PHONE_TAKEN, ErrorCode::AUTH_PHONE_TAKEN, 409);
+            }
+            $request->validate(['email' => 'unique:users,email']); // 이메일이면 평소와 같은 422(errors.email)
+            throw $e;
+        }
+        Cache::forget($tokenKey); // ★ v18.68 가입이 끝난 토큰은 다시 못 씀
 
         // 3. 가입 즉시 로그인 처리 — 로그인 화면 재진입 없이 바로 앱 사용 가능
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -119,6 +169,113 @@ class AuthController extends Controller
             'user'  => $user,
             'token' => $token,
         ], '회원가입이 완료되었습니다.', 201);
+    }
+
+    // ────────────────────────────────────
+    // ★ v18.68 회원가입 휴대폰 인증 — ① 인증번호 받기
+    // POST /api/auth/signup/phone/send  {phone}
+    //   200 {minutes:3} / 422 ERR_VALID_001 형식 / 409 ERR_AUTH_019 이미 가입된 번호 / 429 대기·상한·잠금 / 503 발송 실패
+    //   아무 번호로나 보낼 수 있어서(로그인 전) 발송 제한은 전부 SmsGuard: 같은 번호 60초 대기, 번호별 하루 5통(용도 합산 10통),
+    //   IP별 하루 요청 20번, 서비스 전체 하루 문자 상한 + 가입 인증 전용 상한(config verification.global_purpose_daily.signup)
+    // ────────────────────────────────────
+    public function signupPhoneSend(Request $request)
+    {
+        $digits = self::signupPhone($request->input('phone'));
+        if ($digits === null) {
+            return self::phoneFormatError();
+        }
+
+        // 요청 단위 제한(IP 하루 요청 수·서비스 전체 상한) — 가입 여부를 보기 전에 셈.
+        //   "이미 가입된 번호" 응답으로 번호를 대입해 가입 여부를 훑는 것도 IP당 하루 20번으로 묶임
+        if ($limited = SmsGuard::checkRequest(SmsGuard::SMS, self::SIGNUP_PURPOSE)) {
+            return $limited;
+        }
+        if (self::phoneTaken($digits)) {
+            return ApiResponse::error(self::MSG_PHONE_TAKEN, ErrorCode::AUTH_PHONE_TAKEN, 409);
+        }
+        if ($locked = VerificationCode::lockedResponse(self::SIGNUP_PURPOSE, $digits)) {
+            return $locked;
+        }
+        // 60초 대기·하루 상한이면 429(대기는 data.retry_after), 발송 실패면 503 — 보내기에 성공해야 인증번호 저장
+        $fail = SmsGuard::sendCode(SmsGuard::SMS, self::SIGNUP_PURPOSE, $digits, null, function (string $code) use ($digits) {
+            $this->sms->send($digits, "[현장메이트] 회원가입 인증번호는 {$code} 입니다. (" . VerificationCode::TTL_MINUTES . "분간 유효)");
+        });
+        if ($fail) {
+            return $fail;
+        }
+
+        return ApiResponse::success(['minutes' => VerificationCode::TTL_MINUTES], '인증번호를 보냈어요.');
+    }
+
+    // ────────────────────────────────────
+    // ★ v18.68 회원가입 휴대폰 인증 — ② 인증번호 확인 → phone_token(30분, 가입 한 번)
+    // POST /api/auth/signup/phone/verify  {phone, code}
+    //   200 {phone_token, expires_in:1800} / 422 ERR_AUTH_010 틀림·만료 / 429 ERR_AUTH_017 잠금
+    //   틀린 횟수는 VerificationCode가 번호+용도별로 1시간 누적(5번 → 5분 잠금, 10번 → 1시간 잠금)
+    // ────────────────────────────────────
+    public function signupPhoneVerify(Request $request)
+    {
+        $digits = self::signupPhone($request->input('phone'));
+        if ($digits === null) {
+            return self::phoneFormatError();
+        }
+        if ($locked = VerificationCode::lockedResponse(self::SIGNUP_PURPOSE, $digits)) {
+            return $locked;
+        }
+
+        $wrong = fn() => ApiResponse::error('인증번호가 맞지 않아요. 다시 확인해주세요.', ErrorCode::AUTH_CODE_INVALID, 422);
+        $code = $request->input('code');
+        $code = is_int($code) ? (string) $code : $code;
+        if (!is_string($code) || !preg_match('/^[0-9]{6}$/D', $code)) {
+            return $wrong(); // 6자리 숫자가 아니면 맞을 수 없음(틀린 횟수는 안 셈)
+        }
+        if (VerificationCode::consume(self::SIGNUP_PURPOSE, $digits, $code) === null) {
+            return VerificationCode::lockedResponse(self::SIGNUP_PURPOSE, $digits) ?? $wrong();
+        }
+
+        // 원문 토큰은 앱에만, 캐시 키는 sha1(토큰) — 캐시(실서버 DB)가 새어도 토큰을 못 씀
+        $token = Str::random(64);
+        Cache::put(self::signupTokenKey($token), ['phone' => $digits], now()->addMinutes(self::SIGNUP_TOKEN_MINUTES));
+
+        return ApiResponse::success([
+            'phone_token' => $token,
+            'expires_in'  => self::SIGNUP_TOKEN_MINUTES * 60,
+        ], '휴대폰 인증을 완료했어요.');
+    }
+
+    /** ★ v18.68 가입 인증 번호 입력 → 숫자만(숫자·하이픈만 받음). 휴대폰 번호 형식이 아니면 null */
+    private static function signupPhone($raw): ?string
+    {
+        if (!is_string($raw) || !preg_match('/^[0-9-]{10,20}$/D', $raw)) {
+            return null;
+        }
+        $digits = self::phoneDigits($raw);
+        return preg_match(self::MOBILE_RE, $digits) ? $digits : null;
+    }
+
+    private static function phoneFormatError()
+    {
+        return response()->json([
+            'success'    => false,
+            'message'    => self::MSG_PHONE_FORMAT,
+            'error_code' => ErrorCode::VALID_GENERAL,
+            'errors'     => ['phone' => [self::MSG_PHONE_FORMAT]],
+        ], 422);
+    }
+
+    /**
+     * ★ v18.68 이미 가입된 번호인가 — 숫자만/하이픈(010-1234-5678) 두 모양 모두 비교.
+     *   탈퇴하면 번호를 지우므로(v18.62) 탈퇴 계정 번호로는 다시 가입 가능. 번호가 남아 있는 삭제 계정(그 전 탈퇴분)은
+     *   DB 고유값에 걸려 어차피 가입이 안 되므로 "가입된 번호"로 봄(문자를 보내고 마지막 단계에서 막히지 않게).
+     */
+    private static function phoneTaken(string $digits): bool
+    {
+        return User::withTrashed()->whereIn('phone', self::phoneVariants($digits))->exists();
+    }
+
+    private static function signupTokenKey(string $token): string
+    {
+        return 'signup_phone_token:' . sha1($token);
     }
 
     // ────────────────────────────────────
@@ -296,6 +453,21 @@ class AuthController extends Controller
             return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', 'ERR_AUTH_009', 403);
         }
 
+        // ★ v18.68 보안(리뷰 반영) — "이미 계정이 있어요"를 소셜 로그인으로 통과해 티켓의 소셜을 연결하는 건
+        //   비밀번호도 인증번호 받을 곳(휴대폰·이메일)도 없는 계정만 — /me/reauth의 소셜 다시 로그인과 같은 규칙.
+        //   예전엔 잠금 풀린 폰을 쥔 사람이 자기 구글로 티켓을 받고 → 주인의 카카오(카카오톡 한 번 탭)로 로그인하면
+        //   본인 확인 없이 자기 구글이 주인 계정에 붙어, 나중에 그 구글로 언제든 들어올 수 있었음(로그인 연결 관리의 본인 확인 우회).
+        //   비밀번호가 있으면 이메일·비밀번호 로그인(/auth/login + link_ticket — 비밀번호를 앎 = 본인 확인)으로 연결하고,
+        //   아니면 로그인한 뒤 로그인 연결 관리에서 인증번호로 확인하고 연결. 로그인 토큰도 안 줌(앱은 메시지만 보여 줌).
+        if ($linking && ($user->password || Reauth::channels($user))) {
+            return ApiResponse::error(
+                $user->password
+                    ? '이 계정은 이메일·비밀번호로 로그인해야 연결할 수 있어요. 또는 로그인한 뒤 내 정보 › 로그인 연결 관리에서 본인 확인 후 연결해주세요.'
+                    : '이 계정은 로그인한 뒤 내 정보 › 로그인 연결 관리에서 본인 확인 후 연결해주세요.',
+                ErrorCode::AUTH_REAUTH_REQUIRED,
+                422
+            );
+        }
         if ($linking && ($fail = $this->attachTicket($user, $data['link_ticket']))) {
             return $fail;
         }
@@ -677,8 +849,9 @@ class AuthController extends Controller
         //   (예전 v18.61까진 비밀번호가 없으면 탈퇴 자체가 불가능했음 — 애플 심사 5.1.1(v) 앱 안 계정 삭제 필수)
         if ($user->password) {
             $data = $request->validate(['password' => 'required|string']);
-            if (!Hash::check($data['password'], $user->password)) {
-                return ApiResponse::error('비밀번호가 일치하지 않습니다.', 'ERR_AUTH_001', 422);
+            // ★ v18.68 리뷰 반영 — 틀린 횟수·잠금을 /me/reauth·비밀번호 변경과 같이 셈(Reauth::checkPassword, 잠기면 429 ERR_AUTH_017)
+            if ($fail = Reauth::checkPassword($user, $data['password'], '비밀번호가 일치하지 않습니다.')) {
+                return $fail;
             }
         } elseif ($fail = Reauth::check('withdraw', $user, $request->only('channel', 'code', 'provider', 'token'))) {
             return $fail;
@@ -716,6 +889,10 @@ class AuthController extends Controller
             'kakao_linked_at'  => null,
             'apple_linked_at'  => null,
             'apple_refresh_token' => null,
+            // ★ v18.68 리뷰 반영 — 비밀번호 해시·자동 로그인 토큰도 지움(계정 삭제 안내 "비밀번호와 로그인 토큰" 삭제와 같게).
+            //   본인 확인이 다 끝난 여기서 지움(AccountCleanupService에서 지우면 그 함수를 확인 전에 불렀을 때 비밀번호 확인이 깨짐)
+            'password'        => null,
+            'remember_token'  => null,
         ])->save();
         $user->delete(); // SoftDeletes
 

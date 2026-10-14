@@ -15,9 +15,9 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
-  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FocusStatusBar } from '../components/FocusStatusBar';
 import { Text, IconButton, Button } from 'react-native-paper';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
@@ -129,7 +129,8 @@ export default function PhotoCompareScreen({ route }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      {/* ★ v18.68 — 검은 화면이라 밝은 아이콘. 앱 기본값이 어두운 아이콘으로 바뀌어서 포커스일 때만 덮어씀 */}
+      <FocusStatusBar barStyle="light-content" backgroundColor="#000" />
 
       {/* ── 헤더 ── */}
       <View style={styles.header}>

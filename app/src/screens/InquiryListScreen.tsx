@@ -39,7 +39,8 @@ export default function InquiryListScreen() {
       <AppHeader leftType="back" title="고객 문의" />
       <ScrollView contentContainerStyle={styles.content}>
         <Pressable style={styles.askCard} onPress={() => navigation.navigate('InquiryCreate')}>
-          <Image source={ICONS.megaphone} style={styles.askIcon} />
+          {/* ★ v18.70 — 고객 문의 전용 아이콘(내정보·앱 정보의 고객 문의 줄과 같은 것) */}
+          <Image source={ICONS.inquiry} style={styles.askIcon} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={styles.askTitle}>궁금한 점이 있으신가요?</Text>
             <Text style={styles.askSub}>평일 10:00~18:00 순서대로 답변드려요</Text>

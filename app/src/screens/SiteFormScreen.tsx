@@ -18,6 +18,7 @@ import type { UploadBatchResult } from '../utils/uploadPhotos';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
 import AddressSearchModal, { DaumAddressResult } from '../components/AddressSearchModal';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea';
 import { createSite, updateSite, getSitePhotos, uploadSitePhoto, deleteSitePhoto } from '../api/siteApi';
 import { getMyTeams } from '../api/teamApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
@@ -375,9 +376,11 @@ export default function SiteFormScreen() {
 
         <AddressSearchModal visible={addressSearchVisible} onClose={() => setAddressSearchVisible(false)} onSelect={handleAddressSelect} />
 
-        <Modal visible={teamPickerVisible} animationType="slide" transparent onRequestClose={() => setTeamPickerVisible(false)}>
+        <Modal visible={teamPickerVisible} animationType="slide" transparent onRequestClose={() => setTeamPickerVisible(false)} {...MODAL_UNDER_SYSTEM_BARS}>
           <Pressable style={styles.modalBackdrop} onPress={() => setTeamPickerVisible(false)} />
-          <View style={styles.modalSheet}>
+          {/* ★ v18.70 — 기기 하단 바와 겹치는 높이만큼 아래 여백을 더함(ModalBottomSafeArea)
+            ★ v18.70 QA — 어두운 배경은 기기 상단·하단 바 뒤까지 덮음(MODAL_UNDER_SYSTEM_BARS) */}
+          <ModalBottomSafeArea style={styles.modalSheet}>
             <Text style={styles.modalTitle}>팀 선택</Text>
             <Pressable style={styles.modalRow} onPress={() => { setTeamId(null); setTeamPickerVisible(false); }}>
               <Text style={styles.modalRowText}>선택 안 함 (개인)</Text>
@@ -391,7 +394,7 @@ export default function SiteFormScreen() {
                 </Pressable>
               )}
             />
-          </View>
+          </ModalBottomSafeArea>
         </Modal>
 
         <Pressable onPress={handleSubmit} disabled={saving} style={{ marginTop: 4 }}>

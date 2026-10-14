@@ -5,7 +5,10 @@
          네이티브 입력창 배경만 어둡게 바뀌어 글씨가 안 보이던 문제 발생.
          이 앱은 다크모드 UI를 전혀 지원하지 않으므로(전부 밝은 배경 하드코딩)
          시스템 설정과 무관하게 항상 라이트 테마로 고정. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <!-- ★ v18.70 — 공통 값은 Base.AppTheme에 두고, 실제 앱 테마(AppTheme)는 아래에서 이어받음.
+         안드로이드 8.1(API 27)+는 values-v27/styles.xml의 AppTheme이 하단 시스템 바를 흰 바탕 + 어두운 버튼으로 바꿈.
+         8.0 이하는 바 버튼을 어둡게 바꿀 수 없어서(흰 바에 흰 버튼이 됨) 기기 기본(검은 바)을 그대로 씀. -->
+    <style name="Base.AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
@@ -21,5 +24,7 @@
         <item name="android:statusBarColor">@android:color/white</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <style name="AppTheme" parent="Base.AppTheme" />
 
 </resources>

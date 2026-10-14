@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Modal
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../components/AppHeader';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea';
 import { getTaxSummary } from '../api/taxSummaryApi';
 import type { TaxSummary } from '../types/api';
 import { formatMoney } from '../utils/format';
@@ -127,9 +128,11 @@ export default function TaxHomeScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={yearPickerVisible} animationType="fade" transparent onRequestClose={() => setYearPickerVisible(false)}>
+      <Modal visible={yearPickerVisible} animationType="fade" transparent onRequestClose={() => setYearPickerVisible(false)} {...MODAL_UNDER_SYSTEM_BARS}>
         <Pressable style={styles.modalBackdrop} onPress={() => setYearPickerVisible(false)} />
-        <View style={styles.modalSheet}>
+        {/* ★ v18.70 — 기기 하단 바와 겹치는 높이만큼 아래 여백을 더함(ModalBottomSafeArea)
+            ★ v18.70 QA — 어두운 배경은 기기 상단·하단 바 뒤까지 덮음(MODAL_UNDER_SYSTEM_BARS) */}
+        <ModalBottomSafeArea style={styles.modalSheet}>
           <Text style={styles.modalTitle}>연도 선택</Text>
           <FlatList
             data={yearOptions}
@@ -140,7 +143,7 @@ export default function TaxHomeScreen() {
               </Pressable>
             )}
           />
-        </View>
+        </ModalBottomSafeArea>
       </Modal>
     </View>
   );

@@ -157,7 +157,8 @@ export default function TeamNoticeListScreen() {
         </Pressable>
       )}
 
-      <BottomSheet visible={writing} onClose={closeWrite} label="공지 쓰기">
+      {/* ★ v18.70 QA — 입력칸 있는 시트(withInput): 안드로이드에서 키보드가 열리면 창이 줄어 시트가 키보드 위로 올라오게 */}
+      <BottomSheet visible={writing} onClose={closeWrite} label="공지 쓰기" withInput>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           {done === null ? (
             <View style={{ gap: 14 }}>

@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocialButton } from './AuthUi';
+import ModalBottomSafeArea from './ModalBottomSafeArea';
 import {
   reauthSend, reauthVerify, getSocialCredential, isSocialCancel, APPLE_LOGIN_AVAILABLE,
   ReauthInfo, ReauthChannel, ReauthPurpose, SocialProvider,
@@ -196,8 +197,9 @@ export default function ReauthSheet({ visible, subtitle, info, purpose, notice, 
       {/* 화면 전체를 덮는 틀이 키보드를 피해야 시트가 키보드 위로 올라옴(안드로이드도 TeamJoinScreen처럼 padding) */}
       <KeyboardAvoidingView style={[s.wrap, { paddingTop: insets.top }]} behavior="padding">
         <Pressable style={s.backdrop} onPress={onBackdrop} accessibilityLabel="닫기" />
-        {/* 닫기 = 배경 누르기 · 뒤로가기(onRequestClose) · iOS VoiceOver 문지르기(onAccessibilityEscape) */}
-        <View style={s.sheet} accessibilityViewIsModal accessibilityLabel="본인 확인" onAccessibilityEscape={onClose}>
+        {/* 닫기 = 배경 누르기 · 뒤로가기(onRequestClose) · iOS VoiceOver 문지르기(onAccessibilityEscape)
+            ★ v18.70 — 흰 판 아래 여백 = 30 + 기기 하단 바와 겹치는 높이(ModalBottomSafeArea). 키보드로 시트가 올라가면 겹침이 없어 30만 */}
+        <ModalBottomSafeArea style={s.sheet} accessibilityViewIsModal accessibilityLabel="본인 확인" onAccessibilityEscape={onClose}>
           <View style={s.handle} />
           <ScrollView
             contentContainerStyle={s.body}
@@ -382,7 +384,7 @@ export default function ReauthSheet({ visible, subtitle, info, purpose, notice, 
               </>
             )}
           </ScrollView>
-        </View>
+        </ModalBottomSafeArea>
       </KeyboardAvoidingView>
     </Modal>
   );

@@ -13,6 +13,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import AppHeader from '../components/AppHeader';
+import { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea'; // ★ v18.70 QA — 확인 창 어두운 배경이 기기 바 뒤까지
 import { getMyTeams, getTeamMembers, leaveTeam, setSubLeader, getTeamActivities, kickTeamMember } from '../api/teamApi';
 import type { TeamActivity } from '../api/teamApi';
 import { getSchedules } from '../api/schedulesApi';
@@ -415,7 +416,7 @@ export default function TeamDetailScreen() {
       </BottomSheet>
 
       {/* ── 팀원 내보내기 확인 (TEAM_DETAIL_KICK) ── */}
-      <Modal transparent statusBarTranslucent visible={kickOpen} animationType="fade" onRequestClose={() => { if (!kicking) setKickOpen(false); }}>
+      <Modal transparent {...MODAL_UNDER_SYSTEM_BARS} visible={kickOpen} animationType="fade" onRequestClose={() => { if (!kicking) setKickOpen(false); }}>
         <View style={styles.dim}>
           <View style={styles.dialog} accessibilityRole="alert" accessibilityLabel="팀원 내보내기 확인">
             <View style={styles.dialogIcon}><Icon name="logout" size={26} color={colors.danger} /></View>

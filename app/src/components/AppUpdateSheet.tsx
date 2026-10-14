@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ICONS } from '../assets/icons';
 import { colors } from '../theme/designTokens';
 import type { UpdateChannel } from '../utils/appUpdate';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from './ModalBottomSafeArea';
 
 const MAX_LINES = 3; // 디자인: 서버 안내 문구 최대 3줄
 const TOAST_MS = 2500;
@@ -75,11 +76,13 @@ export default function AppUpdateSheet({ visible, currentVersion, latestVersion,
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={later} statusBarTranslucent>
+      {/* ★ v18.70 QA — 어두운 배경이 기기 상단·하단 바 뒤까지 덮게(MODAL_UNDER_SYSTEM_BARS) */}
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={later} {...MODAL_UNDER_SYSTEM_BARS}>
         <View style={styles.wrap}>
           <Pressable style={styles.backdrop} onPress={later} accessibilityRole="button" accessibilityLabel="나중에" />
-          {/* 닫기 = [나중에] · 바깥 누르기 · 뒤로 가기(onRequestClose) · iOS VoiceOver 문지르기(onAccessibilityEscape, ReauthSheet와 같게) */}
-          <View style={styles.sheet} accessibilityViewIsModal accessibilityLabel="새 버전 안내" onAccessibilityEscape={later}>
+          {/* 닫기 = [나중에] · 바깥 누르기 · 뒤로 가기(onRequestClose) · iOS VoiceOver 문지르기(onAccessibilityEscape, ReauthSheet와 같게)
+              ★ v18.70 — 흰 판 아래 여백 = 30 + 기기 하단 바와 겹치는 높이(ModalBottomSafeArea) */}
+          <ModalBottomSafeArea style={styles.sheet} accessibilityViewIsModal accessibilityLabel="새 버전 안내" onAccessibilityEscape={later}>
             <View style={styles.grabber} />
 
             <View style={styles.head}>
@@ -126,7 +129,7 @@ export default function AppUpdateSheet({ visible, currentVersion, latestVersion,
                 </LinearGradient>
               </Pressable>
             </View>
-          </View>
+          </ModalBottomSafeArea>
         </View>
       </Modal>
 

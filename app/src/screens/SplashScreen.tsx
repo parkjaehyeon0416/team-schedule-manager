@@ -4,11 +4,15 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ICONS } from '../assets/icons';
 import { colors } from '../theme/designTokens';
 
 import { APP_VERSION as VERSION } from '../constants/appVersion';
 const APP_VERSION = `v${VERSION}`;
+// 디자인 기준 화면 아래에서의 거리(+ 기기 하단 바 높이, ★ v18.70)
+const DOTS_BOTTOM = 120;
+const VERSION_BOTTOM = 48;
 
 function LoadingDot({ delay }: { delay: number }) {
   const v = useRef(new Animated.Value(0)).current;
@@ -42,6 +46,8 @@ export default function SplashScreen() {
   const fadeTitle = useRef(new Animated.Value(0)).current;
   const fadeTagline = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
+  // ★ v18.70 — 기기 하단 바가 다시 보이므로 아래쪽 점·버전 글자를 바 높이만큼 올림(안드로이드 14 이하는 0)
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.timing(rise, { toValue: 1, duration: 700, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
@@ -84,12 +90,12 @@ export default function SplashScreen() {
       </Animated.Text>
       <Animated.Text style={[styles.tagline, { opacity: fadeTagline }]}>현장의 하루를 한 곳에서</Animated.Text>
 
-      <View style={styles.dots} accessibilityRole="progressbar" accessibilityLabel="불러오는 중">
+      <View style={[styles.dots, { bottom: DOTS_BOTTOM + insets.bottom }]} accessibilityRole="progressbar" accessibilityLabel="불러오는 중">
         <LoadingDot delay={0} />
         <LoadingDot delay={160} />
         <LoadingDot delay={320} />
       </View>
-      <Text style={styles.version}>{APP_VERSION}</Text>
+      <Text style={[styles.version, { bottom: VERSION_BOTTOM + insets.bottom }]}>{APP_VERSION}</Text>
     </View>
   );
 }
@@ -103,7 +109,7 @@ const styles = StyleSheet.create({
   logo: { width: 140, height: 141, resizeMode: 'contain' },
   brand: { marginTop: 26, fontSize: 34, fontWeight: '800', letterSpacing: -0.4, color: colors.textPrimary },
   tagline: { marginTop: 10, fontSize: 15, color: colors.textSecondary },
-  dots: { position: 'absolute', bottom: 120, flexDirection: 'row', gap: 8 },
+  dots: { position: 'absolute', bottom: DOTS_BOTTOM, flexDirection: 'row', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#168BFF' },
-  version: { position: 'absolute', bottom: 48, fontSize: 12, color: '#8FA3BF' },
+  version: { position: 'absolute', bottom: VERSION_BOTTOM, fontSize: 12, color: '#8FA3BF' },
 });

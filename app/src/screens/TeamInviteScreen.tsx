@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Clipboard from '@react-native-clipboard/clipboard';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
+import { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea'; // ★ v18.70 QA — 확인 창 어두운 배경이 기기 바 뒤까지
 import { getTeamInvite, regenerateTeamInvite } from '../api/teamApi';
 import type { TeamInviteInfo } from '../api/teamApi';
 import { colors, spacing } from '../theme/designTokens';
@@ -162,7 +163,7 @@ export default function TeamInviteScreen() {
       )}
 
       {/* ── 새 초대 코드 확인 (TEAM_INVITE_NEW_CODE) ── */}
-      <Modal transparent statusBarTranslucent visible={ask} animationType="fade" onRequestClose={() => { if (!regenerating) setAsk(false); }}>
+      <Modal transparent {...MODAL_UNDER_SYSTEM_BARS} visible={ask} animationType="fade" onRequestClose={() => { if (!regenerating) setAsk(false); }}>
         <View style={styles.dim}>
           <View style={styles.dialog} accessibilityRole="alert" accessibilityLabel="새 초대 코드 확인">
             <View style={styles.dialogIcon}><Icon name="swap-horizontal" size={26} color={colors.primaryDark} /></View>

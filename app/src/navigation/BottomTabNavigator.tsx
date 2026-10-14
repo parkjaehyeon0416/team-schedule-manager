@@ -26,7 +26,10 @@ function QuickCreatePlaceholder() {
 }
 
 export default function BottomTabNavigator() {
-  // 하단바가 숨겨지면 0, 기기 설정 등으로 보이는 경우엔 그 높이만큼 탭바를 올려 겹침 방지
+  // ★ v18.70 — 기기 하단 바(안드로이드 뒤로·홈·최근 / 제스처 바)를 이제 숨기지 않음(MainActivity).
+  //   탭바 높이·아래 여백에 그 높이(insets.bottom)를 더해 탭 버튼이 바 위로 올라오고, 흰 탭바 바탕이 바 뒤까지 깔림.
+  //   가운데 + 버튼은 탭 버튼 칸 기준(marginTop -24)이라 탭바와 함께 그대로 올라감.
+  //   안드로이드 14 이하는 바가 자기 자리를 따로 차지해 0, iOS는 홈 인디케이터 높이
   const insets = useSafeAreaInsets();
   // 안 읽은 알림 수 → 알림 탭 배지. 탭 전환 시, 그리고 push 화면에서 돌아올 때마다 갱신
   const unreadCount = useNotificationStore(s => s.unreadCount);

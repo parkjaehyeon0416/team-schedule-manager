@@ -80,8 +80,9 @@ export default function ProfileScreen() {
   const roleLine = [user.team?.name, roleLabel].filter(Boolean).join(' · ');
 
   const profileMenu: MenuRow[] = [
+    // ★ v18.70 — 프로필 설정·공개 프로필 보기·고객 문의는 각자 전용 아이콘(예전엔 profile/profile/megaphone을 같이 썼음)
     {
-      key: 'profile', image: 'profile', label: '프로필 설정', sub: '이름 · 연락처 · 지역',
+      key: 'profile', image: 'profileSettings', label: '프로필 설정', sub: '이름 · 연락처 · 지역',
       onPress: () => navigation.navigate('ProfileEdit'),
     },
     {
@@ -89,7 +90,7 @@ export default function ProfileScreen() {
       onPress: () => navigation.navigate('BusinessCard'),
     },
     {
-      key: 'public', image: 'profile', label: '공개 프로필 보기', sub: '다른 사람에게 보이는 모습',
+      key: 'public', image: 'profilePublic', label: '공개 프로필 보기', sub: '다른 사람에게 보이는 모습',
       onPress: () => navigation.navigate('ProfilePublic'),
     },
     // ★ v18.51 — 디자인(MY_HOME)대로 로그인 연결 관리(연결된 수단을 오른쪽에 작게)
@@ -127,17 +128,17 @@ export default function ProfileScreen() {
   ];
 
   // ★ v18.36 — 디자인(MY_HOME)대로 공지·약관·개인정보 항목 추가
+  // ★ v18.70 — 이용약관·개인정보 처리방침은 '앱 정보' 안에만 둠(같은 항목이 내정보·앱 정보 두 군데에 있었음)
   const infoMenu: MenuRow[] = [
     { key: 'notice', image: 'megaphone', label: '공지사항 · 이벤트', onPress: () => navigation.navigate('NoticeList') },
     // ★ v18.43 — 고객 문의 (오른쪽에 새 답변 수)
     {
-      key: 'inquiry', image: 'megaphone', label: '고객 문의', right: unreadAnswers > 0 ? `답변 ${unreadAnswers}건` : undefined,
+      key: 'inquiry', image: 'inquiry', label: '고객 문의', right: unreadAnswers > 0 ? `답변 ${unreadAnswers}건` : undefined,
       onPress: () => navigation.navigate('InquiryList'),
     },
-    { key: 'terms', image: 'doc', label: '이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'terms' }) },
-    { key: 'privacy', image: 'privacy', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
     {
-      key: 'appInfo', image: 'info', label: '앱 정보', sub: `v${APP_VERSION}`,
+      // ★ v18.70 — 약관을 여기서 뺐으니 앱 정보 안에 있다는 걸 설명 줄로 알려 줌
+      key: 'appInfo', image: 'info', label: '앱 정보', sub: `v${APP_VERSION} · 약관 · 개인정보 처리방침`,
       onPress: () => navigation.navigate('AppInfo'),
     },
   ];

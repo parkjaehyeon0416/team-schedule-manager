@@ -4,10 +4,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
 import type { IconKey } from '../assets/icons';
+
+const SHEET_BOTTOM = 34; // 디자인 흰 판 아래 여백(+ 기기 하단 바 높이, ★ v18.70)
 
 // ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
 const ACTIONS: Array<{
@@ -24,6 +27,9 @@ const ACTIONS: Array<{
 
 export default function QuickCreateScreen() {
   const navigation = useNavigation<any>();
+  // ★ v18.70 — 기기 하단 바(안드로이드 뒤로·홈·최근 / 제스처 바)가 다시 보이므로 흰 판 아래 여백에 바 높이를 더함.
+  //   어두운 배경은 바 뒤까지 덮어야 해서 스택 공통 화면 틀의 아래 여백은 빼고(AppNavigator SELF_INSET) 여기서 직접 올림
+  const insets = useSafeAreaInsets();
 
   const close = () => navigation.goBack();
   const go = (route: string) => {
@@ -34,7 +40,7 @@ export default function QuickCreateScreen() {
   return (
     <View style={styles.screen}>
       <Pressable style={StyleSheet.absoluteFill} onPress={close} />
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, { paddingBottom: SHEET_BOTTOM + insets.bottom }]}>
         <View style={styles.grabber} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>무엇을 등록할까요?</Text>
@@ -71,7 +77,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 22,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 34,
+    paddingBottom: SHEET_BOTTOM,
   },
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#D5DFEB', marginBottom: 8 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },

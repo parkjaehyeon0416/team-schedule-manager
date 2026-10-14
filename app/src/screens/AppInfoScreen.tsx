@@ -2,15 +2,20 @@
  * 앱 정보 화면 — v18.34 (DESIGN-CANVAS 기준, APP_INFO.dc.html)
  * 내정보 > 앱 정보에서 진입.
  * 2026-10-02: 위치기반서비스 약관/오픈소스 라이선스/문의하기/회원탈퇴를 전부 실제
- * 동작으로 구현함(기존엔 "준비 중" 안내만 있었음). 사업자 정보는 디자인 원본의
- * 플레이스홀더([회사명] 등)를 그대로 유지 — 실제 사업자 정보로 교체 필요.
+ * 동작으로 구현함(기존엔 "준비 중" 안내만 있었음).
+ * ★ v18.70 — 이용약관·개인정보 처리방침은 이제 이 화면에만 있음(내정보에서 뺌).
+ *   아래 정보 칸은 디자인 플레이스홀더([회사명]·[대표자명]·[고객센터 번호]) 대신 실제 운영자 정보
+ *   (constants/operatorInfo — 사업자 등록 전이라 개인 개발자 표기, 전화번호 없음).
+ *   버전 줄도 고정 글자(v1.0.0 · 최신 버전입니다) 대신 설치된 버전 + 서버 최신 버전과 비교한 결과.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Linking, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Clipboard from '@react-native-clipboard/clipboard';
 import AppHeader from '../components/AppHeader';
+import axiosInstance from '../api/axiosInstance';
 import { withdrawAccount, requestWithdraw, WithdrawMethod, WithdrawChannel } from '../api/profileApi';
 import { getSocialCredential, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
 import { SocialButton } from '../components/AuthUi';
@@ -18,12 +23,20 @@ import { useAuthStore } from '../store/authStore';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { ICONS } from '../assets/icons';
 import type { IconKey } from '../assets/icons';
+import { APP_VERSION } from '../constants/appVersion';
+import { OPERATOR_INFO } from '../constants/operatorInfo';
+import { openAppUpdate } from '../utils/appUpdate';
+import {
+  APP_PLATFORM,
+  APP_VERSION_ENDPOINT,
+  AppUpdateDetails,
+  compareVersions,
+  getAppVersion,
+  parseUpdateDetails,
+} from '../utils/appVersionInfo';
 
 // ★ v18.36 — 디자인의 3D 아이콘(이미지)으로 교체
 type Row = { key: string; image: IconKey; label: string; sub?: string; onPress: () => void };
-
-const SUPPORT_EMAIL = '[support 이메일]';
-const SUPPORT_PHONE = '[고객센터 번호]';
 
 export default function AppInfoScreen() {
   const navigation = useNavigation<any>();
@@ -36,6 +49,39 @@ export default function AppInfoScreen() {
   const [sentTo, setSentTo] = useState<WithdrawChannel | null>(null); // 인증번호를 보낸 곳
   const [sending, setSending] = useState(false);
   const codeSent = !!sentTo;
+  // ★ v18.70 — 서버의 최신 버전(GET /api/app/version). 못 받으면 null → "최신 버전입니다"를 함부로 쓰지 않음
+  const [latest, setLatest] = useState<AppUpdateDetails | null>(null);
+  const installedVersion = getAppVersion(); // 네이티브 모듈이 없는 빌드면 null(그땐 비교 안 함)
+
+  useEffect(() => {
+    if (!installedVersion) return;
+    let alive = true;
+    axiosInstance
+      .get(APP_VERSION_ENDPOINT, { params: { platform: APP_PLATFORM, version: installedVersion }, timeout: 8000 })
+      .then(res => {
+        if (alive) setLatest(parseUpdateDetails(res.data));
+      })
+      .catch(() => {}); // 오프라인·서버 오류 → 버전만 보여 줌
+    return () => {
+      alive = false;
+    };
+  }, [installedVersion]);
+
+  const hasNewer = !!installedVersion && !!latest?.latestVersion && compareVersions(installedVersion, latest.latestVersion) < 0;
+  const isLatest = !!installedVersion && !!latest?.latestVersion && !hasNewer;
+
+  // ★ v18.70 — 운영자 이메일: 메일 앱으로. 메일 앱이 없으면 주소를 보여 주고 복사할 수 있게
+  const handleEmail = async () => {
+    const email = OPERATOR_INFO.supportEmail;
+    try {
+      await Linking.openURL(`mailto:${email}?subject=${encodeURIComponent('[현장메이트] 문의')}`);
+    } catch {
+      Alert.alert('메일 앱을 열지 못했어요', email, [
+        { text: '닫기', style: 'cancel' },
+        { text: '주소 복사', onPress: () => Clipboard.setString(email) },
+      ]);
+    }
+  };
 
   const openWithdraw = () => {
     setPassword('');
@@ -98,14 +144,16 @@ export default function AppInfoScreen() {
     { key: 'privacy', image: 'privacy', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
     { key: 'location', image: 'doc', label: '위치기반서비스 이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'location' }) },
     { key: 'oss', image: 'info', label: '오픈소스 라이선스', onPress: () => navigation.navigate('OpenSourceLicenses') },
-    { key: 'contact', image: 'megaphone', label: '문의하기', sub: '고객지원', onPress: handleContact },
+    // ★ v18.70 — 고객 문의 전용 아이콘(내정보 '고객 문의'와 같은 것)
+    { key: 'contact', image: 'inquiry', label: '문의하기', sub: '고객지원', onPress: handleContact },
   ];
 
-  const bizRows: { label: string; value: string }[] = [
-    { label: '사업자', value: '[회사명]' },
-    { label: '대표', value: '[대표자명]' },
-    { label: '고객센터', value: SUPPORT_PHONE },
-    { label: '이메일', value: SUPPORT_EMAIL },
+  // ★ v18.70 — 운영자 정보(사업자 등록 전 → 개인 개발자). 누를 수 있는 값은 파란 글자
+  //   사업자 등록 후 상호·대표자·사업자등록번호 줄은 constants/operatorInfo에 값을 넣고 여기 추가
+  const bizRows: { label: string; value: string; onPress?: () => void }[] = [
+    { label: '운영자', value: `${OPERATOR_INFO.name} (${OPERATOR_INFO.kind})` },
+    { label: '이메일', value: OPERATOR_INFO.supportEmail, onPress: handleEmail },
+    { label: '고객센터', value: '앱 고객 문의 (전화 상담 없음)', onPress: handleContact }, // 누르면 고객 문의 목록
   ];
 
   return (
@@ -117,7 +165,19 @@ export default function AppInfoScreen() {
           <Text style={styles.brandText}>
             현장<Text style={{ color: colors.primaryDark }}>메이트</Text>
           </Text>
-          <Text style={styles.versionText}>현재 버전 v1.0.0 · 최신 버전입니다</Text>
+          <Text style={styles.versionText}>
+            현재 버전 v{APP_VERSION}
+            {isLatest ? ' · 최신 버전입니다' : hasNewer ? ` · 새 버전 v${latest?.latestVersion} 나왔어요` : ''}
+          </Text>
+          {hasNewer && (
+            <TouchableOpacity
+              style={styles.updateBtn}
+              onPress={() => openAppUpdate(latest ? { ...latest, currentVersion: installedVersion } : null)}
+              hitSlop={8}
+            >
+              <Text style={styles.updateBtnText}>업데이트</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.card}>
@@ -138,12 +198,24 @@ export default function AppInfoScreen() {
         </View>
 
         <View style={styles.bizCard}>
-          {bizRows.map((r, i) => (
-            <View key={r.label} style={[styles.bizRow, i !== bizRows.length - 1 && styles.rowDivider]}>
-              <Text style={styles.bizLabel}>{r.label}</Text>
-              <Text style={styles.bizValue}>{r.value}</Text>
-            </View>
-          ))}
+          {bizRows.map((r, i) => {
+            const rowStyle = [styles.bizRow, i !== bizRows.length - 1 && styles.rowDivider];
+            const content = (
+              <>
+                <Text style={styles.bizLabel}>{r.label}</Text>
+                <Text style={[styles.bizValue, !!r.onPress && styles.bizValueLink]}>{r.value}</Text>
+              </>
+            );
+            return r.onPress ? (
+              <TouchableOpacity key={r.label} style={rowStyle} onPress={r.onPress} accessibilityRole="button">
+                {content}
+              </TouchableOpacity>
+            ) : (
+              <View key={r.label} style={rowStyle}>
+                {content}
+              </View>
+            );
+          })}
         </View>
 
         <TouchableOpacity style={styles.withdrawBtn} onPress={openWithdraw}>
@@ -246,7 +318,10 @@ const styles = StyleSheet.create({
   },
   bizRow: { flexDirection: 'row', gap: spacing.sm, paddingVertical: 9 },
   bizLabel: { width: 70, fontSize: 13, color: colors.textSecondary },
-  bizValue: { fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
+  bizValue: { flex: 1, fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
+  bizValueLink: { color: colors.primary },
+  updateBtn: { marginTop: 2, paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.sm, backgroundColor: '#EAF4FF' },
+  updateBtnText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
 
   withdrawBtn: { alignItems: 'center', paddingVertical: spacing.sm },
   withdrawText: { fontSize: 13, color: colors.textSecondary, textDecorationLine: 'underline' },

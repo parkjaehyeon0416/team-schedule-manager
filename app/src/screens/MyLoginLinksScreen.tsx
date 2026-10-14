@@ -12,6 +12,7 @@ import AppHeader from '../components/AppHeader';
 import GradientButton from '../components/GradientButton';
 import { ProviderBadge } from '../components/AuthUi';
 import ReauthSheet from '../components/ReauthSheet';
+import { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea'; // ★ v18.70 QA — 확인 창 어두운 배경이 기기 바 뒤까지
 import {
   getLoginLinks, linkSocial, unlinkSocial, isSocialCancel, LoginLinks, PROVIDER_NAME, SocialProvider, APPLE_LOGIN_AVAILABLE,
   ReauthInfo,
@@ -274,7 +275,7 @@ export default function MyLoginLinksScreen() {
         />
       )}
 
-      <Modal transparent statusBarTranslucent visible={!!confirm} animationType="fade" onRequestClose={cancelUnlink}>
+      <Modal transparent {...MODAL_UNDER_SYSTEM_BARS} visible={!!confirm} animationType="fade" onRequestClose={cancelUnlink}>
         <View style={styles.dim}>
           <View style={styles.dialog} accessibilityRole="alert">
             <Text style={styles.dTitle}>{confirm ? PROVIDER_NAME[confirm] : ''} 연결을 해제할까요?</Text>
@@ -292,7 +293,7 @@ export default function MyLoginLinksScreen() {
       </Modal>
 
       {/* 연결 실패 — 이미 다른 계정에 연결된 소셜 계정 */}
-      <Modal transparent statusBarTranslucent visible={!!fail} animationType="fade" onRequestClose={() => setFail(null)}>
+      <Modal transparent {...MODAL_UNDER_SYSTEM_BARS} visible={!!fail} animationType="fade" onRequestClose={() => setFail(null)}>
         <View style={styles.dim}>
           <View style={[styles.dialog, { alignItems: 'center' }]} accessibilityRole="alert">
             <View style={styles.failIcon}><Icon name="information-outline" size={26} color="#B95E00" /></View>

@@ -25,6 +25,7 @@ import WorkTypePicker from '../components/WorkTypePicker';
 import SitePickerModal from '../components/SitePickerModal';
 import AddressSearchModal from '../components/AddressSearchModal';
 import AppHeader from '../components/AppHeader';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea';
 import { FocusStatusBar } from '../components/FocusStatusBar';
 import { formatMoney, parseMoney } from '../utils/format';
 import type { TeamMember, WageSetting, WorkType, Site, Team } from '../types/api';
@@ -534,9 +535,11 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
         }}
       />
 
-      <Modal visible={teamPickerVisible} animationType="slide" transparent onRequestClose={() => setTeamPickerVisible(false)}>
+      {/* ★ v18.70 — 아래 시트들은 기기 하단 바와 겹치는 높이만큼 아래 여백을 더함(ModalBottomSafeArea)
+          ★ v18.70 QA — 어두운 배경은 기기 상단·하단 바 뒤까지 덮음(MODAL_UNDER_SYSTEM_BARS) */}
+      <Modal visible={teamPickerVisible} animationType="slide" transparent onRequestClose={() => setTeamPickerVisible(false)} {...MODAL_UNDER_SYSTEM_BARS}>
         <Pressable style={styles.modalBackdrop} onPress={() => setTeamPickerVisible(false)} />
-        <View style={styles.modalSheet}>
+        <ModalBottomSafeArea style={styles.modalSheet}>
           <Text style={styles.modalTitle}>팀 선택</Text>
           <FlatList
             data={leaderTeams}
@@ -547,12 +550,12 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
               </Pressable>
             )}
           />
-        </View>
+        </ModalBottomSafeArea>
       </Modal>
 
-      <Modal visible={reminderPickerVisible} animationType="fade" transparent onRequestClose={() => setReminderPickerVisible(false)}>
+      <Modal visible={reminderPickerVisible} animationType="fade" transparent onRequestClose={() => setReminderPickerVisible(false)} {...MODAL_UNDER_SYSTEM_BARS}>
         <Pressable style={styles.modalBackdrop} onPress={() => setReminderPickerVisible(false)} />
-        <View style={styles.modalSheet}>
+        <ModalBottomSafeArea style={styles.modalSheet}>
           <Text style={styles.modalTitle}>알림</Text>
           <FlatList
             data={REMINDER_TIME_OPTIONS}
@@ -563,7 +566,7 @@ export default function ScheduleCreateScreen({ navigation: navProp, route }: any
               </Pressable>
             )}
           />
-        </View>
+        </ModalBottomSafeArea>
       </Modal>
     </View>
   );

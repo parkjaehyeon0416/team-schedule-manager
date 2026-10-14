@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { getReportsWithContext, createReport, deleteReport, getPublicReportUrl, shareReport } from '../api/reportApi';
 import type { SiteReport, ReportContext } from '../types/api';
 import AppHeader from '../components/AppHeader';
+import { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea'; // ★ v18.70 QA — 확인 창 어두운 배경이 기기 바 뒤까지
 import { isPlanLocked } from '../utils/planLock';
 import { ICONS } from '../assets/icons';
 
@@ -395,7 +396,7 @@ export default function ScheduleReportsScreen({ route }: any) {
       </KeyboardAvoidingView>
 
       {/* ── 삭제 확인 ── */}
-      <Modal transparent statusBarTranslucent visible={!!delTarget} animationType="fade" onRequestClose={() => setDelTarget(null)}>
+      <Modal transparent {...MODAL_UNDER_SYSTEM_BARS} visible={!!delTarget} animationType="fade" onRequestClose={() => setDelTarget(null)}>
         <View style={s.backdrop}>
           <View style={s.dialog} accessibilityRole="alert" accessibilityLabel="보고서 삭제 확인">
             <View style={s.dialogIcon}><Icon name="trash-can-outline" size={26} color="#E5484D" /></View>

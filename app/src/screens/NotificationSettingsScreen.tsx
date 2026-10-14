@@ -9,6 +9,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, FlatL
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../components/AppHeader';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea';
 import { getNotificationSettings, updateNotificationSettings } from '../api/notificationSettingsApi';
 import type { NotificationSetting } from '../types/api';
 import { colors, radius, spacing } from '../theme/designTokens';
@@ -119,9 +120,11 @@ export default function NotificationSettingsScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={timePickerVisible} animationType="fade" transparent onRequestClose={() => setTimePickerVisible(false)}>
+      <Modal visible={timePickerVisible} animationType="fade" transparent onRequestClose={() => setTimePickerVisible(false)} {...MODAL_UNDER_SYSTEM_BARS}>
         <Pressable style={styles.modalBackdrop} onPress={() => setTimePickerVisible(false)} />
-        <View style={styles.modalSheet}>
+        {/* ★ v18.70 — 기기 하단 바와 겹치는 높이만큼 아래 여백을 더함(ModalBottomSafeArea)
+            ★ v18.70 QA — 어두운 배경은 기기 상단·하단 바 뒤까지 덮음(MODAL_UNDER_SYSTEM_BARS) */}
+        <ModalBottomSafeArea style={styles.modalSheet}>
           <Text style={styles.modalTitle}>일정 알림 시간</Text>
           <FlatList
             data={REMINDER_TIME_OPTIONS}
@@ -132,7 +135,7 @@ export default function NotificationSettingsScreen() {
               </Pressable>
             )}
           />
-        </View>
+        </ModalBottomSafeArea>
       </Modal>
     </View>
   );

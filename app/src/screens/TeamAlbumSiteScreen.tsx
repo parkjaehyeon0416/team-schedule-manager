@@ -21,6 +21,7 @@ import { pickImages, toPhotoFile } from '../utils/pickImage';
 import type { PhotoFile } from '../utils/pickImage';
 import { uploadSequentially, showUploadSummary } from '../utils/uploadPhotos';
 import { Avatar } from '../components/TeamUi';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea';
 import { useLightStatusBarWhile } from '../components/FocusStatusBar';
 import { STAGE_LABEL, STAGE_BG } from './TeamAlbumScreen';
 import { colors, spacing } from '../theme/designTokens';
@@ -187,9 +188,11 @@ export default function TeamAlbumSiteScreen() {
       )}
 
       {/* ★ v18.66 — 올릴 사진의 단계 고르기(고른 사진 전부 같은 단계로) */}
-      <Modal visible={!!pendingFiles} animationType="slide" transparent onRequestClose={() => setPendingFiles(null)}>
+      <Modal visible={!!pendingFiles} animationType="slide" transparent onRequestClose={() => setPendingFiles(null)} {...MODAL_UNDER_SYSTEM_BARS}>
         <Pressable style={styles.sheetBackdrop} onPress={() => setPendingFiles(null)} accessibilityLabel="닫기" />
-        <View style={styles.sheet}>
+        {/* ★ v18.70 — 기기 하단 바와 겹치는 높이만큼 아래 여백을 더함(ModalBottomSafeArea)
+            ★ v18.70 QA — 어두운 배경은 기기 상단·하단 바 뒤까지 덮음(MODAL_UNDER_SYSTEM_BARS) */}
+        <ModalBottomSafeArea style={styles.sheet}>
           <Text style={styles.sheetTitle}>어떤 사진인가요?</Text>
           {!!pendingFiles && pendingFiles.length > 1 && (
             <Text style={styles.sheetSub}>고른 사진 {pendingFiles.length}장을 모두 같은 단계로 올려요.</Text>
@@ -203,7 +206,7 @@ export default function TeamAlbumSiteScreen() {
           <Pressable style={styles.sheetCancel} onPress={() => setPendingFiles(null)}>
             <Text style={styles.sheetCancelText}>취소</Text>
           </Pressable>
-        </View>
+        </ModalBottomSafeArea>
       </Modal>
 
       <Modal visible={!!view} animationType="fade" onRequestClose={() => setView(null)} statusBarTranslucent>
@@ -222,7 +225,8 @@ export default function TeamAlbumSiteScreen() {
                 <Image source={{ uri: `${SERVER_BASE_URL}${view.url}` }} style={styles.viewerImg} resizeMode="contain" />
               </ViewShot>
             </View>
-            <View style={styles.viewerFoot}>
+            {/* ★ v18.70 — 아래 줄(올린 사람·저장)도 기기 하단 바와 겹치는 높이만큼 위로(ModalBottomSafeArea) */}
+            <ModalBottomSafeArea style={styles.viewerFoot}>
               <Avatar id={view.uploader?.id ?? 0} name={view.uploader?.name ?? '?'} color={view.uploader?.avatar_color} image={view.uploader?.avatar_image_path} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={styles.viewerName}>{view.uploader?.name ?? '알 수 없음'}</Text>
@@ -231,7 +235,7 @@ export default function TeamAlbumSiteScreen() {
               <Pressable onPress={save} style={styles.saveBtn} accessibilityLabel="사진 저장" disabled={saving}>
                 {saving ? <ActivityIndicator color="#FFFFFF" /> : <Icon name="tray-arrow-down" size={20} color="#FFFFFF" />}
               </Pressable>
-            </View>
+            </ModalBottomSafeArea>
           </View>
         )}
       </Modal>

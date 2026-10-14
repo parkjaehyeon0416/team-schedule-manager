@@ -17,6 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Button, IconButton } from 'react-native-paper';
+import { MODAL_UNDER_SYSTEM_BARS } from './ModalBottomSafeArea';
 
 // ─────────────────────────────────────────────────────────────────
 // Props 타입
@@ -67,8 +68,9 @@ export default function YearMonthPicker({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      {...MODAL_UNDER_SYSTEM_BARS}
     >
-      {/* 배경 탭하면 닫힘 */}
+      {/* 배경 탭하면 닫힘 (★ v18.70 QA — 기기 상단·하단 바 뒤까지 덮음, MODAL_UNDER_SYSTEM_BARS) */}
       <Pressable style={styles.overlay} onPress={onClose}>
         {/* 본체 — 이벤트 전파 막아서 본체 탭으로는 안 닫힘 */}
         <Pressable style={styles.container} onPress={() => {}}>

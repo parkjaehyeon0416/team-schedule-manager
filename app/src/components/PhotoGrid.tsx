@@ -21,6 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { SiteFile } from '../types/api';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { useLightStatusBarWhile } from './FocusStatusBar';
+import ModalBottomSafeArea from './ModalBottomSafeArea';
 
 // ─────────────────────────────────────────────────────────────────
 // 화면 가로폭에 맞춰 사진 한 칸 크기 계산
@@ -133,7 +134,8 @@ export default function PhotoGrid({
             <Icon name="close" size={28} color="#FFF" />
           </Pressable>
           {viewing && (
-            <View style={styles.viewerBar}>
+            // ★ v18.70 — 아래 버튼 줄이 기기 하단 바(3버튼 모드는 40보다 높음)와 겹치면 겹친 만큼 위로(ModalBottomSafeArea)
+            <ModalBottomSafeArea style={styles.viewerBar}>
               {viewingCanPair && (
                 <Pressable style={styles.viewerBtn} onPress={() => { const p = viewing; setViewing(null); onPairAssign!(p); }}>
                   <Icon name="link-variant" size={18} color="#FFF" />
@@ -144,7 +146,7 @@ export default function PhotoGrid({
                 <Icon name="trash-can-outline" size={18} color="#FFF" />
                 <Text style={styles.viewerBtnText}>삭제</Text>
               </Pressable>
-            </View>
+            </ModalBottomSafeArea>
           )}
         </View>
       </Modal>

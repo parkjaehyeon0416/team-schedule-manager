@@ -23,6 +23,7 @@ import {
 import { Button } from 'react-native-paper';
 import type { SiteFile } from '../types/api';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from './ModalBottomSafeArea';
 
 // ─────────────────────────────────────────────────────────────────
 // 모달 안 사진 카드의 크기 계산 — 화면의 절반 폭, 정사각형
@@ -56,8 +57,9 @@ export default function PhotoPairPicker({
       animationType="slide"
       transparent
       onRequestClose={onCancel}
+      {...MODAL_UNDER_SYSTEM_BARS}
     >
-      {/* 반투명 배경 — 탭 시 취소 */}
+      {/* 반투명 배경 — 탭 시 취소 (★ v18.70 QA — 기기 상단·하단 바 뒤까지 덮음, MODAL_UNDER_SYSTEM_BARS) */}
       <TouchableOpacity
         style={styles.backdrop}
         activeOpacity={1}
@@ -125,8 +127,9 @@ export default function PhotoPairPicker({
             </ScrollView>
           )}
 
-          {/* 하단 버튼 영역 */}
-          <View style={styles.footer}>
+          {/* 하단 버튼 영역
+              ★ v18.70 — 시트 맨 아래 여백(16)을 이 줄로 옮기고 기기 하단 바와 겹치는 높이만큼 더함(ModalBottomSafeArea) */}
+          <ModalBottomSafeArea style={styles.footer}>
             <Button
               mode="text"
               onPress={() => onSelect(null)}
@@ -137,7 +140,7 @@ export default function PhotoPairPicker({
             <Button mode="outlined" onPress={onCancel} style={styles.cancelBtn}>
               취소
             </Button>
-          </View>
+          </ModalBottomSafeArea>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -155,7 +158,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '85%',
-    paddingBottom: 16,
   },
   header: {
     paddingHorizontal: 16,
@@ -225,6 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 16, // ★ v18.70 — 원래 시트(sheet)에 있던 아래 여백
     gap: 12,
   },
   skipBtn: { flex: 1 },

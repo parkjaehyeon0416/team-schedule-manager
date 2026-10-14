@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import AddressSearchModal, { DaumAddressResult } from '../components/AddressSearchModal';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea';
 import { createQuote, updateQuote, getMaterials } from '../api/quoteApi';
 import { getSites } from '../api/siteApi';
 import type { Quote, QuoteLine, Site, UserMaterial } from '../types/api';
@@ -301,9 +302,11 @@ export default function QuoteFormScreen() {
 
       <AddressSearchModal visible={addressSearchVisible} onClose={() => setAddressSearchVisible(false)} onSelect={handleAddressSelect} />
 
-      <Modal visible={sitePickerVisible} animationType="slide" transparent onRequestClose={() => setSitePickerVisible(false)}>
+      <Modal visible={sitePickerVisible} animationType="slide" transparent onRequestClose={() => setSitePickerVisible(false)} {...MODAL_UNDER_SYSTEM_BARS}>
         <Pressable style={styles.modalBackdrop} onPress={() => setSitePickerVisible(false)} />
-        <View style={styles.modalSheet}>
+        {/* ★ v18.70 — 기기 하단 바와 겹치는 높이만큼 아래 여백을 더함(ModalBottomSafeArea)
+            ★ v18.70 QA — 어두운 배경은 기기 상단·하단 바 뒤까지 덮음(MODAL_UNDER_SYSTEM_BARS) */}
+        <ModalBottomSafeArea style={styles.modalSheet}>
           <Text style={styles.modalTitle}>현장 선택</Text>
           <FlatList
             data={sites}
@@ -326,7 +329,7 @@ export default function QuoteFormScreen() {
             <Icon name="magnify" size={16} color={colors.primaryDark} />
             <Text style={styles.modalManualBtnText}>새 주소 직접 검색</Text>
           </Pressable>
-        </View>
+        </ModalBottomSafeArea>
       </Modal>
     </View>
   );

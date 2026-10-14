@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { navigationRef, flushPendingNavigation, handleAppLink, flushPendingLink } from './navigationRef';
 import { registerPush } from '../utils/push';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../store/authStore';
 import { useAppUpdateStore } from '../store/appUpdateStore'; // ★ v18.69
 import BottomTabNavigator from './BottomTabNavigator';
+import { colors } from '../theme/designTokens';
 
 import LoginScreen from '../screens/LoginScreen';
 // ★ v18.51 — 소셜 계정 연결(처음 소셜 로그인 안내·약관·가입 완료·쓰던 계정 연결) + 로그인 연결 관리
@@ -74,6 +76,34 @@ import PlanScreen from '../screens/PlanScreen';
 
 const Stack = createNativeStackNavigator();
 
+// ★ v18.70 — 아래 안전 영역을 화면이 직접 처리하는 화면: 스택 공통 화면 틀(screenOptions의 contentStyle)의 아래 여백·바탕색을 빼고 그대로 그림
+const SELF_INSET = { contentStyle: undefined };
+
+// ★ v18.70 QA — 화면 틀 아래 칸(기기 하단 바 뒤)의 색 = 그 화면 아래쪽 바탕색.
+//   예전엔 전부 흰색이라 연한 파랑 바탕(colors.background) 화면(앱 정보·고객 문의·일정 등록·내 명함 등 대부분)에서
+//   맨 아래에 흰 띠가 따로 보였음. 기본은 앱 공통 바탕색, 아래쪽이 다른 색인 화면만 여기 적음
+//   (화면의 바탕색·아래 고정 버튼 줄을 바꾸면 여기도 같이 바꿀 것)
+const FRAME_BOTTOM_BG: Record<string, string> = {
+  // 흰 바탕 화면
+  Login: colors.surface,
+  Register: colors.surface,
+  SocialFirstLogin: colors.surface,
+  SocialSignupTerms: colors.surface,
+  SocialSignupDone: colors.surface,
+  SocialLinkSignin: colors.surface,
+  FindEmail: colors.surface,
+  ForgotPassword: colors.surface,
+  MyPassword: colors.surface,
+  PhoneChange: colors.surface,
+  TeamJoin: colors.surface,
+  NoticeDetail: colors.surface,
+  LegalDocument: colors.surface,
+  // 맨 아래에 흰 버튼 줄이 붙어 있는 화면
+  TeamContactPick: colors.surface,
+  // 견적서 미리보기(회색 바탕)
+  QuotePreview: '#EEF3F9',
+};
+
 /**
  * ═══════════════════════════════════════════
  * 최상위 Stack — 로그인/모달 분기
@@ -81,6 +111,21 @@ const Stack = createNativeStackNavigator();
  */
 export default function AppNavigator() {
   const { isLoggedIn, isLoading, restoreAuth } = useAuthStore();
+
+  // ★ v18.70 — 안드로이드 하단 시스템 바(뒤로·홈·최근 / 제스처 바)를 다시 보이게 하면서(MainActivity)
+  //   스택 화면 틀(contentStyle) 아래쪽을 바 높이(insets.bottom)만큼 비우고 그 칸을 화면 바탕색으로 칠함(FRAME_BOTTOM_BG).
+  //   → 화면마다 따로 손대지 않아도 아래 고정 버튼·토스트·플로팅 버튼·목록 끝이 전부 바 위로 올라옴.
+  //   · 안드로이드 15+: 앱이 바 뒤까지 그려져서 바 높이만큼 비움(바는 투명 → 밝은 칸 위에 어두운 버튼)
+  //   · 안드로이드 14 이하: 바가 자기 자리를 따로 차지(흰 바, values-v27/styles.xml) → insets.bottom = 0이라 그대로
+  //   · iOS: 홈 인디케이터 높이만큼
+  //   예외(SELF_INSET — 화면이 직접 띄움): MainTabs(하단 탭이 탭 높이에 더함), QuickCreate(투명 시트 — 어두운 배경은
+  //   바 뒤까지 덮고 흰 판만 올림), PhotoCompare(검은 화면 — SafeAreaView edges bottom)
+  //   Modal로 뜨는 시트는 따로 뜬 창이라 여기 영향을 안 받음 → components/ModalBottomSafeArea
+  const insets = useSafeAreaInsets();
+  const screenOptions = ({ route }: { route: { name: string } }) => ({
+    headerShown: false,
+    contentStyle: { backgroundColor: FRAME_BOTTOM_BG[route.name] ?? colors.background, paddingBottom: insets.bottom },
+  });
 
   // ★ v18.36 — 스플래시: 로그인 복원이 금방 끝나도 로고 애니메이션이 보이도록 최소 2.5초 유지
   const [minSplashDone, setMinSplashDone] = useState(false);
@@ -120,10 +165,10 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={screenOptions}>
         {isLoggedIn ? (
           <>
-            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+            <Stack.Screen name="MainTabs" component={BottomTabNavigator} options={SELF_INSET} />
             {/* ★ v18.29: 드로어 제거 — 아래 화면들은 하단탭 '내정보' 메뉴에서 push로 진입 */}
             <Stack.Screen name="IncomeList" component={IncomeListScreen} />
             <Stack.Screen name="IncomeDetail" component={IncomeDetailScreen} />
@@ -159,7 +204,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="QuickCreate"
               component={QuickCreateScreen}
-              options={{ presentation: 'transparentModal', animation: 'fade' }}
+              options={{ ...SELF_INSET, presentation: 'transparentModal', animation: 'fade' }}
             />
             <Stack.Screen
               name="ScheduleCreate"
@@ -177,7 +222,7 @@ export default function AppNavigator() {
             {/* ★ v18.66 — 휴대폰 번호 변경(본인 확인 + 새 번호 문자 인증), 프로필 설정의 [변경] */}
             <Stack.Screen name="PhoneChange" component={PhoneChangeScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-            <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} />
+            <Stack.Screen name="PhotoCompare" component={PhotoCompareScreen} options={SELF_INSET} />
             {/* ★ 이번 작업 추가 */}
             <Stack.Screen name="QuoteCreate" component={QuoteFormScreen} />
             <Stack.Screen name="ScheduleReports" component={ScheduleReportsScreen} />

@@ -7,6 +7,7 @@ import { View, Text, Image, Pressable, Modal, StyleSheet, ViewStyle } from 'reac
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { colors } from '../theme/designTokens';
+import ModalBottomSafeArea, { MODAL_UNDER_SYSTEM_BARS } from './ModalBottomSafeArea';
 
 export const AVB = ['#FFE3C2', '#D6ECFF', '#D9F6F1', '#ECE5FF', '#FFE0E0', '#E5ECF5'];
 export const AVT = ['#B95E00', '#0A6CE0', '#0B8574', '#6B4FD8', '#C03A3E', '#5F7290'];
@@ -104,18 +105,22 @@ export function SegTabs({ items, active, onPick }: { items: string[]; active: nu
   );
 }
 
-/** 아래에서 올라오는 시트(디자인 공통: 반투명 배경 + 둥근 흰 판 + 손잡이) */
-export function BottomSheet({ visible, onClose, children, label }: {
-  visible: boolean; onClose: () => void; children: React.ReactNode; label?: string;
+/** 아래에서 올라오는 시트(디자인 공통: 반투명 배경 + 둥근 흰 판 + 손잡이)
+ *  ★ v18.70 — 흰 판 아래 여백 = 30 + 기기 하단 바와 겹치는 높이(ModalBottomSafeArea) → 버튼이 바에 안 가려짐
+ *  ★ v18.70 QA — 어두운 배경이 기기 상단·하단 바 뒤까지 덮게(MODAL_UNDER_SYSTEM_BARS).
+ *    단 입력칸이 있는 시트(withInput — 팀 공지 쓰기)는 예전처럼 상단만: 안드로이드가 창을 키보드만큼 줄여 줘야 시트가 키보드 위로 올라옴 */
+export function BottomSheet({ visible, onClose, children, label, withInput }: {
+  visible: boolean; onClose: () => void; children: React.ReactNode; label?: string; withInput?: boolean;
 }) {
+  const barProps = withInput ? { statusBarTranslucent: true } : MODAL_UNDER_SYSTEM_BARS;
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} {...barProps}>
       <View style={styles.sheetWrap}>
         <Pressable style={styles.sheetBackdrop} onPress={onClose} accessibilityLabel="닫기" />
-        <View style={styles.sheet} accessibilityViewIsModal accessibilityLabel={label}>
+        <ModalBottomSafeArea style={styles.sheet} accessibilityViewIsModal accessibilityLabel={label}>
           <View style={styles.sheetHandle} />
           {children}
-        </View>
+        </ModalBottomSafeArea>
       </View>
     </Modal>
   );

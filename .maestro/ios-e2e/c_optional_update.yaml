@@ -1,0 +1,56 @@
+# (c) 선택 업데이트 — 로컬 서버 설정 APP_LATEST_VERSION_IOS=1.2.0 + APP_UPDATE_MESSAGE(3줄)일 때(워크플로가 바꿔 둠)
+#   앱(1.1.0)을 켜면 스플래시 뒤 "새 버전이 나왔어요 · 1.1.0 → 1.2.0" 시트 → [나중에] → 토스트 → 앱 정보에 새 버전 표시 → 다시 켜면 또 뜸
+appId: com.workmatekr.app
+name: c_optional_update
+---
+- launchApp:
+    stopApp: true
+- extendedWaitUntil:
+    visible: "새 버전이 나왔어요"
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: ".*1\\.1\\.0 → 1\\.2\\.0.*"
+- assertVisible: "바뀐 점"
+- assertVisible: "회원가입 휴대폰 인증이 추가됐어요"
+- takeScreenshot: c_01_optional_update_sheet
+- tapOn:
+    text: "나중에"
+    index: 1
+    optional: true
+- extendedWaitUntil:
+    visible: "다음에 앱을 열 때 다시 알려 드릴게요"
+    timeout: 5000
+    optional: true
+- takeScreenshot: c_02_later_toast
+- runFlow:
+    when:
+      visible: "새 버전이 나왔어요"
+    file: common/dismiss-optional-update.yaml
+- assertNotVisible: "새 버전이 나왔어요"
+
+# 앱 정보: "현재 버전 v1.1.0 · 새 버전 v1.2.0 나왔어요" + [업데이트]
+- runFlow:
+    when:
+      visible: "아이디 찾기"
+    file: common/login-leader.yaml
+- tapOn: "내정보, tab, 5 of 5"
+- scrollUntilVisible:
+    element: "앱 정보.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "앱 정보.*"
+- extendedWaitUntil:
+    visible: ".*새 버전 v1\\.2\\.0 나왔어요.*"
+    timeout: 20000
+- takeScreenshot: c_03_app_info_new_version
+- tapOn: "←"
+
+# 앱을 새로 켜면 다시 뜸("다음에 앱을 열 때 다시 알려 드릴게요")
+- launchApp:
+    stopApp: true
+- extendedWaitUntil:
+    visible: "새 버전이 나왔어요"
+    timeout: 60000
+- takeScreenshot: c_04_sheet_again_after_relaunch
+- runFlow: common/dismiss-optional-update.yaml

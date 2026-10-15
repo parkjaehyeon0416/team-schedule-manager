@@ -1,0 +1,68 @@
+# (b) 이메일 로그인(시드한 가상 팀장) → 홈(하단 탭이 홈 인디케이터 위) → 일정 탭 → 알림 탭 → 내정보 탭(새 아이콘, 이용약관 줄 없음) → 앱 정보
+#   하단 탭 버튼의 iOS 접근성 이름 = "<탭 이름>, tab, N of 5"(React Navigation)
+appId: com.workmatekr.app
+name: b_login_tabs_profile_appinfo
+---
+# 회원가입(e)으로 로그인된 상태를 지우고 로그인 화면부터
+- launchApp:
+    clearState: true
+    stopApp: true
+- runFlow: common/login-leader.yaml
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: b_01_home
+- assertVisible: "홈, tab, 1 of 5"
+- assertVisible: "내정보, tab, 5 of 5"
+- scrollUntilVisible:
+    element: "팀 활동"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+- takeScreenshot: b_02_home_scrolled
+
+- tapOn: "일정, tab, 2 of 5"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: b_03_schedule_tab
+
+- tapOn: "알림, tab, 4 of 5"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: b_04_notifications_tab
+
+- tapOn: "내정보, tab, 5 of 5"
+- extendedWaitUntil:
+    visible: "프로필 설정.*"
+    timeout: 20000
+- assertVisible: "공개 프로필 보기.*"
+- assertVisible: "로그인 연결 관리.*"
+- takeScreenshot: b_05_profile_tab
+# v18.70: 이용약관 · 개인정보 처리방침 줄은 내정보에서 빠지고 앱 정보 안에만 있음
+- assertNotVisible: "이용약관.*"
+- assertNotVisible: "개인정보 처리방침.*"
+- scrollUntilVisible:
+    element: "앱 정보.*"
+    direction: DOWN
+    timeout: 10000
+- assertVisible: "고객 문의.*"
+- takeScreenshot: b_06_profile_tab_bottom
+
+- tapOn: "앱 정보.*"
+- extendedWaitUntil:
+    visible: "운영자"
+    timeout: 20000
+- assertVisible: ".*현재 버전 v1\\.1\\.0.*"
+- takeScreenshot: b_07_app_info
+- scrollUntilVisible:
+    element: "회원 탈퇴"
+    direction: DOWN
+    timeout: 10000
+- assertVisible: ".*박재현 \\(개인 개발자\\).*"
+- assertVisible: ".*workmatekr@gmail\\.com.*"
+- assertVisible: "고객센터.*"
+- assertNotVisible: ".*위치기반.*"
+- takeScreenshot: b_08_app_info_operator
+- tapOn: "←"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "홈, tab, 1 of 5"

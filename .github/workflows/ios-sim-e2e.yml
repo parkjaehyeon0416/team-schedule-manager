@@ -1,0 +1,317 @@
+# 가상 아이폰 E2E — GitHub 맥 서버 안에 로컬 백엔드(Laravel + MySQL, 가상 데이터)를 띄우고,
+#   서버 주소만 http://localhost:8000으로 바꾼 시뮬레이터용 앱을 빌드해서 Maestro로 화면을 눌러 봄.
+#   결과(화면 캡처·Maestro 로그·백엔드 로그·앱 로그·충돌 보고서·빌드 로그)는 ios-e2e-results 브랜치에 올림.
+#
+#   ※ 실서버(workmatekr.com)에는 접속·로그인·쓰기를 하지 않음: 앱 번들에 실서버 주소가 남아 있으면 빌드 단계에서 멈춤.
+#   ※ 실제 계정·비밀번호를 쓰지 않음: 계정은 scripts/e2e/seed.php가 이 러너의 빈 DB에 만들고, 비밀번호는 실행마다 무작위.
+#      (리포지토리에 저장되는 비밀번호 없음, 결과에 올리기 전에 로그에서도 지움)
+#   실행: ios-e2e 브랜치에 push 하거나 Actions 탭에서 수동 실행. 흐름 파일: .maestro/ios-e2e/
+name: iOS Simulator E2E
+
+on:
+  push:
+    branches: [ios-e2e]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-sim-e2e
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: macos-15
+    timeout-minutes: 150
+    env:
+      RESULTS: ${{ github.workspace }}/e2e-results
+      APP_OUT: ${{ github.workspace }}/e2e-app
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+      HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare results folder
+        run: mkdir -p "$RESULTS/logs" "$RESULTS/screenshots" "$APP_OUT"
+
+      # ───────────────────────── 앱 빌드(서버 주소 = 로컬) ─────────────────────────
+      # 앱 소스가 그대로면 지난번에 빌드한 시뮬레이터 앱을 다시 씀(흐름·시드만 고칠 때 빌드 20분 절약)
+      - name: Restore simulator app cache
+        id: appcache
+        uses: actions/cache/restore@v4
+        with:
+          path: e2e-app
+          key: ios-e2e-app-localhost8000-v1-${{ hashFiles('app/src/**', 'app/ios/Podfile', 'app/ios/app/**', 'app/ios/app.xcodeproj/project.pbxproj', 'app/package-lock.json', 'app/App.tsx', 'app/index.js', 'app/app.json', 'app/babel.config.js', 'app/metro.config.js', 'app/react-native.config.js', 'app/Gemfile') }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: ${{ steps.appcache.outputs.cache-hit != 'true' && 'npm' || '' }}
+          cache-dependency-path: app/package-lock.json
+
+      - uses: ruby/setup-ruby@v1
+        if: steps.appcache.outputs.cache-hit != 'true'
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: app
+
+      - name: Install JS packages
+        if: steps.appcache.outputs.cache-hit != 'true'
+        working-directory: app
+        run: npm ci --legacy-peer-deps > "$RESULTS/logs/npm.log" 2>&1 || { tail -80 "$RESULTS/logs/npm.log"; exit 1; }
+
+      - name: Firebase config from secret
+        if: steps.appcache.outputs.cache-hit != 'true'
+        working-directory: app
+        env:
+          GSI: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: printf '%s' "$GSI" > ios/app/GoogleService-Info.plist && plutil -lint ios/app/GoogleService-Info.plist
+
+      - name: Point the app at the local backend (CI only, not committed)
+        if: steps.appcache.outputs.cache-hit != 'true'
+        working-directory: app
+        run: |
+          sed -i '' "s#^export const SERVER_BASE_URL = 'https://workmatekr.com';#export const SERVER_BASE_URL = 'http://localhost:8000';#" src/api/axiosInstance.ts
+          grep -n "^export const SERVER_BASE_URL" src/api/axiosInstance.ts
+          grep -q "^export const SERVER_BASE_URL = 'http://localhost:8000';" src/api/axiosInstance.ts || { echo "SERVER_BASE_URL patch failed"; exit 1; }
+
+      - name: Install pods
+        if: steps.appcache.outputs.cache-hit != 'true'
+        working-directory: app/ios
+        run: bundle exec pod install > "$RESULTS/logs/pod.log" 2>&1 || { tail -80 "$RESULTS/logs/pod.log"; exit 1; }
+
+      - name: Build for simulator
+        if: steps.appcache.outputs.cache-hit != 'true'
+        working-directory: app
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/app.xcworkspace -scheme app -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/build ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGNING_ALLOWED=NO build > "$RESULTS/logs/build.log" 2>&1 || { grep -E "error:|fatal" "$RESULTS/logs/build.log" | head -60; tail -80 "$RESULTS/logs/build.log"; exit 1; }
+          tail -5 "$RESULTS/logs/build.log"
+          APP=$(find ios/build/Build/Products/Release-iphonesimulator -maxdepth 1 -name "*.app" | head -1)
+          rm -rf "$APP_OUT/app.app" && cp -R "$APP" "$APP_OUT/app.app"
+
+      - name: Save simulator app cache
+        if: steps.appcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: e2e-app
+          key: ${{ steps.appcache.outputs.cache-primary-key }}
+
+      # 번들 안에 실서버 주소가 있으면 여기서 멈춤(실서버에 붙는 빌드로 점검하지 않게)
+      - name: Verify app bundle uses only the local backend
+        run: |
+          B="$APP_OUT/app.app/main.jsbundle"
+          ls -la "$B"
+          if LC_ALL=C grep -a -c "https://workmatekr.com" "$B"; then echo "production URL found in bundle — refusing to run"; exit 1; fi
+          LC_ALL=C grep -a -q "http://localhost:8000" "$B" || { echo "local backend URL not found in bundle"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_OUT/app.app/Info.plist" | tee "$RESULTS/logs/app-version.txt"
+
+      # ───────────────────────── 로컬 백엔드 ─────────────────────────
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, gd, intl, zip, bcmath, exif, fileinfo, gmp, curl, dom, xml
+          coverage: none
+          tools: composer:v2
+
+      - name: MySQL 8 (local, empty)
+        run: |
+          brew install mysql@8.4 > "$RESULTS/logs/mysql-install.log" 2>&1 || { tail -60 "$RESULTS/logs/mysql-install.log"; exit 1; }
+          MYSQL_BIN="$(brew --prefix mysql@8.4)/bin"
+          echo "$MYSQL_BIN" >> "$GITHUB_PATH"
+          brew services start mysql@8.4 || "$MYSQL_BIN/mysql.server" start
+          for i in $(seq 1 90); do "$MYSQL_BIN/mysqladmin" -uroot ping --silent && break; sleep 2; done
+          "$MYSQL_BIN/mysqladmin" -uroot ping
+          DB_PW="e2e$(openssl rand -hex 12)"
+          echo "::add-mask::$DB_PW"
+          echo "E2E_DB_PW=$DB_PW" >> "$GITHUB_ENV"
+          "$MYSQL_BIN/mysql" -uroot -e "CREATE DATABASE workmate_e2e CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE USER 'e2e'@'127.0.0.1' IDENTIFIED BY '$DB_PW'; CREATE USER 'e2e'@'localhost' IDENTIFIED BY '$DB_PW';
+            GRANT ALL PRIVILEGES ON workmate_e2e.* TO 'e2e'@'127.0.0.1'; GRANT ALL PRIVILEGES ON workmate_e2e.* TO 'e2e'@'localhost';
+            FLUSH PRIVILEGES;"
+          "$MYSQL_BIN/mysql" -uroot -e "SELECT VERSION();"
+
+      - name: Composer cache dir
+        id: composercache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composercache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+
+      - name: Backend install, .env, migrate
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress > "$RESULTS/logs/composer.log" 2>&1 || { tail -60 "$RESULTS/logs/composer.log"; exit 1; }
+          cat > .env <<EOF
+          APP_NAME=WorkmateE2E
+          APP_ENV=local
+          APP_KEY=
+          APP_DEBUG=true
+          APP_URL=http://localhost:8000
+          APP_TIMEZONE=Asia/Seoul
+          LOG_CHANNEL=single
+          LOG_LEVEL=debug
+          DB_CONNECTION=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_DATABASE=workmate_e2e
+          DB_USERNAME=e2e
+          DB_PASSWORD=${E2E_DB_PW}
+          SESSION_DRIVER=file
+          CACHE_STORE=file
+          QUEUE_CONNECTION=sync
+          BROADCAST_CONNECTION=log
+          FILESYSTEM_DISK=local
+          MAIL_MAILER=log
+          MAIL_FROM_ADDRESS="e2e@example.com"
+          MAIL_FROM_NAME="WorkmateE2E"
+          SMS_DRIVER=log
+          PLAN_LAUNCH_FREE=true
+          APP_MIN_VERSION_ANDROID=1.0.0
+          APP_LATEST_VERSION_ANDROID=1.1.0
+          APP_MIN_VERSION_IOS=1.0.0
+          APP_LATEST_VERSION_IOS=1.1.0
+          APP_UPDATE_MESSAGE=""
+          APP_STORE_URL=
+          APP_STORE_URL_IOS=
+          APP_STORE_URL_ANDROID=
+          APP_APK_URL=http://localhost:8000/download/latest
+          EOF
+          sed -i '' 's/^ *//' .env
+          php artisan key:generate --force
+          php artisan config:clear
+          php artisan migrate --force > "$RESULTS/logs/migrate.log" 2>&1 || { tail -60 "$RESULTS/logs/migrate.log"; exit 1; }
+          tail -5 "$RESULTS/logs/migrate.log"
+          php artisan db:seed --class=WorkTypeSeeder --force
+          php artisan storage:link || true
+
+      - name: Start backend (127.0.0.1:8000)
+        working-directory: backend
+        run: |
+          nohup env PHP_CLI_SERVER_WORKERS=4 php artisan serve --host=127.0.0.1 --port=8000 > "$RESULTS/logs/artisan-serve.log" 2>&1 &
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:8000/up && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8000/up > /dev/null
+          curl -fsS "http://127.0.0.1:8000/api/app/version?platform=ios&version=1.1.0"; echo
+
+      - name: Seed fictional data (random passwords, job-only file)
+        run: |
+          ACC="$RUNNER_TEMP/e2e-accounts.env"
+          E2E_ACCOUNTS_FILE="$ACC" php scripts/e2e/seed.php
+          chmod 600 "$ACC"
+          while IFS='=' read -r k v; do
+            [ -z "$k" ] && continue
+            case "$k" in *_PW) echo "::add-mask::$v" ;; esac
+            echo "$k=$v" >> "$GITHUB_ENV"
+          done < "$ACC"
+          grep -v "_PW=" "$ACC"
+
+      - name: Start verification-code helper (127.0.0.1:9999)
+        run: |
+          nohup node scripts/e2e/code-server.js > "$RESULTS/logs/code-server.log" 2>&1 &
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:9999/health && break; sleep 1; done
+          echo
+
+      # ───────────────────────── 시뮬레이터 + Maestro ─────────────────────────
+      - name: Boot simulator and install app
+        run: |
+          (xcodebuild -version && xcrun simctl list runtimes) > "$RESULTS/logs/versions.txt" 2>&1
+          read -r DEV DEVNAME <<< "$(python3 - <<'PY'
+          import json, re, subprocess
+          d = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '-j']))['devices']
+          def ver(k):
+              m = re.search(r'iOS-(\d+)-(\d+)', k)
+              return (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+          prefs = ['iPhone 17 Pro', 'iPhone 16 Pro', 'iPhone 17', 'iPhone 16', 'iPhone 15 Pro']
+          for k in sorted([k for k in d if 'iOS' in k], key=ver, reverse=True):
+              phones = [x for x in d[k] if x['name'].startswith('iPhone')]
+              if not phones:
+                  continue
+              pick = next((x for p in prefs for x in phones if x['name'] == p), phones[-1])
+              print(pick['udid'], pick['name'].replace(' ', '_') + '@' + k.split('.')[-1])
+              break
+          PY
+          )"
+          echo "DEV=$DEV ($DEVNAME)" | tee -a "$RESULTS/logs/versions.txt"
+          echo "DEV=$DEV" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
+          # 키보드 첫 사용 안내·자동 고침 끄기(입력이 바뀌지 않게)
+          xcrun simctl spawn "$DEV" defaults write com.apple.keyboard.preferences DidShowContinuousPathIntroduction -bool true || true
+          xcrun simctl spawn "$DEV" defaults write com.apple.Preferences KeyboardAutocorrection -bool false || true
+          xcrun simctl spawn "$DEV" defaults write com.apple.Preferences KeyboardPrediction -bool false || true
+          xcrun simctl install "$DEV" "$APP_OUT/app.app"
+          xcrun simctl io "$DEV" screenshot "$RESULTS/screenshots/00_simulator_booted.png" || true
+          touch "$RUNNER_TEMP/e2e-start-marker"
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash > "$RESULTS/logs/maestro-install.log" 2>&1
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version | tee -a "$RESULTS/logs/versions.txt"
+
+      - name: Run E2E flows
+        id: flows
+        continue-on-error: true
+        timeout-minutes: 75
+        run: bash scripts/e2e/run-ios-flows.sh
+
+      # ───────────────────────── 결과 모으기 · 올리기 ─────────────────────────
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p "$RESULTS/logs" "$RESULTS/crash"
+          if [ -n "${DEV:-}" ]; then
+            xcrun simctl spawn "$DEV" log show --last 100m --style compact --predicate 'process == "app" OR eventMessage CONTAINS "com.workmatekr.app"' > "$RESULTS/logs/app-simulator.log" 2>&1 || true
+            [ -f "$RESULTS/logs/app-simulator.log" ] && tail -c 4000000 "$RESULTS/logs/app-simulator.log" > "$RESULTS/logs/app-simulator-tail.log" && rm "$RESULTS/logs/app-simulator.log"
+          fi
+          find ~/Library/Logs/DiagnosticReports -newer "$RUNNER_TEMP/e2e-start-marker" \( -name "*app*" -o -name "*Maestro*" \) -exec cp {} "$RESULTS/crash/" \; 2>/dev/null || true
+          ls "$RESULTS/crash" > "$RESULTS/crash/LIST.txt" 2>/dev/null || true
+          [ -f backend/storage/logs/laravel.log ] && tail -n 1500 backend/storage/logs/laravel.log > "$RESULTS/logs/laravel-tail.log"
+          for f in npm pod composer mysql-install maestro-install; do
+            [ -f "$RESULTS/logs/$f.log" ] && tail -n 200 "$RESULTS/logs/$f.log" > "$RESULTS/logs/$f-tail.log" && rm "$RESULTS/logs/$f.log"
+          done
+          if [ -f "$RESULTS/logs/build.log" ]; then
+            grep -E "error:|fatal" "$RESULTS/logs/build.log" | head -100 > "$RESULTS/logs/build-errors.txt" || true
+            tail -n 200 "$RESULTS/logs/build.log" > "$RESULTS/logs/build-tail.log"; rm "$RESULTS/logs/build.log"
+          fi
+          [ "${{ steps.appcache.outputs.cache-hit }}" = "true" ] && echo "app build restored from cache (${{ steps.appcache.outputs.cache-matched-key }})" > "$RESULTS/logs/build-cache.txt" || true
+
+      # 무작위 비밀번호도 결과 파일에 남기지 않음
+      - name: Scrub secrets from results
+        if: always()
+        run: |
+          ACC="$RUNNER_TEMP/e2e-accounts.env"
+          secrets=()
+          [ -n "${E2E_DB_PW:-}" ] && secrets+=("$E2E_DB_PW")
+          if [ -f "$ACC" ]; then while IFS='=' read -r k v; do case "$k" in *_PW) secrets+=("$v") ;; esac; done < "$ACC"; fi
+          for s in "${secrets[@]}"; do
+            grep -rlIF -- "$s" "$RESULTS" 2>/dev/null | while read -r f; do SECRET="$s" perl -pi -e 's/\Q$ENV{SECRET}\E/***REDACTED***/g' "$f"; done
+          done
+          for s in "${secrets[@]}"; do if grep -rqIF -- "$s" "$RESULTS"; then echo "secret still present"; exit 1; fi; done
+          rm -f "$ACC"
+
+      - name: Publish results to ios-e2e-results
+        if: always()
+        run: |
+          cd "$RESULTS"
+          if [ -f summary.txt ] && ! grep -q " FAIL " summary.txt; then STATUS=success
+          elif [ -f summary.txt ]; then STATUS="flows_failed($(grep -c ' FAIL ' summary.txt))"
+          else STATUS="setup_failed"; fi
+          {
+            echo "${{ github.sha }} $STATUS $(date -u)"
+            echo "job=${{ job.status }} run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            [ -f summary.txt ] && cat summary.txt
+          } > RUN.txt
+          cat RUN.txt
+          git init -q && git checkout -q -b ios-e2e-results
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "iOS E2E results for ${{ github.sha }} ($STATUS)"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ios-e2e-results

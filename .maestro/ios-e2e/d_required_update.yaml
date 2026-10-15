@@ -1,0 +1,38 @@
+# (d) 강제 업데이트 — 로컬 서버 설정 APP_MIN_VERSION_IOS=1.2.0일 때(워크플로가 바꿔 둠)
+#   앱(1.1.0)을 켜면 앱 화면 대신 "업데이트가 필요해요" 화면만(닫을 수 없음). 아이폰은 스토어 모양([업데이트하기])
+appId: com.workmatekr.app
+name: d_required_update
+---
+- launchApp:
+    stopApp: true
+- extendedWaitUntil:
+    visible: "업데이트가 필요해요"
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: "업데이트하기"
+- assertVisible: ".*현재 버전 1\\.1\\.0 · 최신 버전 1\\.2\\.0.*"
+- assertVisible: "이번 업데이트"
+- assertNotVisible: "홈, tab, 1 of 5"
+- assertNotVisible: "새 파일 받기|홈페이지에서 새 파일을 받아 설치해요"
+- takeScreenshot: d_01_required_update_screen
+- scrollUntilVisible:
+    element: ".*workmatekr@gmail\\.com.*"
+    direction: DOWN
+    timeout: 8000
+    optional: true
+- takeScreenshot: d_02_required_update_bottom
+# 다시 켜도 그대로
+- launchApp:
+    stopApp: true
+- extendedWaitUntil:
+    visible: "업데이트가 필요해요"
+    timeout: 60000
+- takeScreenshot: d_03_required_after_relaunch
+# [업데이트하기] — 앱스토어 등록 전이라 서버 store_url이 비어 홈페이지(로컬 서버 주소)가 열림
+- tapOn: "업데이트하기"
+- extendedWaitUntil:
+    visible: ".*현장메이트.*|.*localhost.*"
+    timeout: 15000
+    optional: true
+- takeScreenshot: d_04_after_update_button

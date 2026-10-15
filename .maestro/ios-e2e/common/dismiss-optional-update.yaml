@@ -1,0 +1,16 @@
+# 선택 업데이트 안내 시트 [나중에] — 같은 이름의 바깥(어두운 배경) 누름 영역도 있어서 버튼(두 번째)을 먼저 누르고, 남아 있으면 아무거나
+appId: com.workmatekr.app
+---
+- tapOn:
+    text: "나중에"
+    index: 1
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
+      visible: "새 버전이 나왔어요"
+    commands:
+      - tapOn: "나중에"
+      - waitForAnimationToEnd:
+          timeout: 3000

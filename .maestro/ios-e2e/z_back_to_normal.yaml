@@ -1,0 +1,8 @@
+# (z) 서버 설정을 원래대로(최소 1.0.0 · 최신 1.1.0) 돌린 뒤 — 앱을 새로 켜면 업데이트 화면 없이 홈으로 돌아와야 함
+appId: com.workmatekr.app
+name: z_back_to_normal
+---
+- runFlow: common/ensure-home.yaml
+- assertNotVisible: "업데이트가 필요해요"
+- assertNotVisible: "새 버전이 나왔어요"
+- takeScreenshot: z_01_home_after_reset

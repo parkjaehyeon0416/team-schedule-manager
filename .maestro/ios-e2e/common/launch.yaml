@@ -1,0 +1,9 @@
+# 앱을 새로 켜고 스플래시(최소 2.5초)가 끝날 때까지 기다림 — 로그인 화면 · 홈 · 업데이트 안내 중 하나가 보이면 끝
+appId: com.workmatekr.app
+---
+- launchApp:
+    stopApp: true
+- extendedWaitUntil:
+    visible:
+      text: "아이디 찾기|팀관리|새 버전이 나왔어요|업데이트가 필요해요"
+    timeout: 60000

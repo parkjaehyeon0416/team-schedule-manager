@@ -1,0 +1,53 @@
+# (h) 홈 › 내 명함 → "명함 공개" 스위치 끄기/켜기 + "현장 사진 공개" 선택지(공개 안 함 / 시공 후만 / 전 · 후 모두)
+#   "명함 공개"라는 이름이 제목 글자와 스위치 두 곳에 있어 스위치는 두 번째(index 1)
+appId: com.workmatekr.app
+name: h_business_card_public
+---
+- runFlow: common/ensure-home.yaml
+- tapOn: "내 명함"
+- extendedWaitUntil:
+    visible: "현장 사진 공개"
+    timeout: 20000
+- takeScreenshot: h_01_card_public
+- scrollUntilVisible:
+    element: "전 · 후 모두.*"
+    direction: DOWN
+    timeout: 10000
+- takeScreenshot: h_02_card_settings_public
+
+# 공개 → 비공개
+- tapOn:
+    text: "명함 공개"
+    index: 1
+- extendedWaitUntil:
+    visible: "비공개 · 나만 볼 수 있어요"
+    timeout: 15000
+- takeScreenshot: h_03_card_private
+- assertVisible: "명함을 공개하면 고를 수 있어요"
+
+# 비공개 → 공개
+- tapOn:
+    text: "명함 공개"
+    index: 1
+- extendedWaitUntil:
+    visible: "공개 중 · 링크로 누구나 볼 수 있어요"
+    timeout: 15000
+- takeScreenshot: h_04_card_public_again
+
+# 현장 사진 공개: 시공 후만 → 전 · 후 모두 → 공개 안 함(원래대로)
+- tapOn: "시공 후만.*"
+- extendedWaitUntil:
+    visible: ".*시공 후만.*바꿨어요"
+    timeout: 10000
+    optional: true
+- takeScreenshot: h_05_showcase_after_only
+- tapOn: "전 · 후 모두.*"
+- extendedWaitUntil:
+    visible: ".*전 · 후 모두.*바꿨어요"
+    timeout: 10000
+    optional: true
+- takeScreenshot: h_06_showcase_both
+- tapOn: "공개 안 함.*"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: h_07_showcase_none

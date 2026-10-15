@@ -1,0 +1,33 @@
+# (i) 홈 › 견적서 → 발송 상태 견적 상세 → ⋯ → 완료 처리(일정 등록) → 새 안내 창("일당은 비워 두고 등록되니…") → [취소]
+appId: com.workmatekr.app
+name: i_quote_approve_notice
+---
+- runFlow: common/ensure-home.yaml
+- tapOn: "견적서"
+- extendedWaitUntil:
+    visible: ".*가상고객 고객.*"
+    timeout: 20000
+- takeScreenshot: i_01_quote_list
+- tapOn: ".*가상고객 고객.*"
+- extendedWaitUntil:
+    visible: "견적 항목"
+    timeout: 20000
+- takeScreenshot: i_02_quote_detail
+# 머리 오른쪽 ⋯ 버튼(글자 없는 아이콘) — 제목 오른쪽에 있는 것
+- tapOn:
+    rightOf: "견적서 상세"
+- extendedWaitUntil:
+    visible: "완료 처리 \\(일정 등록\\)"
+    timeout: 10000
+- takeScreenshot: i_03_quote_menu
+- tapOn: "완료 처리 \\(일정 등록\\)"
+- extendedWaitUntil:
+    visible: "견적 승인"
+    timeout: 10000
+- assertVisible: ".*일당은 비워 두고 등록되니.*"
+- takeScreenshot: i_04_approve_notice_dialog
+- tapOn: "취소"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible: "견적 승인"
+- takeScreenshot: i_05_after_cancel

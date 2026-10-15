@@ -1,0 +1,13 @@
+# 시뮬레이터 시스템 창 정리 — 알림 허용 요청(로그인 직후 푸시 등록), 키보드 첫 사용 안내(밀어서 입력)
+appId: com.workmatekr.app
+---
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"

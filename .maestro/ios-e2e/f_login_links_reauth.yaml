@@ -1,0 +1,49 @@
+# (f) 내정보 › 로그인 연결 관리 → 카카오 [해제] → 본인 확인 시트(비밀번호 탭) → 팀장 비밀번호 → 해제 확인 창 → [취소](실제로 해제하지 않음)
+appId: com.workmatekr.app
+name: f_login_links_reauth
+---
+- runFlow: common/ensure-home.yaml
+- tapOn: "내정보, tab, 5 of 5"
+- extendedWaitUntil:
+    visible: "로그인 연결 관리.*"
+    timeout: 20000
+- tapOn: "로그인 연결 관리.*"
+- extendedWaitUntil:
+    visible: "로그인 방법 .*개 사용 중"
+    timeout: 20000
+- takeScreenshot: f_01_login_links
+# 카카오 줄만 연결됨 → [해제] 버튼은 하나(구글·Apple은 [연결])
+- tapOn: "해제"
+- extendedWaitUntil:
+    visible: "본인 확인"
+    timeout: 15000
+- assertVisible: ".*카카오 연결을 해제하기 전에.*"
+- takeScreenshot: f_02_reauth_sheet
+# 비밀번호 입력칸(접근성 이름 "비밀번호", 안내 글자 "로그인 비밀번호") — 같은 이름의 탭·라벨이 있어 안내 글자로 찾음
+- runFlow:
+    when:
+      visible: "로그인 비밀번호"
+    commands:
+      - tapOn: "로그인 비밀번호"
+- runFlow:
+    when:
+      notVisible: "로그인 비밀번호"
+    commands:
+      - tapOn:
+          text: "비밀번호"
+          index: 2
+- runFlow: common/system-dialogs.yaml
+- inputText: ${LEADER_PW}
+- takeScreenshot: f_03_reauth_password_typed
+# 키보드 "완료" = 확인
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "카카오 연결을 해제할까요?"
+    timeout: 20000
+- takeScreenshot: f_04_unlink_confirm_dialog
+- tapOn: "취소"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible: "카카오 연결을 해제할까요?"
+- assertVisible: "연결됨.*"
+- takeScreenshot: f_05_after_cancel_still_linked

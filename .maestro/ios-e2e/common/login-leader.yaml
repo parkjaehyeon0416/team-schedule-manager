@@ -1,0 +1,26 @@
+# 시드한 가상 팀장 계정으로 이메일 로그인(로그인 화면에서 시작). 비밀번호는 CI가 실행마다 무작위로 만든 값(LEADER_PW)
+appId: com.workmatekr.app
+---
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 30000
+- tapOn: "이메일"
+# 키보드 첫 사용 안내(밀어서 입력)가 뜨면 닫기
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- inputText: ${LEADER_EMAIL}
+# 이메일 칸 "다음" → 비밀번호 칸(키보드가 비밀번호 칸을 가려도 포커스는 넘어감)
+- pressKey: Enter
+- inputText: ${LEADER_PW}
+# 비밀번호 칸 "완료" → 로그인
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "팀관리|Allow"
+    timeout: 40000
+- runFlow: system-dialogs.yaml
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 20000

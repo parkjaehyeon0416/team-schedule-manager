@@ -1,0 +1,56 @@
+# (g) 홈 › 팀관리 › 팀 상세 → 팀원 시트 → [팀에서 내보내기] 확인 창(취소) → 팀원 초대 → [새 코드 만들기] 확인 창 → [새로 만들기] → 토스트
+appId: com.workmatekr.app
+name: g_team_kick_invite
+---
+- runFlow: common/ensure-home.yaml
+- tapOn: "팀관리"
+- extendedWaitUntil:
+    visible: ".*${TEAM_NAME}.*"
+    timeout: 20000
+- takeScreenshot: g_01_team_list
+- tapOn: ".*${TEAM_NAME}.*"
+- extendedWaitUntil:
+    visible: "팀원 3"
+    timeout: 20000
+- takeScreenshot: g_02_team_detail_members
+# 부팀장(오가상) 줄 → 팀원 메뉴 시트
+- tapOn: ".*오가상.*"
+- extendedWaitUntil:
+    visible: "팀에서 내보내기.*"
+    timeout: 15000
+- takeScreenshot: g_03_member_sheet
+- tapOn: "팀에서 내보내기.*"
+- extendedWaitUntil:
+    visible: "오가상님을 팀에서 내보낼까요?"
+    timeout: 15000
+- takeScreenshot: g_04_kick_confirm_dialog
+- tapOn: "취소"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible: "오가상님을 팀에서 내보낼까요?"
+- assertVisible: "팀원 3"
+
+# 팀원 초대 → 새 코드 만들기
+- scrollUntilVisible:
+    element: "팀원 초대"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "팀원 초대"
+- extendedWaitUntil:
+    visible: "초대 코드"
+    timeout: 20000
+- takeScreenshot: g_05_team_invite
+- scrollUntilVisible:
+    element: "새 코드 만들기"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "새 코드 만들기"
+- extendedWaitUntil:
+    visible: "초대 코드를 새로 만들까요?"
+    timeout: 15000
+- takeScreenshot: g_06_regenerate_confirm_dialog
+- tapOn: "새로 만들기"
+- extendedWaitUntil:
+    visible: "새 초대 코드를 만들었어요"
+    timeout: 15000
+- takeScreenshot: g_07_regenerated_toast

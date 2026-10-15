@@ -1,0 +1,16 @@
+# 앱을 새로 켜서 팀장으로 로그인된 홈까지(로그인돼 있으면 그대로, 아니면 로그인). 선택 업데이트 안내가 뜨면 [나중에]
+appId: com.workmatekr.app
+---
+- runFlow: launch.yaml
+- runFlow:
+    when:
+      visible: "새 버전이 나왔어요"
+    file: dismiss-optional-update.yaml
+- runFlow:
+    when:
+      visible: "아이디 찾기"
+    file: login-leader.yaml
+- runFlow: system-dialogs.yaml
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 30000

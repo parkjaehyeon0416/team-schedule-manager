@@ -12,24 +12,24 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import AppHeader from '../components/AppHeader';
-import { TERMS_OF_SERVICE, PRIVACY_POLICY, LOCATION_BASED_TERMS } from '../constants/legalDocuments';
+import { TERMS_OF_SERVICE, PRIVACY_POLICY } from '../constants/legalDocuments';
 
-type LegalDocType = 'terms' | 'privacy' | 'location';
+// ★ v18.70 — 위치기반서비스 이용약관은 뺌(앱이 기기 위치를 쓰지 않음)
+type LegalDocType = 'terms' | 'privacy';
 
 const TITLES: Record<LegalDocType, string> = {
   terms: '이용약관',
   privacy: '개인정보 처리방침',
-  location: '위치기반서비스 이용약관',
 };
 const CONTENTS: Record<LegalDocType, string> = {
   terms: TERMS_OF_SERVICE,
   privacy: PRIVACY_POLICY,
-  location: LOCATION_BASED_TERMS,
 };
 
 export default function LegalDocumentScreen() {
   const route = useRoute<any>();
-  const type: LegalDocType = route.params?.type ?? 'terms';
+  // 알 수 없는 값(옛 'location' 등)이 오면 이용약관을 보여 줌
+  const type: LegalDocType = route.params?.type === 'privacy' ? 'privacy' : 'terms';
 
   const title = TITLES[type];
   const content = CONTENTS[type];

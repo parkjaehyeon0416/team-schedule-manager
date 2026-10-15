@@ -7,6 +7,8 @@
  *   아래 정보 칸은 디자인 플레이스홀더([회사명]·[대표자명]·[고객센터 번호]) 대신 실제 운영자 정보
  *   (constants/operatorInfo — 사업자 등록 전이라 개인 개발자 표기, 전화번호 없음).
  *   버전 줄도 고정 글자(v1.0.0 · 최신 버전입니다) 대신 설치된 버전 + 서버 최신 버전과 비교한 결과.
+ * ★ v18.70 — 위치기반서비스 이용약관 뺌: 앱이 기기 위치(GPS)를 쓰지 않음(현장 주소는 사용자가 직접 입력하는 정보).
+ *   플레이 데이터 보안에도 "위치 수집 안 함"으로 신고. 나중에 위치 기능을 넣으면 약관과 함께 다시 추가.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -142,7 +144,6 @@ export default function AppInfoScreen() {
   const rows: Row[] = [
     { key: 'terms', image: 'doc', label: '이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'terms' }) },
     { key: 'privacy', image: 'privacy', label: '개인정보 처리방침', onPress: () => navigation.navigate('LegalDocument', { type: 'privacy' }) },
-    { key: 'location', image: 'doc', label: '위치기반서비스 이용약관', onPress: () => navigation.navigate('LegalDocument', { type: 'location' }) },
     { key: 'oss', image: 'info', label: '오픈소스 라이선스', onPress: () => navigation.navigate('OpenSourceLicenses') },
     // ★ v18.70 — 고객 문의 전용 아이콘(내정보 '고객 문의'와 같은 것)
     { key: 'contact', image: 'inquiry', label: '문의하기', sub: '고객지원', onPress: handleContact },

@@ -9,7 +9,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, FlatList } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import AppHeader from '../components/AppHeader';
 import { getMyTeams, getTeamMembers } from '../api/teamApi';
 import { useAuthStore } from '../store/authStore';

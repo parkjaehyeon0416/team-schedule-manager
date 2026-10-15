@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, FlatList, ActivityIndicator, Image, Linking, PermissionsAndroid, Platform, ScrollView, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import Contacts from 'react-native-contacts';
 import AppHeader from '../components/AppHeader';
 import { getTeamInvite } from '../api/teamApi';

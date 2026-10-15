@@ -7,7 +7,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import AppHeader from '../components/AppHeader';
 import { getWageProfile, saveWageProfile } from '../api/wageSettingsApi';
 import { formatMoney, parseMoney } from '../utils/format';

@@ -7,7 +7,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import { getTaxSummary } from '../api/taxSummaryApi';
 import { getSchedules } from '../api/schedulesApi';
 import AppHeader from '../components/AppHeader';

@@ -7,7 +7,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
 import { getTeamNotices, postTeamNotice, toggleTeamNoticePin, deleteTeamNotice } from '../api/teamApi';

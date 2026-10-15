@@ -13,7 +13,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, Linking, Pressable, ActivityIndicator, AppState, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ICONS } from '../assets/icons';
 import { colors } from '../theme/designTokens';

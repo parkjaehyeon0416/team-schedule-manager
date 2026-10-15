@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from './Gradient';
 import dayjs from 'dayjs';
 import { usePlanLockStore, PlanLockInfo } from '../store/planLockStore';
 import { navigateFromOutside } from '../navigation/navigationRef';

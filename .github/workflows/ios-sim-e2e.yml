@@ -307,13 +307,35 @@ jobs:
           if [ -f summary.txt ] && ! grep -q " FAIL " summary.txt; then STATUS=success
           elif [ -f summary.txt ]; then STATUS="flows_failed($(grep -c ' FAIL ' summary.txt))"
           else STATUS="setup_failed"; fi
-          {
-            echo "${{ github.sha }} $STATUS $(date -u)"
-            echo "job=${{ job.status }} run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            [ -f summary.txt ] && cat summary.txt
-          } > RUN.txt
-          cat RUN.txt
-          git init -q && git checkout -q -b ios-e2e-results
-          git config user.name "github-actions" && git config user.email "actions@github.com"
-          git add -A && git commit -qm "iOS E2E results for ${{ github.sha }} ($STATUS)"
-          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ios-e2e-results
+          # 3차 실행에서 올리기가 실패해 결과를 못 받았음(로그는 관리자만 봄) → 큰 파일 빼기·http 버퍼·재시도·가벼운 결과로 대체
+          find . -type f -size +40M > "$RUNNER_TEMP/big-files.txt"
+          xargs -r rm -f < "$RUNNER_TEMP/big-files.txt"
+          write_run() {
+            {
+              echo "${{ github.sha }} $STATUS $(date -u)"
+              echo "job=${{ job.status }} run=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              [ -f summary.txt ] && cat summary.txt
+              echo "size=$(du -sh . | cut -f1) files=$(find . -type f | wc -l) $1"
+              [ -s "$RUNNER_TEMP/big-files.txt" ] && { echo "removed (>40MB):"; cat "$RUNNER_TEMP/big-files.txt"; }
+            } > RUN.txt
+            cat RUN.txt
+          }
+          publish() {
+            rm -rf .git
+            git init -q && git checkout -q -b ios-e2e-results
+            git config user.name "github-actions" && git config user.email "actions@github.com"
+            git config http.postBuffer 524288000
+            git add -A && git commit -qm "iOS E2E results for ${{ github.sha }} ($STATUS)"
+            for i in 1 2 3; do
+              git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ios-e2e-results && return 0
+              echo "push failed ($i)"; sleep 15
+            done
+            return 1
+          }
+          write_run "full"
+          publish && exit 0
+          # 그래도 안 되면 화면 사진 · 요약 · 흐름 로그만
+          find flows -type d \( -name out -o -name debug-shots -o -name screen-hierarchy \) -prune -exec rm -rf {} +
+          rm -f logs/app-simulator-tail.log
+          write_run "slim(full push failed)"
+          publish

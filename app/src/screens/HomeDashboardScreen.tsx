@@ -8,7 +8,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-nati
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import { getMonthlySummary, getSchedules } from '../api/schedulesApi';
 import { getQuotes } from '../api/quoteApi';
 import { getTeamActivities } from '../api/teamApi';

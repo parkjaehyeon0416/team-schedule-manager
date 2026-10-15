@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import AppHeader from '../components/AppHeader';
 import { joinTeam, previewTeam } from '../api/teamApi';
 import { SERVER_BASE_URL } from '../api/axiosInstance';

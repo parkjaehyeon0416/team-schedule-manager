@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import AppHeader from '../components/AppHeader';
 import GradientButton from '../components/GradientButton';
 import { ProviderBadge } from '../components/AuthUi';

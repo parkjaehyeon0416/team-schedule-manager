@@ -11,7 +11,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, Pressable, Modal, StyleSheet, Platform, AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from './Gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ICONS } from '../assets/icons';
 import { colors } from '../theme/designTokens';

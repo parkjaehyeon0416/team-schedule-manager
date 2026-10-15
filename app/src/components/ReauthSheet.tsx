@@ -13,7 +13,7 @@ import {
   View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Modal, ScrollView, Keyboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from './Gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocialButton } from './AuthUi';
 import ModalBottomSafeArea from './ModalBottomSafeArea';

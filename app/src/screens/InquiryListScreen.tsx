@@ -5,7 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import dayjs from 'dayjs';
 import AppHeader from '../components/AppHeader';
 import { getMyInquiries, INQUIRY_CATEGORY_LABEL } from '../api/inquiryApi';

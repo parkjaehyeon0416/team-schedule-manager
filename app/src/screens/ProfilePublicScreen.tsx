@@ -12,7 +12,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Share, Linking, Alert, ScrollView, Image, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import AppHeader from '../components/AppHeader';
 import { getMyBusinessCard, getPublicCardUrl, showcasePhotoUri, type BusinessCardShowcasePhoto, type MyBusinessCard } from '../api/businessCardApi';
 import { getMyTeams, getTeamMembers } from '../api/teamApi';

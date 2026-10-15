@@ -8,7 +8,7 @@ import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable,
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
+import LinearGradient from '../components/Gradient';
 import AppHeader from '../components/AppHeader';
 import { createTeam, updateTeam } from '../api/teamApi';
 import { getWorkTypes } from '../api/workTypesApi';

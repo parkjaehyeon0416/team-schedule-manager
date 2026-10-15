@@ -26,6 +26,7 @@ import { getMyTeams } from '../api/teamApi';
 import { useAuthStore } from '../store/authStore';
 import type { BusinessCard, BusinessCardShowcaseMode, Team } from '../types/api';
 import { colors, radius, shadow, spacing } from '../theme/designTokens';
+import { josaRo } from '../utils/format';
 
 const SHOWCASE_OPTIONS: { value: BusinessCardShowcaseMode; label: string; desc: string }[] = [
   { value: 'none', label: '공개 안 함', desc: '공개 프로필에 현장 사진을 보여주지 않아요' },
@@ -159,7 +160,7 @@ export default function BusinessCardScreen() {
   };
   const pickShowcase = (value: BusinessCardShowcaseMode, label: string) => {
     if (!isPublic || value === showcase) return;
-    updateVisibility({ showcase_mode: value }, `현장 사진 공개를 '${label}'(으)로 바꿨어요`);
+    updateVisibility({ showcase_mode: value }, `현장 사진 공개를 '${label}'${josaRo(label)} 바꿨어요`);
   };
 
   // ★ v18.68 — RN7은 navigate가 이전 화면으로 돌아가지 않고 새로 쌓음 → 프로필 화면에서 왔으면 그 화면으로 돌아감

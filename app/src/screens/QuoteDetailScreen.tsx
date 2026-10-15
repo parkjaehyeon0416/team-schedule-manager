@@ -5,6 +5,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from '../components/Gradient';
@@ -30,6 +31,8 @@ export default function QuoteDetailScreen() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  // ★ v18.71 — … 메뉴는 헤더 바로 아래(헤더 높이 = 56 + 위쪽 안전 영역). 예전 고정 54는 아이폰에서 다이내믹 아일랜드 높이만큼 위로 올라가 헤더를 덮었음
+  const insets = useSafeAreaInsets();
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const load = useCallback(() => {
@@ -119,7 +122,7 @@ export default function QuoteDetailScreen() {
         }
       />
       {menuOpen && (
-        <View style={styles.menuBox}>
+        <View style={[styles.menuBox, { top: insets.top + 54 }]}>
           {quote.status === 'draft' && (
             <Pressable style={styles.menuItem} onPress={handleSend}><Text style={styles.menuItemText}>발송으로 변경</Text></Pressable>
           )}

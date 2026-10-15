@@ -7,13 +7,24 @@
  *   안드로이드는 버전·Modal 설정(statusBarTranslucent 등)에 따라 시스템이 Modal 내용을 이미 바 위로 올려 그리기도 해서
  *   그 값을 그대로 더하면 두 번 띄워짐. SafeAreaView는 자기가 그려진 창에서 실제로 겹친 만큼을 직접 재므로 어느 경우든 맞음
  *   (Modal 밖의 일반 화면은 AppNavigator 화면 틀·하단 탭이 insets.bottom으로 처리).
+ *
+ *   ★ v18.71 — iOS는 예외: Modal 안의 SafeAreaView가 겹친 높이를 0으로 재서(새 아키텍처) 시트 버튼이 홈 인디케이터에 붙었음
+ *   (아이폰 시뮬레이터 점검 — 업데이트 안내·본인 확인·팀원 메뉴 시트). iOS Modal은 늘 앱 화면 전체를 덮는 같은 창이라
+ *   앱 화면 기준 insets.bottom이 그대로 맞음 → style의 아래 여백 + insets.bottom으로 직접 더함.
  */
 import React from 'react';
-import { SafeAreaView, type Edge, type SafeAreaViewProps } from 'react-native-safe-area-context';
+import { Platform, StyleSheet, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets, type Edge, type SafeAreaViewProps } from 'react-native-safe-area-context';
 
 const BOTTOM: readonly Edge[] = ['bottom'];
 
 export default function ModalBottomSafeArea(props: Omit<SafeAreaViewProps, 'edges' | 'mode'>) {
+  const insets = useSafeAreaInsets();
+  if (Platform.OS === 'ios') {
+    const flat = StyleSheet.flatten(props.style) || {};
+    const base = flat.paddingBottom ?? flat.paddingVertical ?? flat.padding ?? 0;
+    return <View {...props} style={[props.style, { paddingBottom: (typeof base === 'number' ? base : 0) + insets.bottom }]} />;
+  }
   return <SafeAreaView {...props} edges={BOTTOM} />;
 }
 

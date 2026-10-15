@@ -1,0 +1,28 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow c_optional_update
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "새 버전이 나왔어요" is visible... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Assert that ".*1\.1\.0 → 1\.2\.0.*" is visible... COMPLETED
+Assert that "바뀐 점" is visible... COMPLETED
+Assert that "회원가입 휴대폰 인증이 추가됐어요" is visible... COMPLETED
+Take screenshot c_01_optional_update_sheet... COMPLETED
+Tap on "나중에"... COMPLETED
+Assert that (Optional) ".*다음에 앱을 열 때 다시 알려 드릴게요.*" is visible... COMPLETED
+Take screenshot c_02_later_toast... COMPLETED
+Assert that "새 버전이 나왔어요" is not visible... COMPLETED
+Run common/login-leader.yaml when "아이디 찾기" is visible...
+Run common/login-leader.yaml when "아이디 찾기" is visible... SKIPPED
+Tap on "내정보, tab, 5 of 5"... COMPLETED
+Scrolling DOWN until "앱 정보.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "앱 정보.*"... COMPLETED
+Assert that ".*새 버전 v1\.2\.0 나왔어요.*" is visible... COMPLETED
+Take screenshot c_03_app_info_new_version... COMPLETED
+Tap on "←"... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "새 버전이 나왔어요" is visible... COMPLETED
+Take screenshot c_04_sheet_again_after_relaunch... COMPLETED
+Run common/dismiss-optional-update.yaml...
+  Tap on "나중에"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/dismiss-optional-update.yaml... COMPLETED

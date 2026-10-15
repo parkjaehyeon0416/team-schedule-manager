@@ -1,0 +1,19 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow d_required_update
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "업데이트가 필요해요" is visible... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Assert that "업데이트하기" is visible... COMPLETED
+Assert that ".*현재 버전 1\.1\.0 · 최신 버전 1\.2\.0.*" is visible... COMPLETED
+Assert that "이번 업데이트" is visible... COMPLETED
+Assert that "홈, tab, 1 of 5" is not visible... COMPLETED
+Assert that "새 파일 받기|홈페이지에서 새 파일을 받아 설치해요" is not visible... COMPLETED
+Take screenshot d_01_required_update_screen... COMPLETED
+Scrolling DOWN until ".*workmatekr@gmail\.com.*" is visible with speed 40, visibility percentage 100%, timeout 8000 ms, with centering disabled... COMPLETED
+Take screenshot d_02_required_update_bottom... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "업데이트가 필요해요" is visible... COMPLETED
+Take screenshot d_03_required_after_relaunch... COMPLETED
+Tap on "업데이트하기"... COMPLETED
+Assert that (Optional) ".*현장메이트.*|.*localhost.*" is visible... COMPLETED
+Take screenshot d_04_after_update_button... COMPLETED

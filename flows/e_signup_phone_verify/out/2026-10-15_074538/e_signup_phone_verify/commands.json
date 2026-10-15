@@ -1,0 +1,1619 @@
+[ {
+  "command" : {
+    "defineVariablesCommand" : {
+      "env" : {
+        "LEADER_EMAIL" : "leader.e2e@example.com",
+        "LEADER_PW" : "***REDACTED***",
+        "SIGNUP_EMAIL" : "signup.e2e.715aeb@example.com",
+        "SIGNUP_PW" : "***REDACTED***",
+        "SIGNUP_PHONE" : "01099990077",
+        "TEAM_NAME" : "가상시공팀",
+        "MAESTRO_DISABLE_UPDATE_CHECK" : "true",
+        "MAESTRO_CLI_NO_ANALYTICS" : "1",
+        "MAESTRO_DRIVER_STARTUP_TIMEOUT" : "240000",
+        "MAESTRO_FILENAME" : "e_signup_phone_verify",
+        "MAESTRO_DEVICE_UDID" : "E952A9B0-CC78-435C-BF08-06AD47FE1076",
+        "MAESTRO_SHARD_ID" : "1",
+        "MAESTRO_SHARD_INDEX" : "0"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050562211,
+    "duration" : 9,
+    "sequenceNumber" : 0,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "defineVariablesCommand" : {
+        "env" : {
+          "LEADER_EMAIL" : "leader.e2e@example.com",
+          "LEADER_PW" : "***REDACTED***",
+          "SIGNUP_EMAIL" : "signup.e2e.715aeb@example.com",
+          "SIGNUP_PW" : "***REDACTED***",
+          "SIGNUP_PHONE" : "01099990077",
+          "TEAM_NAME" : "가상시공팀",
+          "MAESTRO_DISABLE_UPDATE_CHECK" : "true",
+          "MAESTRO_CLI_NO_ANALYTICS" : "1",
+          "MAESTRO_DRIVER_STARTUP_TIMEOUT" : "240000",
+          "MAESTRO_FILENAME" : "e_signup_phone_verify",
+          "MAESTRO_DEVICE_UDID" : "E952A9B0-CC78-435C-BF08-06AD47FE1076",
+          "MAESTRO_SHARD_ID" : "1",
+          "MAESTRO_SHARD_INDEX" : "0"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "applyConfigurationCommand" : {
+      "config" : {
+        "appId" : "com.workmatekr.app",
+        "name" : "e_signup_phone_verify"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050562222,
+    "duration" : 3,
+    "sequenceNumber" : 1,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "applyConfigurationCommand" : {
+        "config" : {
+          "appId" : "com.workmatekr.app",
+          "name" : "e_signup_phone_verify"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "launchAppCommand" : {
+      "appId" : "com.workmatekr.app",
+      "stopApp" : true,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050562226,
+    "duration" : 6966,
+    "sequenceNumber" : 2,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "launchAppCommand" : {
+        "appId" : "com.workmatekr.app",
+        "stopApp" : true,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "아이디 찾기",
+          "optional" : false
+        }
+      },
+      "timeout" : "60000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050570165,
+    "duration" : 4439,
+    "sequenceNumber" : 3,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "아이디 찾기",
+            "optional" : false
+          }
+        },
+        "timeout" : "60000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "이메일로 회원가입",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050574639,
+    "duration" : 4138,
+    "sequenceNumber" : 4,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "이메일로 회원가입",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "기본정보 입력",
+          "optional" : false
+        }
+      },
+      "timeout" : "20000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050579008,
+    "duration" : 1419,
+    "sequenceNumber" : 5,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "기본정보 입력",
+            "optional" : false
+          }
+        },
+        "timeout" : "20000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_01_signup_form",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050580560,
+    "duration" : 196,
+    "sequenceNumber" : 6,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_01_signup_form",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_01_signup_form.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "이름",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050580860,
+    "duration" : 5647,
+    "sequenceNumber" : 7,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "이름",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "runFlowCommand" : {
+      "commands" : [ {
+        "applyConfigurationCommand" : {
+          "config" : {
+            "appId" : "com.workmatekr.app"
+          },
+          "optional" : false
+        }
+      }, {
+        "runFlowCommand" : {
+          "commands" : [ {
+            "tapOnElement" : {
+              "selector" : {
+                "textRegex" : "Allow",
+                "optional" : false
+              },
+              "retryIfNoChange" : false,
+              "waitUntilVisible" : false,
+              "longPress" : false,
+              "optional" : false
+            }
+          } ],
+          "condition" : {
+            "visible" : {
+              "textRegex" : "Allow",
+              "optional" : false
+            }
+          },
+          "optional" : false
+        }
+      }, {
+        "runFlowCommand" : {
+          "commands" : [ {
+            "tapOnElement" : {
+              "selector" : {
+                "textRegex" : "Continue",
+                "optional" : false
+              },
+              "retryIfNoChange" : false,
+              "waitUntilVisible" : false,
+              "longPress" : false,
+              "optional" : false
+            }
+          } ],
+          "condition" : {
+            "visible" : {
+              "textRegex" : "Continue",
+              "optional" : false
+            }
+          },
+          "optional" : false
+        }
+      } ],
+      "sourceDescription" : "common/system-dialogs.yaml",
+      "config" : {
+        "appId" : "com.workmatekr.app"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050587092,
+    "duration" : 7442,
+    "sequenceNumber" : 8,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "runFlowCommand" : {
+        "commands" : [ {
+          "applyConfigurationCommand" : {
+            "config" : {
+              "appId" : "com.workmatekr.app"
+            },
+            "optional" : false
+          }
+        }, {
+          "runFlowCommand" : {
+            "commands" : [ {
+              "tapOnElement" : {
+                "selector" : {
+                  "textRegex" : "Allow",
+                  "optional" : false
+                },
+                "retryIfNoChange" : false,
+                "waitUntilVisible" : false,
+                "longPress" : false,
+                "optional" : false
+              }
+            } ],
+            "condition" : {
+              "visible" : {
+                "textRegex" : "Allow",
+                "optional" : false
+              }
+            },
+            "optional" : false
+          }
+        }, {
+          "runFlowCommand" : {
+            "commands" : [ {
+              "tapOnElement" : {
+                "selector" : {
+                  "textRegex" : "Continue",
+                  "optional" : false
+                },
+                "retryIfNoChange" : false,
+                "waitUntilVisible" : false,
+                "longPress" : false,
+                "optional" : false
+              }
+            } ],
+            "condition" : {
+              "visible" : {
+                "textRegex" : "Continue",
+                "optional" : false
+              }
+            },
+            "optional" : false
+          }
+        } ],
+        "sourceDescription" : "common/system-dialogs.yaml",
+        "config" : {
+          "appId" : "com.workmatekr.app"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "applyConfigurationCommand" : {
+      "config" : {
+        "appId" : "com.workmatekr.app"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050587692,
+    "duration" : 1,
+    "sequenceNumber" : 9,
+    "depth" : 1,
+    "evaluatedCommand" : {
+      "applyConfigurationCommand" : {
+        "config" : {
+          "appId" : "com.workmatekr.app"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "runFlowCommand" : {
+      "commands" : [ {
+        "tapOnElement" : {
+          "selector" : {
+            "textRegex" : "Allow",
+            "optional" : false
+          },
+          "retryIfNoChange" : false,
+          "waitUntilVisible" : false,
+          "longPress" : false,
+          "optional" : false
+        }
+      } ],
+      "condition" : {
+        "visible" : {
+          "textRegex" : "Allow",
+          "optional" : false
+        }
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "SKIPPED",
+    "timestamp" : 1792050587694,
+    "duration" : 6227,
+    "sequenceNumber" : 10,
+    "depth" : 1,
+    "evaluatedCommand" : {
+      "runFlowCommand" : {
+        "commands" : [ {
+          "tapOnElement" : {
+            "selector" : {
+              "textRegex" : "Allow",
+              "optional" : false
+            },
+            "retryIfNoChange" : false,
+            "waitUntilVisible" : false,
+            "longPress" : false,
+            "optional" : false
+          }
+        } ],
+        "condition" : {
+          "visible" : {
+            "textRegex" : "Allow",
+            "optional" : false
+          }
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "runFlowCommand" : {
+      "commands" : [ {
+        "tapOnElement" : {
+          "selector" : {
+            "textRegex" : "Continue",
+            "optional" : false
+          },
+          "retryIfNoChange" : false,
+          "waitUntilVisible" : false,
+          "longPress" : false,
+          "optional" : false
+        }
+      } ],
+      "condition" : {
+        "visible" : {
+          "textRegex" : "Continue",
+          "optional" : false
+        }
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "SKIPPED",
+    "timestamp" : 1792050593922,
+    "duration" : 610,
+    "sequenceNumber" : 11,
+    "depth" : 1,
+    "evaluatedCommand" : {
+      "runFlowCommand" : {
+        "commands" : [ {
+          "tapOnElement" : {
+            "selector" : {
+              "textRegex" : "Continue",
+              "optional" : false
+            },
+            "retryIfNoChange" : false,
+            "waitUntilVisible" : false,
+            "longPress" : false,
+            "optional" : false
+          }
+        } ],
+        "condition" : {
+          "visible" : {
+            "textRegex" : "Continue",
+            "optional" : false
+          }
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "inputTextCommand" : {
+      "text" : "E2E Signup",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050594535,
+    "duration" : 1705,
+    "sequenceNumber" : 12,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "inputTextCommand" : {
+        "text" : "E2E Signup",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "이메일",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050596241,
+    "duration" : 2501,
+    "sequenceNumber" : 13,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "이메일",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "inputTextCommand" : {
+      "text" : "${SIGNUP_EMAIL}",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050598761,
+    "duration" : 6871,
+    "sequenceNumber" : 14,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "inputTextCommand" : {
+        "text" : "signup.e2e.715aeb@example.com",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "비밀번호",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050605635,
+    "duration" : 1922,
+    "sequenceNumber" : 15,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "비밀번호",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "inputTextCommand" : {
+      "text" : "${SIGNUP_PW}",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050607558,
+    "duration" : 1655,
+    "sequenceNumber" : 16,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "inputTextCommand" : {
+        "text" : "***REDACTED***",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "비밀번호 확인",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050609216,
+    "duration" : 1663,
+    "sequenceNumber" : 17,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "비밀번호 확인",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "inputTextCommand" : {
+      "text" : "${SIGNUP_PW}",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050610882,
+    "duration" : 1570,
+    "sequenceNumber" : 18,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "inputTextCommand" : {
+        "text" : "***REDACTED***",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "휴대폰 번호",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050612453,
+    "duration" : 1922,
+    "sequenceNumber" : 19,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "휴대폰 번호",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "inputTextCommand" : {
+      "text" : "${SIGNUP_PHONE}",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050614377,
+    "duration" : 1639,
+    "sequenceNumber" : 20,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "inputTextCommand" : {
+        "text" : "01099990077",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_02_phone_entered",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050616033,
+    "duration" : 137,
+    "sequenceNumber" : 21,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_02_phone_entered",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_02_phone_entered.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "인증번호 받기",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050616171,
+    "duration" : 2952,
+    "sequenceNumber" : 22,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "인증번호 받기",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "다시 받기",
+          "optional" : false
+        }
+      },
+      "timeout" : "20000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050619123,
+    "duration" : 371,
+    "sequenceNumber" : 23,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "다시 받기",
+            "optional" : false
+          }
+        },
+        "timeout" : "20000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_03_code_sent",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050619494,
+    "duration" : 152,
+    "sequenceNumber" : 24,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_03_code_sent",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_03_code_sent.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "runScriptCommand" : {
+      "script" : "// 로컬 code-server(scripts/e2e/code-server.js)에서 방금 보낸 문자 인증번호를 받아 output.code에 넣음.\n// Maestro runScript는 맥(호스트)에서 실행되므로 127.0.0.1 = CI 러너. PHONE은 runScript env로 넘김.\nvar url = 'http://127.0.0.1:9999/code?wait=8';\nif (typeof PHONE !== 'undefined' && PHONE) {\n  url += '&to=' + PHONE;\n}\nvar res = http.get(url);\nif (res.status !== 200) {\n  throw new Error('code-server ' + res.status + ': ' + res.body);\n}\noutput.code = json(res.body).code;\nconsole.log('verification code received for ' + json(res.body).to);\n",
+      "env" : {
+        "PHONE" : "${SIGNUP_PHONE}"
+      },
+      "sourceDescription" : "scripts/get_code.js",
+      "optional" : false,
+      "scriptDir" : "/Users/runner/work/team-schedule-manager/team-schedule-manager/.maestro/ios-e2e/scripts"
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050619648,
+    "duration" : 377,
+    "sequenceNumber" : 25,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "runScriptCommand" : {
+        "script" : "// 로컬 code-server(scripts/e2e/code-server.js)에서 방금 보낸 문자 인증번호를 받아 output.code에 넣음.\n// Maestro runScript는 맥(호스트)에서 실행되므로 127.0.0.1 = CI 러너. PHONE은 runScript env로 넘김.\nvar url = 'http://127.0.0.1:9999/code?wait=8';\nif (typeof PHONE !== 'undefined' && PHONE) {\n  url += '&to=' + PHONE;\n}\nvar res = http.get(url);\nif (res.status !== 200) {\n  throw new Error('code-server ' + res.status + ': ' + res.body);\n}\noutput.code = json(res.body).code;\nconsole.log('verification code received for ' + json(res.body).to);\n",
+        "env" : {
+          "PHONE" : "01099990077"
+        },
+        "sourceDescription" : "scripts/get_code.js",
+        "optional" : false,
+        "scriptDir" : "/Users/runner/work/team-schedule-manager/team-schedule-manager/.maestro/ios-e2e/scripts"
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "인증번호",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050620026,
+    "duration" : 3064,
+    "sequenceNumber" : 26,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "인증번호",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "inputTextCommand" : {
+      "text" : "${output.code}",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050623095,
+    "duration" : 1975,
+    "sequenceNumber" : 27,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "inputTextCommand" : {
+        "text" : "505860",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_04_code_typed",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050625074,
+    "duration" : 538,
+    "sequenceNumber" : 28,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_04_code_typed",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_04_code_typed.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "확인",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050625693,
+    "duration" : 4183,
+    "sequenceNumber" : 29,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "확인",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "휴대폰 인증을 완료했어요",
+          "optional" : false
+        }
+      },
+      "timeout" : "20000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050629878,
+    "duration" : 310,
+    "sequenceNumber" : 30,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "휴대폰 인증을 완료했어요",
+            "optional" : false
+          }
+        },
+        "timeout" : "20000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_05_phone_verified",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050630189,
+    "duration" : 139,
+    "sequenceNumber" : 31,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_05_phone_verified",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_05_phone_verified.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "확인됨",
+          "optional" : false
+        }
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050630328,
+    "duration" : 351,
+    "sequenceNumber" : 32,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "확인됨",
+            "optional" : false
+          }
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "scrollUntilVisible" : {
+      "selector" : {
+        "textRegex" : "이용약관 및.*",
+        "optional" : false
+      },
+      "direction" : "DOWN",
+      "scrollDuration" : "40",
+      "visibilityPercentage" : 100,
+      "timeout" : "10000",
+      "centerElement" : false,
+      "originalSpeedValue" : "40",
+      "optional" : false,
+      "visibilityPercentageNormalized" : 1.0
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050630680,
+    "duration" : 322,
+    "sequenceNumber" : 33,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "scrollUntilVisible" : {
+        "selector" : {
+          "textRegex" : "이용약관 및.*",
+          "optional" : false
+        },
+        "direction" : "DOWN",
+        "scrollDuration" : "601",
+        "visibilityPercentage" : 100,
+        "timeout" : "10000",
+        "centerElement" : false,
+        "originalSpeedValue" : "40",
+        "optional" : false,
+        "visibilityPercentageNormalized" : 1.0
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "이용약관 및.*",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "relativePoint" : "3%,50%",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050631004,
+    "duration" : 1894,
+    "sequenceNumber" : 34,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "이용약관 및.*",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "relativePoint" : "3%,50%",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "scrollUntilVisible" : {
+      "selector" : {
+        "textRegex" : "가입하기",
+        "optional" : false
+      },
+      "direction" : "DOWN",
+      "scrollDuration" : "40",
+      "visibilityPercentage" : 100,
+      "timeout" : "10000",
+      "centerElement" : false,
+      "originalSpeedValue" : "40",
+      "optional" : false,
+      "visibilityPercentageNormalized" : 1.0
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050632898,
+    "duration" : 406,
+    "sequenceNumber" : 35,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "scrollUntilVisible" : {
+        "selector" : {
+          "textRegex" : "가입하기",
+          "optional" : false
+        },
+        "direction" : "DOWN",
+        "scrollDuration" : "601",
+        "visibilityPercentage" : 100,
+        "timeout" : "10000",
+        "centerElement" : false,
+        "originalSpeedValue" : "40",
+        "optional" : false,
+        "visibilityPercentageNormalized" : 1.0
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_06_terms_checked",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050633305,
+    "duration" : 149,
+    "sequenceNumber" : 36,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_06_terms_checked",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_06_terms_checked.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "가입하기",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050633455,
+    "duration" : 4217,
+    "sequenceNumber" : 37,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "가입하기",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "팀관리|Allow|회원가입 실패|오류",
+          "optional" : false
+        }
+      },
+      "timeout" : "40000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050637675,
+    "duration" : 1288,
+    "sequenceNumber" : 38,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "팀관리|Allow|회원가입 실패|오류",
+            "optional" : false
+          }
+        },
+        "timeout" : "40000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_07_after_signup",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050638964,
+    "duration" : 300,
+    "sequenceNumber" : 39,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_07_after_signup",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_07_after_signup.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "runFlowCommand" : {
+      "commands" : [ {
+        "applyConfigurationCommand" : {
+          "config" : {
+            "appId" : "com.workmatekr.app"
+          },
+          "optional" : false
+        }
+      }, {
+        "runFlowCommand" : {
+          "commands" : [ {
+            "tapOnElement" : {
+              "selector" : {
+                "textRegex" : "Allow",
+                "optional" : false
+              },
+              "retryIfNoChange" : false,
+              "waitUntilVisible" : false,
+              "longPress" : false,
+              "optional" : false
+            }
+          } ],
+          "condition" : {
+            "visible" : {
+              "textRegex" : "Allow",
+              "optional" : false
+            }
+          },
+          "optional" : false
+        }
+      }, {
+        "runFlowCommand" : {
+          "commands" : [ {
+            "tapOnElement" : {
+              "selector" : {
+                "textRegex" : "Continue",
+                "optional" : false
+              },
+              "retryIfNoChange" : false,
+              "waitUntilVisible" : false,
+              "longPress" : false,
+              "optional" : false
+            }
+          } ],
+          "condition" : {
+            "visible" : {
+              "textRegex" : "Continue",
+              "optional" : false
+            }
+          },
+          "optional" : false
+        }
+      } ],
+      "sourceDescription" : "common/system-dialogs.yaml",
+      "config" : {
+        "appId" : "com.workmatekr.app"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050639272,
+    "duration" : 6470,
+    "sequenceNumber" : 40,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "runFlowCommand" : {
+        "commands" : [ {
+          "applyConfigurationCommand" : {
+            "config" : {
+              "appId" : "com.workmatekr.app"
+            },
+            "optional" : false
+          }
+        }, {
+          "runFlowCommand" : {
+            "commands" : [ {
+              "tapOnElement" : {
+                "selector" : {
+                  "textRegex" : "Allow",
+                  "optional" : false
+                },
+                "retryIfNoChange" : false,
+                "waitUntilVisible" : false,
+                "longPress" : false,
+                "optional" : false
+              }
+            } ],
+            "condition" : {
+              "visible" : {
+                "textRegex" : "Allow",
+                "optional" : false
+              }
+            },
+            "optional" : false
+          }
+        }, {
+          "runFlowCommand" : {
+            "commands" : [ {
+              "tapOnElement" : {
+                "selector" : {
+                  "textRegex" : "Continue",
+                  "optional" : false
+                },
+                "retryIfNoChange" : false,
+                "waitUntilVisible" : false,
+                "longPress" : false,
+                "optional" : false
+              }
+            } ],
+            "condition" : {
+              "visible" : {
+                "textRegex" : "Continue",
+                "optional" : false
+              }
+            },
+            "optional" : false
+          }
+        } ],
+        "sourceDescription" : "common/system-dialogs.yaml",
+        "config" : {
+          "appId" : "com.workmatekr.app"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "applyConfigurationCommand" : {
+      "config" : {
+        "appId" : "com.workmatekr.app"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050639305,
+    "duration" : 0,
+    "sequenceNumber" : 41,
+    "depth" : 1,
+    "evaluatedCommand" : {
+      "applyConfigurationCommand" : {
+        "config" : {
+          "appId" : "com.workmatekr.app"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "runFlowCommand" : {
+      "commands" : [ {
+        "tapOnElement" : {
+          "selector" : {
+            "textRegex" : "Allow",
+            "optional" : false
+          },
+          "retryIfNoChange" : false,
+          "waitUntilVisible" : false,
+          "longPress" : false,
+          "optional" : false
+        }
+      } ],
+      "condition" : {
+        "visible" : {
+          "textRegex" : "Allow",
+          "optional" : false
+        }
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "SKIPPED",
+    "timestamp" : 1792050639306,
+    "duration" : 5911,
+    "sequenceNumber" : 42,
+    "depth" : 1,
+    "evaluatedCommand" : {
+      "runFlowCommand" : {
+        "commands" : [ {
+          "tapOnElement" : {
+            "selector" : {
+              "textRegex" : "Allow",
+              "optional" : false
+            },
+            "retryIfNoChange" : false,
+            "waitUntilVisible" : false,
+            "longPress" : false,
+            "optional" : false
+          }
+        } ],
+        "condition" : {
+          "visible" : {
+            "textRegex" : "Allow",
+            "optional" : false
+          }
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "runFlowCommand" : {
+      "commands" : [ {
+        "tapOnElement" : {
+          "selector" : {
+            "textRegex" : "Continue",
+            "optional" : false
+          },
+          "retryIfNoChange" : false,
+          "waitUntilVisible" : false,
+          "longPress" : false,
+          "optional" : false
+        }
+      } ],
+      "condition" : {
+        "visible" : {
+          "textRegex" : "Continue",
+          "optional" : false
+        }
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "SKIPPED",
+    "timestamp" : 1792050645218,
+    "duration" : 524,
+    "sequenceNumber" : 43,
+    "depth" : 1,
+    "evaluatedCommand" : {
+      "runFlowCommand" : {
+        "commands" : [ {
+          "tapOnElement" : {
+            "selector" : {
+              "textRegex" : "Continue",
+              "optional" : false
+            },
+            "retryIfNoChange" : false,
+            "waitUntilVisible" : false,
+            "longPress" : false,
+            "optional" : false
+          }
+        } ],
+        "condition" : {
+          "visible" : {
+            "textRegex" : "Continue",
+            "optional" : false
+          }
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "팀관리",
+          "optional" : false
+        }
+      },
+      "timeout" : "20000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050645742,
+    "duration" : 242,
+    "sequenceNumber" : 44,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "팀관리",
+            "optional" : false
+          }
+        },
+        "timeout" : "20000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "e_08_signup_home",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792050645984,
+    "duration" : 195,
+    "sequenceNumber" : 45,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "e_08_signup_home",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/e_08_signup_home.png"
+    } ]
+  }
+} ]

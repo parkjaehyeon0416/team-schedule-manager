@@ -1,0 +1,49 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow f_login_links_reauth
+Run common/ensure-home.yaml...
+  Run launch.yaml...
+    Launch app "com.workmatekr.app"... COMPLETED
+    Assert that "아이디 찾기|팀관리|새 버전이 나왔어요|업데이트가 필요해요" is visible... COMPLETED
+  Run launch.yaml... COMPLETED
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible...
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible... SKIPPED
+  Run login-leader.yaml when "아이디 찾기" is visible...
+  Run login-leader.yaml when "아이디 찾기" is visible... SKIPPED
+  Run system-dialogs.yaml...
+    Run flow when "Allow" is visible...
+    Run flow when "Allow" is visible... SKIPPED
+    Run flow when "Continue" is visible...
+    Run flow when "Continue" is visible... SKIPPED
+  Run system-dialogs.yaml... COMPLETED
+  Assert that "팀관리" is visible... COMPLETED
+Run common/ensure-home.yaml... COMPLETED
+Tap on "내정보, tab, 5 of 5"... COMPLETED
+Assert that "로그인 연결 관리.*" is visible... COMPLETED
+Tap on "로그인 연결 관리.*"... COMPLETED
+Assert that "로그인 방법 .*개 사용 중" is visible... COMPLETED
+Take screenshot f_01_login_links... COMPLETED
+Tap on "해제"... COMPLETED
+Assert that "본인 확인" is visible... COMPLETED
+Assert that ".*카카오 연결을 해제하기 전에.*" is visible... COMPLETED
+Take screenshot f_02_reauth_sheet... COMPLETED
+Run flow when "로그인 비밀번호" is visible...
+  Tap on "로그인 비밀번호"... COMPLETED
+Run flow when "로그인 비밀번호" is visible... COMPLETED
+Run flow when "로그인 비밀번호" is not visible...
+Run flow when "로그인 비밀번호" is not visible... SKIPPED
+Run common/system-dialogs.yaml...
+  Run flow when "Allow" is visible...
+  Run flow when "Allow" is visible... SKIPPED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+Run common/system-dialogs.yaml... COMPLETED
+Input text ***REDACTED***
+Take screenshot f_03_reauth_password_typed... COMPLETED
+Press Enter key... COMPLETED
+Assert that "카카오 연결을 해제할까요?" is visible... COMPLETED
+Take screenshot f_04_unlink_confirm_dialog... COMPLETED
+Tap on "취소"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Assert that "카카오 연결을 해제할까요?" is not visible... COMPLETED
+Assert that "연결됨.*" is visible... COMPLETED
+Take screenshot f_05_after_cancel_still_linked... COMPLETED

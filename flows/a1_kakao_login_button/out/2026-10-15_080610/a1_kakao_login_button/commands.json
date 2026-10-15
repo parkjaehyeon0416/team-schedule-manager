@@ -1,0 +1,387 @@
+[ {
+  "command" : {
+    "defineVariablesCommand" : {
+      "env" : {
+        "LEADER_EMAIL" : "leader.e2e@example.com",
+        "LEADER_PW" : "***REDACTED***",
+        "SIGNUP_EMAIL" : "signup.e2e.715aeb@example.com",
+        "SIGNUP_PW" : "***REDACTED***",
+        "SIGNUP_PHONE" : "01099990077",
+        "TEAM_NAME" : "가상시공팀",
+        "MAESTRO_DISABLE_UPDATE_CHECK" : "true",
+        "MAESTRO_CLI_NO_ANALYTICS" : "1",
+        "MAESTRO_DRIVER_STARTUP_TIMEOUT" : "240000",
+        "MAESTRO_FILENAME" : "a1_kakao_login_button",
+        "MAESTRO_DEVICE_UDID" : "E952A9B0-CC78-435C-BF08-06AD47FE1076",
+        "MAESTRO_SHARD_ID" : "1",
+        "MAESTRO_SHARD_INDEX" : "0"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051597964,
+    "duration" : 16,
+    "sequenceNumber" : 0,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "defineVariablesCommand" : {
+        "env" : {
+          "LEADER_EMAIL" : "leader.e2e@example.com",
+          "LEADER_PW" : "***REDACTED***",
+          "SIGNUP_EMAIL" : "signup.e2e.715aeb@example.com",
+          "SIGNUP_PW" : "***REDACTED***",
+          "SIGNUP_PHONE" : "01099990077",
+          "TEAM_NAME" : "가상시공팀",
+          "MAESTRO_DISABLE_UPDATE_CHECK" : "true",
+          "MAESTRO_CLI_NO_ANALYTICS" : "1",
+          "MAESTRO_DRIVER_STARTUP_TIMEOUT" : "240000",
+          "MAESTRO_FILENAME" : "a1_kakao_login_button",
+          "MAESTRO_DEVICE_UDID" : "E952A9B0-CC78-435C-BF08-06AD47FE1076",
+          "MAESTRO_SHARD_ID" : "1",
+          "MAESTRO_SHARD_INDEX" : "0"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "applyConfigurationCommand" : {
+      "config" : {
+        "appId" : "com.workmatekr.app",
+        "name" : "a1_kakao_login_button"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051597983,
+    "duration" : 13,
+    "sequenceNumber" : 1,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "applyConfigurationCommand" : {
+        "config" : {
+          "appId" : "com.workmatekr.app",
+          "name" : "a1_kakao_login_button"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "launchAppCommand" : {
+      "appId" : "com.workmatekr.app",
+      "clearState" : true,
+      "stopApp" : true,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051597997,
+    "duration" : 11327,
+    "sequenceNumber" : 2,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "launchAppCommand" : {
+        "appId" : "com.workmatekr.app",
+        "clearState" : true,
+        "stopApp" : true,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "아이디 찾기",
+          "optional" : false
+        }
+      },
+      "timeout" : "90000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051609331,
+    "duration" : 4149,
+    "sequenceNumber" : 3,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "아이디 찾기",
+            "optional" : false
+          }
+        },
+        "timeout" : "90000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "a_01_login_screen",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051613481,
+    "duration" : 147,
+    "sequenceNumber" : 4,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "a_01_login_screen",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/a_01_login_screen.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "카카오로 로그인",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051613629,
+    "duration" : 5636,
+    "sequenceNumber" : 5,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "카카오로 로그인",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : ".*kakao\\.com.*",
+          "optional" : false
+        }
+      },
+      "timeout" : "20000",
+      "optional" : true
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051619267,
+    "duration" : 596,
+    "sequenceNumber" : 6,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : ".*kakao\\.com.*",
+            "optional" : false
+          }
+        },
+        "timeout" : "20000",
+        "optional" : true
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "a_02_kakao_system_prompt",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051619864,
+    "duration" : 299,
+    "sequenceNumber" : 7,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "a_02_kakao_system_prompt",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/a_02_kakao_system_prompt.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "Continue",
+        "optional" : true
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : true
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051620176,
+    "duration" : 8071,
+    "sequenceNumber" : 8,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "Continue",
+          "optional" : true
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : true
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "accounts\\.kakao\\.com|.*Kakao.*|.*카카오계정.*",
+          "optional" : false
+        }
+      },
+      "timeout" : "20000",
+      "optional" : true
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051628331,
+    "duration" : 2446,
+    "sequenceNumber" : 9,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "accounts\\.kakao\\.com|.*Kakao.*|.*카카오계정.*",
+            "optional" : false
+          }
+        },
+        "timeout" : "20000",
+        "optional" : true
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "a_03_kakao_web_login",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051630778,
+    "duration" : 219,
+    "sequenceNumber" : 10,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "a_03_kakao_web_login",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/a_03_kakao_web_login.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "Cancel|Close|취소|닫기",
+        "optional" : true
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : true
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051630999,
+    "duration" : 4681,
+    "sequenceNumber" : 11,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "Cancel|Close|취소|닫기",
+          "optional" : true
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : true
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "a_04_after_kakao_cancel",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051635683,
+    "duration" : 170,
+    "sequenceNumber" : 12,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "a_04_after_kakao_cancel",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/a_04_after_kakao_cancel.png"
+    } ]
+  }
+} ]

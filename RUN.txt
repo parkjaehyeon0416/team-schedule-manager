@@ -1,0 +1,17 @@
+6934a83e2ef5f2bf2e21cdba58253d7024cf90a8 success Thu Oct 15 08:11:13 UTC 2026
+job=success run=https://github.com/parkjaehyeon0416/team-schedule-manager/actions/runs/38700197365
+e_signup_phone_verify PASS (exit 0)
+b_login_tabs_profile_appinfo PASS (exit 0)
+f_login_links_reauth PASS (exit 0)
+g_team_kick_invite PASS (exit 0)
+h_business_card_public PASS (exit 0)
+i_quote_approve_notice PASS (exit 0)
+c_optional_update PASS (exit 0)
+d_required_update PASS (exit 0)
+z_back_to_normal PASS (exit 0)
+a3_apple_login_button PASS (exit 0)
+a1_kakao_login_button PASS (exit 0)
+a2_google_login_button PASS (exit 0)
+size=300M files=     226 full
+removed (>40MB):
+./flows/b_login_tabs_profile_appinfo/out/2026-10-15_075105/b_login_tabs_profile_appinfo/logs/device-simulator.log

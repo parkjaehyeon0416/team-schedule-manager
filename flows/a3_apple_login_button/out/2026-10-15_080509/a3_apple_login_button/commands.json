@@ -1,0 +1,325 @@
+[ {
+  "command" : {
+    "defineVariablesCommand" : {
+      "env" : {
+        "LEADER_EMAIL" : "leader.e2e@example.com",
+        "LEADER_PW" : "***REDACTED***",
+        "SIGNUP_EMAIL" : "signup.e2e.715aeb@example.com",
+        "SIGNUP_PW" : "***REDACTED***",
+        "SIGNUP_PHONE" : "01099990077",
+        "TEAM_NAME" : "가상시공팀",
+        "MAESTRO_DISABLE_UPDATE_CHECK" : "true",
+        "MAESTRO_CLI_NO_ANALYTICS" : "1",
+        "MAESTRO_DRIVER_STARTUP_TIMEOUT" : "240000",
+        "MAESTRO_FILENAME" : "a3_apple_login_button",
+        "MAESTRO_DEVICE_UDID" : "E952A9B0-CC78-435C-BF08-06AD47FE1076",
+        "MAESTRO_SHARD_ID" : "1",
+        "MAESTRO_SHARD_INDEX" : "0"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051535500,
+    "duration" : 4,
+    "sequenceNumber" : 0,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "defineVariablesCommand" : {
+        "env" : {
+          "LEADER_EMAIL" : "leader.e2e@example.com",
+          "LEADER_PW" : "***REDACTED***",
+          "SIGNUP_EMAIL" : "signup.e2e.715aeb@example.com",
+          "SIGNUP_PW" : "***REDACTED***",
+          "SIGNUP_PHONE" : "01099990077",
+          "TEAM_NAME" : "가상시공팀",
+          "MAESTRO_DISABLE_UPDATE_CHECK" : "true",
+          "MAESTRO_CLI_NO_ANALYTICS" : "1",
+          "MAESTRO_DRIVER_STARTUP_TIMEOUT" : "240000",
+          "MAESTRO_FILENAME" : "a3_apple_login_button",
+          "MAESTRO_DEVICE_UDID" : "E952A9B0-CC78-435C-BF08-06AD47FE1076",
+          "MAESTRO_SHARD_ID" : "1",
+          "MAESTRO_SHARD_INDEX" : "0"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "applyConfigurationCommand" : {
+      "config" : {
+        "appId" : "com.workmatekr.app",
+        "name" : "a3_apple_login_button"
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051535511,
+    "duration" : 2,
+    "sequenceNumber" : 1,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "applyConfigurationCommand" : {
+        "config" : {
+          "appId" : "com.workmatekr.app",
+          "name" : "a3_apple_login_button"
+        },
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "launchAppCommand" : {
+      "appId" : "com.workmatekr.app",
+      "clearState" : true,
+      "stopApp" : true,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051535513,
+    "duration" : 11340,
+    "sequenceNumber" : 2,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "launchAppCommand" : {
+        "appId" : "com.workmatekr.app",
+        "clearState" : true,
+        "stopApp" : true,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "Apple로 로그인",
+          "optional" : false
+        }
+      },
+      "timeout" : "90000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051546871,
+    "duration" : 3992,
+    "sequenceNumber" : 3,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "Apple로 로그인",
+            "optional" : false
+          }
+        },
+        "timeout" : "90000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "Apple로 로그인",
+        "optional" : false
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051550864,
+    "duration" : 2599,
+    "sequenceNumber" : 4,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "Apple로 로그인",
+          "optional" : false
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "로그인 실패|.*Apple Account.*|.*Apple ID.*|Settings",
+          "optional" : false
+        }
+      },
+      "timeout" : "15000",
+      "optional" : true
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051553466,
+    "duration" : 385,
+    "sequenceNumber" : 5,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "로그인 실패|.*Apple Account.*|.*Apple ID.*|Settings",
+            "optional" : false
+          }
+        },
+        "timeout" : "15000",
+        "optional" : true
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "a_08_apple_sheet",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051553852,
+    "duration" : 180,
+    "sequenceNumber" : 6,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "a_08_apple_sheet",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/a_08_apple_sheet.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "tapOnElement" : {
+      "selector" : {
+        "textRegex" : "확인|Cancel|Close|Not Now",
+        "optional" : true
+      },
+      "retryIfNoChange" : false,
+      "waitUntilVisible" : false,
+      "longPress" : false,
+      "optional" : true
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051554033,
+    "duration" : 2154,
+    "sequenceNumber" : 7,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "tapOnElement" : {
+        "selector" : {
+          "textRegex" : "확인|Cancel|Close|Not Now",
+          "optional" : true
+        },
+        "retryIfNoChange" : false,
+        "waitUntilVisible" : false,
+        "longPress" : false,
+        "optional" : true
+      }
+    }
+  }
+}, {
+  "command" : {
+    "waitForAnimationToEndCommand" : {
+      "timeout" : "3000",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051556189,
+    "duration" : 1899,
+    "sequenceNumber" : 8,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "waitForAnimationToEndCommand" : {
+        "timeout" : "3000",
+        "optional" : false
+      }
+    }
+  }
+}, {
+  "command" : {
+    "takeScreenshotCommand" : {
+      "path" : "a_09_after_apple_close",
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051558090,
+    "duration" : 153,
+    "sequenceNumber" : 9,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "takeScreenshotCommand" : {
+        "path" : "a_09_after_apple_close",
+        "optional" : false
+      }
+    },
+    "artifacts" : [ {
+      "type" : "TAKE_SCREENSHOT",
+      "path" : "takeScreenshot/a_09_after_apple_close.png"
+    } ]
+  }
+}, {
+  "command" : {
+    "assertConditionCommand" : {
+      "condition" : {
+        "visible" : {
+          "textRegex" : "Apple로 로그인",
+          "optional" : false
+        }
+      },
+      "optional" : false
+    }
+  },
+  "metadata" : {
+    "status" : "COMPLETED",
+    "timestamp" : 1792051558247,
+    "duration" : 264,
+    "sequenceNumber" : 10,
+    "depth" : 0,
+    "evaluatedCommand" : {
+      "assertConditionCommand" : {
+        "condition" : {
+          "visible" : {
+            "textRegex" : "Apple로 로그인",
+            "optional" : false
+          }
+        },
+        "optional" : false
+      }
+    }
+  }
+} ]

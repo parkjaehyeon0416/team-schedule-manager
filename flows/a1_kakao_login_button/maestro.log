@@ -1,0 +1,13 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow a1_kakao_login_button
+Launch app "com.workmatekr.app" with clear state... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Take screenshot a_01_login_screen... COMPLETED
+Tap on "카카오로 로그인"... COMPLETED
+Assert that (Optional) ".*kakao\.com.*" is visible... COMPLETED
+Take screenshot a_02_kakao_system_prompt... COMPLETED
+Tap on (Optional) "Continue"... COMPLETED
+Assert that (Optional) "accounts\.kakao\.com|.*Kakao.*|.*카카오계정.*" is visible... COMPLETED
+Take screenshot a_03_kakao_web_login... COMPLETED
+Tap on (Optional) "Cancel|Close|취소|닫기"... COMPLETED
+Take screenshot a_04_after_kakao_cancel... COMPLETED

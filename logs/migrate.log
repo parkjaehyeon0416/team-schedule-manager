@@ -1,0 +1,72 @@
+
+   INFO  Preparing database.  
+
+  Creating migration table ....................................... 8.54ms DONE
+
+   INFO  Running migrations.  
+
+  2026_04_17_075937_create_personal_access_tokens_table ......... 25.36ms DONE
+  2026_04_19_052537_create_roles_table ........................... 8.63ms DONE
+  2026_04_19_052550_create_teams_table ........................... 8.32ms DONE
+  2026_04_19_052600_create_users_table ........................... 8.48ms DONE
+  2026_04_19_052610_create_schedules_table ...................... 16.72ms DONE
+  2026_04_19_052620_create_schedule_users_table .................. 7.62ms DONE
+  2026_04_19_052630_create_sites_table ........................... 4.07ms DONE
+  2026_04_19_052640_create_site_files_table ...................... 4.84ms DONE
+  2026_04_19_052648_create_attendances_table ..................... 9.24ms DONE
+  2026_04_19_233539_create_cache_table .......................... 14.14ms DONE
+  2026_04_20_151238_modify_users_table_for_freelancer ........... 25.56ms DONE
+  2026_04_23_154757_create_work_types_table ..................... 13.45ms DONE
+  2026_04_23_154927_add_wage_fields_to_schedules_table .......... 44.54ms DONE
+  2026_04_23_155121_create_user_wage_settings_table ............. 12.45ms DONE
+  2026_04_23_155255_add_photo_fields_to_site_files_table ........ 26.81ms DONE
+  2026_04_23_155532_create_site_reports_table ................... 16.60ms DONE
+  2026_04_23_155708_create_monthly_summaries_table .............. 10.49ms DONE
+  2026_04_23_223734_add_operator_to_user_type_enum .............. 10.21ms DONE
+  2026_04_26_151806_add_paired_with_id_to_site_files_table ...... 10.21ms DONE
+  2026_09_19_172245_create_business_cards_table ................. 17.47ms DONE
+  2026_09_19_172246_create_card_views_table ...................... 7.35ms DONE
+  2026_09_19_173019_create_sessions_table ....................... 13.70ms DONE
+  2026_09_19_194914_create_quotes_table ......................... 13.28ms DONE
+  2026_09_19_194914_create_user_materials_table .................. 8.95ms DONE
+  2026_09_19_194915_create_quote_lines_table ..................... 7.67ms DONE
+  2026_09_20_120642_create_notification_settings_table ........... 6.41ms DONE
+  2026_09_21_121614_add_owner_id_for_freelancer_isolation ....... 32.86ms DONE
+  2026_09_21_121807_add_created_by_to_schedules_and_sites ....... 19.01ms DONE
+  2026_09_21_124009_add_phone_to_users_table .................... 11.98ms DONE
+  2026_09_21_124010_create_password_reset_codes_table ............ 3.70ms DONE
+  2026_09_21_133519_drop_password_reset_codes_and_create_verification_codes  6.00ms DONE
+  2026_09_21_214149_add_owner_id_to_work_types_table ............ 11.37ms DONE
+  2026_09_28_154808_add_social_login_fields_to_users_table ...... 43.83ms DONE
+  2026_09_29_120000_create_team_members_table .................. 191.48ms DONE
+  2026_09_29_170000_add_profile_fields_to_users_table ........... 29.43ms DONE
+  2026_10_01_190000_add_design_fields_to_sites_table ............ 30.70ms DONE
+  2026_10_01_193000_create_wage_profiles_table ................... 6.89ms DONE
+  2026_10_01_196000_add_design_fields_to_notification_settings_table  25.14ms DONE
+  2026_10_01_199000_add_design_fields_to_schedules_table ........ 35.39ms DONE
+  2026_10_02_100000_add_design_fields_to_teams_table ............ 36.42ms DONE
+  2026_10_02_103000_add_design_fields_to_schedules_table_2 ...... 23.44ms DONE
+  2026_10_02_106000_add_tax_type_to_quotes_table ................ 18.41ms DONE
+  2026_10_02_110000_create_app_notifications_table .............. 20.87ms DONE
+  2026_10_02_120000_create_notices_table ........................ 63.13ms DONE
+  2026_10_02_130000_add_address_to_schedules_table .............. 22.27ms DONE
+  2026_10_02_140000_create_device_tokens_and_reminder_sent_at ... 18.92ms DONE
+  2026_10_02_150000_attach_owner_to_personal_schedules ........... 0.53ms DONE
+  2026_10_02_160000_add_admin_fields_v18_41 ..................... 33.86ms DONE
+  2026_10_06_100000_create_operator_features_v18_43 ............ 138.09ms DONE
+  2026_10_06_110000_design_fields_v18_43 ....................... 152.22ms DONE
+  2026_10_06_120000_recalc_quote_tax_v18_45 ...................... 0.33ms DONE
+  2026_10_07_100000_team_plan_features_v18_47 .................. 146.51ms DONE
+  2026_10_07_110000_team_design_fields_v18_48 ................... 21.66ms DONE
+  2026_10_07_120000_social_linked_at_v18_51 ..................... 32.53ms DONE
+  2026_10_08_100000_operator_management_v18_56 .................. 51.12ms DONE
+  2026_10_08_120000_apple_login_v18_60 .......................... 51.10ms DONE
+  2026_10_09_100000_report_share_expiry_v18_63 .................. 10.22ms DONE
+  2026_10_12_100000_apple_refresh_token_v18_64 .................. 17.88ms DONE
+  2026_10_12_200000_recalc_estimated_tax_v18_66 .................. 0.30ms DONE
+  2026_10_13_170000_clear_card_showcase_v18_67 ................... 0.19ms DONE
+  2026_10_13_170100_device_tokens_access_token_v18_67 ............ 9.46ms DONE
+  2026_10_13_180000_users_main_work_types_v18_68 ................ 18.59ms DONE
+  2026_10_13_180100_team_members_kicked_at_v18_68 ............... 18.53ms DONE
+  2026_10_14_100300_business_card_showcase_mode_v18_68 .......... 20.09ms DONE
+

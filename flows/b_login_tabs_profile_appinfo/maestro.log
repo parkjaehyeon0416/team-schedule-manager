@@ -1,0 +1,56 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow b_login_tabs_profile_appinfo
+Launch app "com.workmatekr.app" with clear state... COMPLETED
+Run common/login-leader.yaml...
+  Assert that "아이디 찾기" is visible... COMPLETED
+  Tap on "이메일"... COMPLETED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+  Input text ***REDACTED***
+  Press Enter key... COMPLETED
+  Input text ***REDACTED***
+  Press Enter key... COMPLETED
+  Assert that "팀관리|Allow" is visible... COMPLETED
+  Run system-dialogs.yaml...
+    Run flow when "Allow" is visible...
+    Run flow when "Allow" is visible... SKIPPED
+    Run flow when "Continue" is visible...
+    Run flow when "Continue" is visible... SKIPPED
+  Run system-dialogs.yaml... COMPLETED
+  Assert that "팀관리" is visible... COMPLETED
+Run common/login-leader.yaml... COMPLETED
+Wait for animation to end within 5000 ms... COMPLETED
+Take screenshot b_01_home... COMPLETED
+Assert that "홈, tab, 1 of 5" is visible... COMPLETED
+Assert that "내정보, tab, 5 of 5" is visible... COMPLETED
+Scrolling DOWN until "팀 활동" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Take screenshot b_02_home_scrolled... COMPLETED
+Tap on "일정, tab, 2 of 5"... COMPLETED
+Wait for animation to end within 5000 ms... COMPLETED
+Take screenshot b_03_schedule_tab... COMPLETED
+Tap on "알림, tab, 4 of 5"... COMPLETED
+Wait for animation to end within 5000 ms... COMPLETED
+Take screenshot b_04_notifications_tab... COMPLETED
+Tap on "내정보, tab, 5 of 5"... COMPLETED
+Assert that "프로필 설정.*" is visible... COMPLETED
+Assert that "공개 프로필 보기.*" is visible... COMPLETED
+Assert that "로그인 연결 관리.*" is visible... COMPLETED
+Take screenshot b_05_profile_tab... COMPLETED
+Assert that "이용약관.*" is not visible... COMPLETED
+Assert that "개인정보 처리방침.*" is not visible... COMPLETED
+Scrolling DOWN until "앱 정보.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Assert that "고객 문의.*" is visible... COMPLETED
+Take screenshot b_06_profile_tab_bottom... COMPLETED
+Tap on "앱 정보.*"... COMPLETED
+Assert that ".*현재 버전 v1\.1\.0.*" is visible... COMPLETED
+Take screenshot b_07_app_info... COMPLETED
+Scrolling DOWN until "운영자" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Scrolling DOWN until "회원 탈퇴" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Assert that ".*박재현 \(개인 개발자\).*" is visible... COMPLETED
+Assert that ".*workmatekr@gmail\.com.*" is visible... COMPLETED
+Assert that "고객센터.*" is visible... COMPLETED
+Assert that ".*위치기반.*" is not visible... COMPLETED
+Take screenshot b_08_app_info_operator... COMPLETED
+Tap on "←"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Tap on "홈, tab, 1 of 5"... COMPLETED

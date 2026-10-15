@@ -1,0 +1,46 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow g_team_kick_invite
+Run common/ensure-home.yaml...
+  Run launch.yaml...
+    Launch app "com.workmatekr.app"... COMPLETED
+    Assert that "아이디 찾기|팀관리|새 버전이 나왔어요|업데이트가 필요해요" is visible... COMPLETED
+  Run launch.yaml... COMPLETED
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible...
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible... SKIPPED
+  Run login-leader.yaml when "아이디 찾기" is visible...
+  Run login-leader.yaml when "아이디 찾기" is visible... SKIPPED
+  Run system-dialogs.yaml...
+    Run flow when "Allow" is visible...
+    Run flow when "Allow" is visible... SKIPPED
+    Run flow when "Continue" is visible...
+    Run flow when "Continue" is visible... SKIPPED
+  Run system-dialogs.yaml... COMPLETED
+  Assert that "팀관리" is visible... COMPLETED
+Run common/ensure-home.yaml... COMPLETED
+Tap on "팀관리"... COMPLETED
+Assert that "내 팀 1" is visible... COMPLETED
+Take screenshot g_01_team_list... COMPLETED
+Tap on ".*${TEAM_NAME}.*"... COMPLETED
+Assert that "팀원 3" is visible... COMPLETED
+Take screenshot g_02_team_detail_members... COMPLETED
+Tap on ".*오가상.*"... COMPLETED
+Assert that ".*팀에서 내보내기.*" is visible... COMPLETED
+Take screenshot g_03_member_sheet... COMPLETED
+Tap on ".*팀에서 내보내기.*"... COMPLETED
+Assert that "오가상님을 팀에서 내보낼까요?" is visible... COMPLETED
+Take screenshot g_04_kick_confirm_dialog... COMPLETED
+Tap on "취소"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Assert that "오가상님을 팀에서 내보낼까요?" is not visible... COMPLETED
+Assert that "팀원 3" is visible... COMPLETED
+Scrolling DOWN until ".*팀원 초대.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on ".*팀원 초대.*"... COMPLETED
+Assert that "초대 코드" is visible... COMPLETED
+Take screenshot g_05_team_invite... COMPLETED
+Scrolling DOWN until ".*새 코드 만들기.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on ".*새 코드 만들기.*"... COMPLETED
+Assert that "초대 코드를 새로 만들까요?" is visible... COMPLETED
+Take screenshot g_06_regenerate_confirm_dialog... COMPLETED
+Tap on "새로 만들기"... COMPLETED
+Assert that ".*새 초대 코드를 만들었어요.*" is visible... COMPLETED
+Take screenshot g_07_regenerated_toast... COMPLETED

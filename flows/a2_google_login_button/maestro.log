@@ -1,0 +1,12 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow a2_google_login_button
+Launch app "com.workmatekr.app" with clear state... COMPLETED
+Assert that "구글로 로그인" is visible... COMPLETED
+Tap on "구글로 로그인"... COMPLETED
+Assert that (Optional) ".*google\.com.*" is visible... COMPLETED
+Take screenshot a_05_google_system_prompt... COMPLETED
+Tap on (Optional) "Continue"... COMPLETED
+Assert that (Optional) "accounts\.google\.com|.*Sign in.*|.*Google.*" is visible... COMPLETED
+Take screenshot a_06_google_web_login... COMPLETED
+Tap on (Optional) "Cancel|Close|취소|닫기"... COMPLETED
+Take screenshot a_07_after_google_cancel... COMPLETED

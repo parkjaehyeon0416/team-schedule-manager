@@ -1,0 +1,11 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow a3_apple_login_button
+Launch app "com.workmatekr.app" with clear state... COMPLETED
+Assert that "Apple로 로그인" is visible... COMPLETED
+Tap on "Apple로 로그인"... COMPLETED
+Assert that (Optional) "로그인 실패|.*Apple Account.*|.*Apple ID.*|Settings" is visible... COMPLETED
+Take screenshot a_08_apple_sheet... COMPLETED
+Tap on (Optional) "확인|Cancel|Close|Not Now"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Take screenshot a_09_after_apple_close... COMPLETED
+Assert that "Apple로 로그인" is visible... COMPLETED

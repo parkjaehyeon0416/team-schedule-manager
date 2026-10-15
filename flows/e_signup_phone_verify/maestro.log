@@ -1,0 +1,50 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow e_signup_phone_verify
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Tap on "이메일로 회원가입"... COMPLETED
+Assert that "기본정보 입력" is visible... COMPLETED
+Take screenshot e_01_signup_form... COMPLETED
+Tap on "이름"... COMPLETED
+Run common/system-dialogs.yaml...
+  Run flow when "Allow" is visible...
+  Run flow when "Allow" is visible... SKIPPED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+Run common/system-dialogs.yaml... COMPLETED
+Input text ***REDACTED***
+Tap on "이메일"... COMPLETED
+Input text ***REDACTED***
+Tap on "비밀번호"... COMPLETED
+Input text ***REDACTED***
+Tap on "비밀번호 확인"... COMPLETED
+Input text ***REDACTED***
+Tap on "휴대폰 번호"... COMPLETED
+Input text ***REDACTED***
+Take screenshot e_02_phone_entered... COMPLETED
+Tap on "인증번호 받기"... COMPLETED
+Assert that "다시 받기" is visible... COMPLETED
+Take screenshot e_03_code_sent... COMPLETED
+Run scripts/get_code.js... COMPLETED
+Tap on "인증번호"... COMPLETED
+Input text ***REDACTED***
+Take screenshot e_04_code_typed... COMPLETED
+Tap on "확인"... COMPLETED
+Assert that "휴대폰 인증을 완료했어요" is visible... COMPLETED
+Take screenshot e_05_phone_verified... COMPLETED
+Assert that "확인됨" is visible... COMPLETED
+Scrolling DOWN until "이용약관 및.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "이용약관 및.*" at 3%,50%... COMPLETED
+Scrolling DOWN until "가입하기" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Take screenshot e_06_terms_checked... COMPLETED
+Tap on "가입하기"... COMPLETED
+Assert that "팀관리|Allow|회원가입 실패|오류" is visible... COMPLETED
+Take screenshot e_07_after_signup... COMPLETED
+Run common/system-dialogs.yaml...
+  Run flow when "Allow" is visible...
+  Run flow when "Allow" is visible... SKIPPED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+Run common/system-dialogs.yaml... COMPLETED
+Assert that "팀관리" is visible... COMPLETED
+Take screenshot e_08_signup_home... COMPLETED

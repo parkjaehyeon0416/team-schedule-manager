@@ -1,0 +1,39 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow i_quote_approve_notice
+Run common/ensure-home.yaml...
+  Run launch.yaml...
+    Launch app "com.workmatekr.app"... COMPLETED
+    Assert that "아이디 찾기|팀관리|새 버전이 나왔어요|업데이트가 필요해요" is visible... COMPLETED
+  Run launch.yaml... COMPLETED
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible...
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible... SKIPPED
+  Run login-leader.yaml when "아이디 찾기" is visible...
+  Run login-leader.yaml when "아이디 찾기" is visible... SKIPPED
+  Run system-dialogs.yaml...
+    Run flow when "Allow" is visible...
+    Run flow when "Allow" is visible... SKIPPED
+    Run flow when "Continue" is visible...
+    Run flow when "Continue" is visible... SKIPPED
+  Run system-dialogs.yaml... COMPLETED
+  Assert that "팀관리" is visible... COMPLETED
+Run common/ensure-home.yaml... COMPLETED
+Tap on "견적서"... COMPLETED
+Assert that ".*가상고객 고객.*" is visible... COMPLETED
+Take screenshot i_01_quote_list... COMPLETED
+Tap on ".*가상고객 고객.*"... COMPLETED
+Assert that "견적 항목" is visible... COMPLETED
+Take screenshot i_02_quote_detail... COMPLETED
+Tap on (Optional) Right of "견적서 상세"... COMPLETED
+Assert that (Optional) "완료 처리 \(일정 등록\)" is visible... COMPLETED
+Run flow when "완료 처리 \(일정 등록\)" is not visible...
+Run flow when "완료 처리 \(일정 등록\)" is not visible... SKIPPED
+Assert that "완료 처리 \(일정 등록\)" is visible... COMPLETED
+Take screenshot i_03_quote_menu... COMPLETED
+Tap on "완료 처리 \(일정 등록\)"... COMPLETED
+Assert that "견적 승인" is visible... COMPLETED
+Assert that ".*일당은 비워 두고 등록되니.*" is visible... COMPLETED
+Take screenshot i_04_approve_notice_dialog... COMPLETED
+Tap on "취소"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Assert that "견적 승인" is not visible... COMPLETED
+Take screenshot i_05_after_cancel... COMPLETED

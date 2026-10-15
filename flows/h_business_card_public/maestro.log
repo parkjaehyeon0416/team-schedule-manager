@@ -1,0 +1,46 @@
+Running on iPhone 17 Pro - iOS 26.2 - E952A9B0-CC78-435C-BF08-06AD47FE1076
+ > Flow h_business_card_public
+Run common/ensure-home.yaml...
+  Run launch.yaml...
+    Launch app "com.workmatekr.app"... COMPLETED
+    Assert that "아이디 찾기|팀관리|새 버전이 나왔어요|업데이트가 필요해요" is visible... COMPLETED
+  Run launch.yaml... COMPLETED
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible...
+  Run dismiss-optional-update.yaml when "새 버전이 나왔어요" is visible... SKIPPED
+  Run login-leader.yaml when "아이디 찾기" is visible...
+  Run login-leader.yaml when "아이디 찾기" is visible... SKIPPED
+  Run system-dialogs.yaml...
+    Run flow when "Allow" is visible...
+    Run flow when "Allow" is visible... SKIPPED
+    Run flow when "Continue" is visible...
+    Run flow when "Continue" is visible... SKIPPED
+  Run system-dialogs.yaml... COMPLETED
+  Assert that "팀관리" is visible... COMPLETED
+Run common/ensure-home.yaml... COMPLETED
+Tap on "내 명함"... COMPLETED
+Assert that "현장 사진 공개" is visible... COMPLETED
+Take screenshot h_01_card_public... COMPLETED
+Scrolling DOWN until "전 · 후 모두.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Take screenshot h_02_card_settings_public... COMPLETED
+Tap on (Optional) "명함 공개", Index: 1... COMPLETED
+Assert that (Optional) "비공개 · 나만 볼 수 있어요" is visible... COMPLETED
+Run flow when "비공개 · 나만 볼 수 있어요" is not visible...
+Run flow when "비공개 · 나만 볼 수 있어요" is not visible... SKIPPED
+Assert that "비공개 · 나만 볼 수 있어요" is visible... COMPLETED
+Take screenshot h_03_card_private... COMPLETED
+Assert that "명함을 공개하면 고를 수 있어요" is visible... COMPLETED
+Tap on (Optional) "명함 공개", Index: 1... COMPLETED
+Assert that (Optional) "공개 중 · 링크로 누구나 볼 수 있어요" is visible... COMPLETED
+Run flow when "공개 중 · 링크로 누구나 볼 수 있어요" is not visible...
+Run flow when "공개 중 · 링크로 누구나 볼 수 있어요" is not visible... SKIPPED
+Assert that "공개 중 · 링크로 누구나 볼 수 있어요" is visible... COMPLETED
+Take screenshot h_04_card_public_again... COMPLETED
+Tap on "시공 후만.*"... COMPLETED
+Assert that (Optional) ".*시공 후만.*바꿨어요" is visible... COMPLETED
+Take screenshot h_05_showcase_after_only... COMPLETED
+Tap on "전 · 후 모두.*"... COMPLETED
+Assert that (Optional) ".*전 · 후 모두.*바꿨어요" is visible... COMPLETED
+Take screenshot h_06_showcase_both... COMPLETED
+Tap on "공개 안 함.*"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Take screenshot h_07_showcase_none... COMPLETED

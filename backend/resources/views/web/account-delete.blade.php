@@ -163,6 +163,6 @@ footer a { color: #0A6CE0; text-decoration: none; margin: 0 8px; }
     <p style="margin-top:12px">자세한 내용은 <a href="/privacy">개인정보 처리방침</a> 3항(보유 및 이용기간)을 확인해 주세요.</p>
   </section>
 </main>
-<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/account-delete">계정 삭제</a> · <a href="/">현장메이트 소개</a></footer>
+<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/account-delete">계정 삭제</a> · <a href="/support">고객 지원</a> · <a href="/">현장메이트 소개</a></footer>
 </body>
 </html>

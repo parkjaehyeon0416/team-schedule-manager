@@ -77,6 +77,15 @@ class LandingPageController extends Controller
         ]);
     }
 
+    // ★ v18.70 — 고객 지원 페이지(App Store "지원 URL"): 연락처 · 자주 묻는 질문 · 문서 링크
+    public function support()
+    {
+        return view('web.support', [
+            'developer'    => config('workmate.developer_name') ?: '박재현',
+            'supportEmail' => config('workmate.support_email') ?: 'workmatekr@gmail.com',
+        ]);
+    }
+
     private function legal(string $title, string $file)
     {
         return view('web.legal', [

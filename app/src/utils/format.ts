@@ -29,6 +29,17 @@ export function parseMoney(input: string): number {
 }
 
 /**
+ * ★ v18.71 — 단어 뒤에 붙일 조사 '으로/로': 받침 있으면 '으로', 받침 없거나 ㄹ 받침이면 '로'
+ * "공개 안 함" → "으로", "전 · 후 모두" → "로" (예전엔 '(으)로'가 그대로 보였음)
+ */
+export function josaRo(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return '(으)로'; // 한글로 안 끝나면 예전처럼
+  const final = code % 28;
+  return final === 0 || final === 8 ? '로' : '으로';
+}
+
+/**
  * 공수 포맷: 1 → "1.0", 1.5 → "1.5"
  */
 export function formatWorkUnits(

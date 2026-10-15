@@ -591,11 +591,13 @@ export default function RegisterScreen() {
       {/* ★ v18.70 — 기기 하단 바 높이는 스택 공통 화면 틀이 이미 비워 둠(AppNavigator) → 여기서 또 더하면 두 번 띄워짐
           ★ v18.70 QA — 토스트를 키보드 위로: 안드로이드 15+는 키보드가 떠도 화면이 줄지 않아('인증번호를 보냈어요'가
           자동으로 열리는 숫자 키보드 뒤에 숨었음) 화면 전체를 덮는 투명 층(toastLayer)이 키보드와 겹친 만큼 아래를 비움.
-          겹친 만큼을 직접 재므로 화면이 줄어드는 안드로이드 14 이하는 0(두 번 안 올라감). iOS는 바깥 KeyboardAvoidingView가 처리.
+          겹친 만큼을 직접 재므로 화면이 줄어드는 안드로이드 14 이하는 0(두 번 안 올라감).
+          ★ v18.71 — iOS도 이 층이 직접 올림: 층은 절대 위치라 바깥 KeyboardAvoidingView의 아래 여백이 안 먹어서
+          아이폰에서도 토스트가 숫자 키보드 뒤에 숨었음(아이폰 시뮬레이터 점검).
           층은 늘 깔아 둬야 키보드가 먼저 열려 있어도 높이를 앎. 빈 곳 터치는 아래 화면으로 그대로 감(box-none) */}
       <KeyboardAvoidingView
         style={styles.toastLayer}
-        behavior={Platform.OS === 'android' ? 'padding' : undefined}
+        behavior="padding"
         pointerEvents="box-none"
       >
         {!!toast && (

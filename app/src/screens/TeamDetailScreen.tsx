@@ -6,6 +6,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, ScrollView, Image, Linking, Modal, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from '../components/Gradient';
@@ -47,6 +48,8 @@ export default function TeamDetailScreen() {
   const [activities, setActivities] = useState<TeamActivity[] | null>(null);
   const [pick, setPick] = useState<TeamMember | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  // ★ v18.71 — … 메뉴는 헤더 바로 아래(헤더 높이 = 56 + 위쪽 안전 영역). 예전 고정 54는 아이폰에서 다이내믹 아일랜드 높이만큼 위로 올라가 헤더를 덮었음
+  const insets = useSafeAreaInsets();
   const [toast, setToast] = useState('');
   const [kick, setKick] = useState<TeamMember | null>(null); // 내보내기 확인 대상(닫히는 동안에도 이름 유지)
   const [kickOpen, setKickOpen] = useState(false);
@@ -117,7 +120,7 @@ export default function TeamDetailScreen() {
     try {
       await setSubLeader(team.id, target.id, next);
       setMembers(ms => ms.map(m => (m.id === target.id ? { ...m, is_sub_leader: next } : m)));
-      showToast(`${target.name}님이 ${next ? '부팀장' : '팀원'}(으)로 바뀌었어요`);
+      showToast(`${target.name}님이 ${next ? '부팀장으로' : '팀원으로'} 바뀌었어요`);
     } catch (e: any) {
       if (!isPlanLocked(e)) Alert.alert('변경 실패', e?.response?.data?.message || '다시 시도해주세요.');
     }
@@ -205,7 +208,7 @@ export default function TeamDetailScreen() {
         }
       />
       {menuOpen && (
-        <View style={styles.menuBox}>
+        <View style={[styles.menuBox, { top: insets.top + 54 }]}>
           <Pressable style={styles.menuItem} onPress={handleLeave}>
             <Text style={[styles.menuItemText, { color: colors.danger }]}>팀 나가기</Text>
           </Pressable>
@@ -461,8 +464,9 @@ const styles = StyleSheet.create({
 
   tileRow: { flexDirection: 'row', gap: 8 },
   tile: { flex: 1, minWidth: 0, alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 4, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderCard, borderRadius: 14 },
-  tileLabel: { fontSize: 13, fontWeight: '700', color: colors.textPrimary },
-  tileSub: { fontSize: 10, color: colors.textSecondary },
+  // ★ v18.71 — 줄 높이 고정: iOS에서 '정산표' 칸 글자만 1~3pt 위로 떠서 네 칸이 안 맞았음(글자에 따라 줄 높이가 달라짐)
+  tileLabel: { fontSize: 13, lineHeight: 18, fontWeight: '700', color: colors.textPrimary },
+  tileSub: { fontSize: 10, lineHeight: 14, color: colors.textSecondary },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderCard, paddingHorizontal: spacing.lg, shadowColor: '#102A56', shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: colors.borderHairline },

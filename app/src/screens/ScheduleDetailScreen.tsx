@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════════
 import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { pickImages, toPhotoFile } from '../utils/pickImage';
@@ -68,6 +69,8 @@ export default function ScheduleDetailScreen({ route }: any) {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // ★ v18.71 — … 메뉴는 헤더 바로 아래(헤더 높이 = 56 + 위쪽 안전 영역). 예전 고정 54는 아이폰에서 다이내믹 아일랜드 높이만큼 위로 올라가 헤더를 덮었음
+  const insets = useSafeAreaInsets();
 
   const [photos, setPhotos] = useState<PhotoListResponse>(EMPTY_PHOTOS);
   const [currentCategory, setCurrentCategory] = useState<PhotoCategory>('before');
@@ -277,7 +280,7 @@ export default function ScheduleDetailScreen({ route }: any) {
         }
       />
       {menuOpen && (
-        <View style={styles.menuBox}>
+        <View style={[styles.menuBox, { top: insets.top + 54 }]}>
           <Pressable style={styles.menuItem} onPress={() => { setMenuOpen(false); navigation.navigate('ScheduleReports', { scheduleId: id }); }}>
             <Text style={styles.menuItemText}>자동 보고서 관리</Text>
           </Pressable>

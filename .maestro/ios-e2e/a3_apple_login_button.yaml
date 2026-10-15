@@ -1,0 +1,24 @@
+# (a-3) 로그인 화면 → [Apple로 로그인] — 서명 없는 시뮬레이터 빌드(Sign in with Apple 권한 없음)라
+#   애플 시트 또는 앱의 실패 알림이 떠야 정상. 닫은 뒤 앱이 살아 있고 로그인 화면이 그대로인지 확인
+appId: com.workmatekr.app
+name: a3_apple_login_button
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "Apple로 로그인"
+    timeout: 90000
+- tapOn: "Apple로 로그인"
+- extendedWaitUntil:
+    visible: "로그인 실패|.*Apple Account.*|.*Apple ID.*|Settings"
+    timeout: 15000
+    optional: true
+- takeScreenshot: a_08_apple_sheet
+- tapOn:
+    text: "확인|Cancel|Close|Not Now"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: a_09_after_apple_close
+- assertVisible: "Apple로 로그인"

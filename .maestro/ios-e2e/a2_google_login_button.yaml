@@ -1,0 +1,29 @@
+# (a-2) 로그인 화면 → [구글로 로그인] — 시스템 확인 창("google.com 사용") → [Continue] → 구글 로그인 웹 화면 캡처 후 바로 닫음
+#   (계정은 입력하지 않음). 닫은 뒤에는 화면 캡처만(a1과 같은 이유)
+appId: com.workmatekr.app
+name: a2_google_login_button
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "구글로 로그인"
+    timeout: 90000
+- tapOn: "구글로 로그인"
+- extendedWaitUntil:
+    visible: ".*google\\.com.*"
+    timeout: 20000
+    optional: true
+- takeScreenshot: a_05_google_system_prompt
+- tapOn:
+    text: "Continue"
+    optional: true
+- extendedWaitUntil:
+    visible: "accounts\\.google\\.com|.*Sign in.*|.*Google.*"
+    timeout: 20000
+    optional: true
+- takeScreenshot: a_06_google_web_login
+- tapOn:
+    text: "Cancel|Close|취소|닫기"
+    optional: true
+- takeScreenshot: a_07_after_google_cancel

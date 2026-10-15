@@ -1,0 +1,32 @@
+# (a-1) 로그인 화면 → [카카오로 로그인] — 카카오톡이 없는 시뮬레이터라 시스템 확인 창("kakao.com 사용") →
+#   [Continue] → 카카오 웹 로그인 화면을 캡처하고 바로 닫음(아이디·비밀번호는 입력하지 않음)
+#   ※ 웹 로그인 창을 닫은 직후엔 Maestro가 화면 구조를 못 읽고 멈추는 일이 있어(iOS 26 SafariViewService),
+#     닫은 뒤에는 화면 캡처만 하고 끝냄. 앱이 오류 창을 띄웠는지는 그 캡처로 확인
+appId: com.workmatekr.app
+name: a1_kakao_login_button
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 90000
+- takeScreenshot: a_01_login_screen
+- tapOn: "카카오로 로그인"
+- extendedWaitUntil:
+    visible: ".*kakao\\.com.*"
+    timeout: 20000
+    optional: true
+- takeScreenshot: a_02_kakao_system_prompt
+- tapOn:
+    text: "Continue"
+    optional: true
+- extendedWaitUntil:
+    visible: "accounts\\.kakao\\.com|.*Kakao.*|.*카카오계정.*"
+    timeout: 20000
+    optional: true
+- takeScreenshot: a_03_kakao_web_login
+- tapOn:
+    text: "Cancel|Close|취소|닫기"
+    optional: true
+- takeScreenshot: a_04_after_kakao_cancel

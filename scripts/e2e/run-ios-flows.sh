@@ -89,10 +89,18 @@ run_flow() {
   return 0
 }
 
+# SafariViewService(카카오·구글 웹 로그인 창, "암호 저장" 창)가 떠 있거나 닫힌 직후엔 Maestro가 화면 구조를 못 읽고
+#   1분씩 멈추다 드라이버가 죽음(첫 실행 a·b 실패 원인). 암호 저장 창은 워크플로가 시뮬레이터 설정으로 끄고,
+#   소셜 흐름은 맨 끝에 하나씩 돌리며 사이사이 그 프로세스를 정리함
+kill_web_auth() {
+  xcrun simctl terminate "$DEV" com.apple.SafariViewService > /dev/null 2>&1 || true
+  xcrun simctl terminate "$DEV" com.apple.mobilesafari > /dev/null 2>&1 || true
+  sleep 2
+}
+
 wait_backend || exit 1
 
 # 기본: 최소 1.0.0 · 최신 1.1.0(= 앱 버전) → 업데이트 안내 없음
-run_flow a_social_login_buttons
 run_flow e_signup_phone_verify
 run_flow b_login_tabs_profile_appinfo
 run_flow f_login_links_reauth
@@ -116,7 +124,19 @@ set_env APP_MIN_VERSION_IOS 1.0.0
 set_env APP_LATEST_VERSION_IOS 1.1.0
 set_env APP_UPDATE_MESSAGE '""'
 reload_backend
+kill_web_auth   # d에서 [업데이트하기]가 연 Safari 정리
 run_flow z_back_to_normal
+
+# 소셜 로그인 버튼(로그인은 하지 않음) — 맨 끝에, 하나씩
+run_flow a3_apple_login_button
+kill_web_auth
+run_flow a1_kakao_login_button
+kill_web_auth
+run_flow a2_google_login_button
+kill_web_auth
+
+# 혹시 빠진 takeScreenshot 결과 한 번 더 모으기
+find "$RESULTS/flows" -path "*/takeScreenshot/*.png" -exec cp -n {} "$RESULTS/screenshots/" \; 2>/dev/null || true
 
 echo "===== summary ====="
 cat "$SUMMARY"

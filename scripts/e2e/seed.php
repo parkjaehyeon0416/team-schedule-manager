@@ -132,12 +132,12 @@ say("팀 {$teamId} + 팀원 2명(오가상=부팀장)");
 // ── 3. 현장 2곳 ──
 $today = now()->startOfDay();
 $site1 = call('POST', '/sites', $tokens['LEADER'], [
-    'address' => '서울특별시 가상구 예시로 12', 'apt_name' => '가상아파트', 'dong' => '101동', 'ho' => '1203호',
+    'address' => '서울특별시 가상구 예시로 12', 'apt_name' => '가상아파트', 'dong' => '101', 'ho' => '1203',
     'area_m2' => 84.5, 'customer' => '가상고객', 'team_id' => $teamId,
     'start_date' => $today->copy()->subDay()->toDateString(), 'end_date' => $today->copy()->addDays(7)->toDateString(),
 ])['data'];
 $site2 = call('POST', '/sites', $tokens['LEADER'], [
-    'address' => '서울특별시 가상구 샘플길 34', 'apt_name' => '샘플빌라', 'dong' => '2동', 'ho' => '301호',
+    'address' => '서울특별시 가상구 샘플길 34', 'apt_name' => '샘플빌라', 'dong' => '2', 'ho' => '301',
     'area_m2' => 59.0, 'customer' => '샘플고객', 'team_id' => $teamId,
 ])['data'];
 say('현장 2곳');

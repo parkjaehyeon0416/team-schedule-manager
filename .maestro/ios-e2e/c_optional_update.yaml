@@ -14,19 +14,12 @@ name: c_optional_update
 - assertVisible: "바뀐 점"
 - assertVisible: "회원가입 휴대폰 인증이 추가됐어요"
 - takeScreenshot: c_01_optional_update_sheet
-- tapOn:
-    text: "나중에"
-    index: 1
-    optional: true
+- tapOn: "나중에"
 - extendedWaitUntil:
-    visible: "다음에 앱을 열 때 다시 알려 드릴게요"
+    visible: ".*다음에 앱을 열 때 다시 알려 드릴게요.*"
     timeout: 5000
     optional: true
 - takeScreenshot: c_02_later_toast
-- runFlow:
-    when:
-      visible: "새 버전이 나왔어요"
-    file: common/dismiss-optional-update.yaml
 - assertNotVisible: "새 버전이 나왔어요"
 
 # 앱 정보: "현재 버전 v1.1.0 · 새 버전 v1.2.0 나왔어요" + [업데이트]

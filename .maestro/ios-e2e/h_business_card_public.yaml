@@ -15,10 +15,22 @@ name: h_business_card_public
     timeout: 10000
 - takeScreenshot: h_02_card_settings_public
 
-# 공개 → 비공개
+# 공개 → 비공개 (스위치가 두 번째가 아니면 첫 번째로 다시 시도)
 - tapOn:
     text: "명함 공개"
     index: 1
+    optional: true
+- extendedWaitUntil:
+    visible: "비공개 · 나만 볼 수 있어요"
+    timeout: 8000
+    optional: true
+- runFlow:
+    when:
+      notVisible: "비공개 · 나만 볼 수 있어요"
+    commands:
+      - tapOn:
+          text: "명함 공개"
+          index: 0
 - extendedWaitUntil:
     visible: "비공개 · 나만 볼 수 있어요"
     timeout: 15000
@@ -29,6 +41,18 @@ name: h_business_card_public
 - tapOn:
     text: "명함 공개"
     index: 1
+    optional: true
+- extendedWaitUntil:
+    visible: "공개 중 · 링크로 누구나 볼 수 있어요"
+    timeout: 8000
+    optional: true
+- runFlow:
+    when:
+      notVisible: "공개 중 · 링크로 누구나 볼 수 있어요"
+    commands:
+      - tapOn:
+          text: "명함 공개"
+          index: 0
 - extendedWaitUntil:
     visible: "공개 중 · 링크로 누구나 볼 수 있어요"
     timeout: 15000

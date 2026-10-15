@@ -16,6 +16,18 @@ name: i_quote_approve_notice
 # 머리 오른쪽 ⋯ 버튼(글자 없는 아이콘) — 제목 오른쪽에 있는 것
 - tapOn:
     rightOf: "견적서 상세"
+    optional: true
+- extendedWaitUntil:
+    visible: "완료 처리 \\(일정 등록\\)"
+    timeout: 6000
+    optional: true
+# 못 찾았으면 화면 오른쪽 위(머리 높이)를 직접 누름
+- runFlow:
+    when:
+      notVisible: "완료 처리 \\(일정 등록\\)"
+    commands:
+      - tapOn:
+          point: "92%,10%"
 - extendedWaitUntil:
     visible: "완료 처리 \\(일정 등록\\)"
     timeout: 10000

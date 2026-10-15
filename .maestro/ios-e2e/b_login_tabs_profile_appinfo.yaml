@@ -49,10 +49,13 @@ name: b_login_tabs_profile_appinfo
 
 - tapOn: "앱 정보.*"
 - extendedWaitUntil:
-    visible: "운영자"
+    visible: ".*현재 버전 v1\\.1\\.0.*"
     timeout: 20000
-- assertVisible: ".*현재 버전 v1\\.1\\.0.*"
 - takeScreenshot: b_07_app_info
+- scrollUntilVisible:
+    element: "운영자"
+    direction: DOWN
+    timeout: 10000
 - scrollUntilVisible:
     element: "회원 탈퇴"
     direction: DOWN

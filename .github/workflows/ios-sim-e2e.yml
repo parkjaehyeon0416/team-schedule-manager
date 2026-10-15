@@ -243,6 +243,11 @@ jobs:
           echo "DEV=$DEV" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEV"
           xcrun simctl bootstatus "$DEV" -b
+          # 로그인 직후 "암호 저장" 시스템 창이 Maestro를 멈추게 해서(첫 실행) 암호 자동 완성을 끄고 시뮬레이터를 다시 켬
+          python3 scripts/e2e/sim-disable-password-autofill.py "$DEV" | tee -a "$RESULTS/logs/versions.txt"
+          xcrun simctl shutdown "$DEV"
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
           # 키보드 첫 사용 안내·자동 고침 끄기(입력이 바뀌지 않게)
           xcrun simctl spawn "$DEV" defaults write com.apple.keyboard.preferences DidShowContinuousPathIntroduction -bool true || true
           xcrun simctl spawn "$DEV" defaults write com.apple.Preferences KeyboardAutocorrection -bool false || true
@@ -286,20 +291,17 @@ jobs:
 
       # 무작위 비밀번호도 결과 파일에 남기지 않음
       - name: Scrub secrets from results
+        id: scrub
         if: always()
         run: |
           ACC="$RUNNER_TEMP/e2e-accounts.env"
-          secrets=()
-          [ -n "${E2E_DB_PW:-}" ] && secrets+=("$E2E_DB_PW")
-          if [ -f "$ACC" ]; then while IFS='=' read -r k v; do case "$k" in *_PW) secrets+=("$v") ;; esac; done < "$ACC"; fi
-          for s in "${secrets[@]}"; do
-            grep -rlIF -- "$s" "$RESULTS" 2>/dev/null | while read -r f; do SECRET="$s" perl -pi -e 's/\Q$ENV{SECRET}\E/***REDACTED***/g' "$f"; done
-          done
-          for s in "${secrets[@]}"; do if grep -rqIF -- "$s" "$RESULTS"; then echo "secret still present"; exit 1; fi; done
+          # 전체 값 + 6자 이상 부분 문자열(드라이버 로그가 입력 중 남은 글자를 찍음) + 입력 로그 줄까지 지움. 남으면 실패(→ 올리지 않음)
+          python3 scripts/e2e/scrub.py "$RESULTS" "$ACC" "${E2E_DB_PW:-}"
           rm -f "$ACC"
 
       - name: Publish results to ios-e2e-results
-        if: always()
+        # 비밀값 지우기가 성공했을 때만 올림
+        if: always() && steps.scrub.outcome == 'success'
         run: |
           cd "$RESULTS"
           if [ -f summary.txt ] && ! grep -q " FAIL " summary.txt; then STATUS=success

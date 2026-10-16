@@ -46,6 +46,8 @@ class SiteFile extends Model
         'sort_order' => 'integer',
         // ★ v11.1 추가
         'paired_with_id' => 'integer',
+        // ★ v18.72 운영자 숨김 기록 (hidden_by·hidden_reason과 함께 fillable에 넣지 않고 속성으로 직접 대입)
+        'hidden_at' => 'datetime',
     ];
 
     /**

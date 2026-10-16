@@ -66,6 +66,7 @@ class LandingPageController extends Controller
      * ★ v18.68 — 계정 삭제 안내(구글 플레이 "데이터 삭제" 필수 URL: https://workmatekr.com/account-delete).
      *   앱 안 탈퇴 경로 + 앱 없이 메일로 요청하는 방법 + 지우는 정보·남는 정보·보관 기간.
      *   지우는/남는 정보는 AuthController::withdraw() · AccountCleanupService · 개인정보 처리방침 3항과 같게 유지할 것.
+     *   ★ v18.72 — 지우는 정보에 차단 목록(user_blocks 양쪽), 남는 정보에 신고 처리 기록(content_reports) 추가.
      */
     public function accountDelete()
     {

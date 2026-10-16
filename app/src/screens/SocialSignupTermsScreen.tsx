@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { socialSignup } from '../api/socialAuthApi';
 import GradientButton from '../components/GradientButton';
 import { CheckBox } from '../components/TeamUi';
+import { isSuspendedAccount, showSuspendedAlert } from '../utils/suspendedAccount';
 import type { SocialFlowParams } from './SocialFirstLoginScreen';
 
 const ITEMS: { label: string; required: boolean; doc?: 'terms' | 'privacy' }[] = [
@@ -37,6 +38,11 @@ export default function SocialSignupTermsScreen() {
         keepLoggedIn: params.keepLoggedIn ?? true,
       });
     } catch (e: any) {
+      // ★ v18.72 — 정지된 계정(403 ERR_AUTH_009)이면 고객센터 안내 후 처음(로그인 화면)으로
+      if (isSuspendedAccount(e)) {
+        showSuspendedAlert(e, () => navigation.popToTop());
+        return;
+      }
       const code = e?.response?.data?.error_code;
       Alert.alert('가입하지 못했어요', e?.response?.data?.message ?? '잠시 후 다시 시도해주세요.', [
         { text: '확인', onPress: () => code === 'ERR_AUTH_013' && navigation.popToTop() },

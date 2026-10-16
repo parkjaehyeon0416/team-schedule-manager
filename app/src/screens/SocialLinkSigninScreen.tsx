@@ -11,6 +11,7 @@ import { socialLogin, isSocialCancel, PROVIDER_NAME, SocialProvider, APPLE_LOGIN
 import GradientButton from '../components/GradientButton';
 import { ProviderBadge, SocialButton, OrDivider, AuthInput, FindLinks } from '../components/AuthUi';
 import { ICONS } from '../assets/icons';
+import { isSuspendedAccount, showSuspendedAlert } from '../utils/suspendedAccount';
 import type { SocialFlowParams } from './SocialFirstLoginScreen';
 
 const GA: Record<SocialProvider, string> = { kakao: '카카오가', google: '구글이', apple: 'Apple이' };
@@ -30,6 +31,11 @@ export default function SocialLinkSigninScreen() {
 
   const onFail = (e: any) => {
     if (isSocialCancel(e)) return;
+    // ★ v18.72 — 정지된 계정은 연결을 이어갈 수 없으니 확인 후 처음(로그인 화면)으로
+    if (isSuspendedAccount(e)) {
+      showSuspendedAlert(e, () => navigation.popToTop());
+      return;
+    }
     const code = e?.response?.data?.error_code;
     const msg = code === 'ERR_AUTH_001'
       ? '이메일 또는 비밀번호를 확인해주세요.'

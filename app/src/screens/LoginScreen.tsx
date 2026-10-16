@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
 import { socialLogin, isSocialCancel, SocialProvider, APPLE_LOGIN_AVAILABLE } from '../api/socialAuthApi';
+import { isSuspendedAccount, showSuspendedAlert } from '../utils/suspendedAccount';
 import { colors } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
 import { SocialButton, OrDivider, AuthInput, FindLinks } from '../components/AuthUi';
@@ -40,6 +41,10 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       if (isSocialCancel(error)) return;
+      if (isSuspendedAccount(error)) {
+        showSuspendedAlert(error); // ★ v18.72
+        return;
+      }
       Alert.alert('로그인 실패', error?.response?.data?.message ?? '소셜 로그인 중 오류가 발생했습니다.');
     } finally {
       setSocialLoading(null);
@@ -63,6 +68,8 @@ export default function LoginScreen() {
         Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
       } else if (errCode === 'ERR_AUTH_008') {
         Alert.alert('접근 불가', '운영자 계정은 모바일 앱 이용이 불가합니다.\n웹 관리자에서 로그인해주세요.');
+      } else if (isSuspendedAccount(error)) {
+        showSuspendedAlert(error); // ★ v18.72 — 정지된 계정(403 ERR_AUTH_009): 고객센터 이메일까지 안내
       } else {
         Alert.alert('오류', error.response?.data?.message ?? '네트워크 오류가 발생했습니다.');
       }

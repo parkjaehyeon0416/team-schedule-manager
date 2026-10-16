@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Team;
 use App\Services\PlanService;
+use App\Support\BlockFilter;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -31,6 +32,8 @@ class TeamAlbumController extends Controller implements HasMiddleware
         if ($err) {
             return $err;
         }
+        // ★ v18.72 — 내가 차단한 사람이 올린 사진은 빼고 셈(차단한 사람 사진만 있는 현장은 목록에서도 빠짐)
+        $blocked = $request->user()->blockedUserIds();
 
         $sites = DB::table('sites')
             ->join('site_files', 'site_files.site_id', '=', 'sites.id')
@@ -38,6 +41,7 @@ class TeamAlbumController extends Controller implements HasMiddleware
             ->whereNull('sites.deleted_at')
             ->whereNull('site_files.deleted_at')
             ->where('site_files.file_type', 'photo')
+            ->tap(fn($q) => BlockFilter::uploader($q, 'site_files.uploaded_by', $blocked))
             ->groupBy('sites.id', 'sites.apt_name', 'sites.address', 'sites.dong', 'sites.ho', 'sites.status')
             ->orderByDesc(DB::raw('MAX(site_files.created_at)'))
             ->get([
@@ -53,6 +57,7 @@ class TeamAlbumController extends Controller implements HasMiddleware
         $previews = DB::table('site_files')
             ->whereIn('site_id', $sites->pluck('id'))
             ->whereNull('deleted_at')->where('file_type', 'photo')
+            ->tap(fn($q) => BlockFilter::uploader($q, 'uploaded_by', $blocked)) // ★ v18.72
             ->orderByDesc('created_at')
             ->get(['id', 'site_id', 'file_path', 'photo_category'])
             ->groupBy('site_id')
@@ -90,6 +95,9 @@ class TeamAlbumController extends Controller implements HasMiddleware
         if ($err) {
             return $err;
         }
+        // ★ v18.72 — 내가 차단한 사람이 올린 사진·올린 사람 칩은 안 보임(Apple 1.2, 한쪽만 적용)
+        $me = (int) $request->user()->id;
+        $blocked = $request->user()->blockedUserIds();
 
         $query = DB::table('site_files')
             ->join('sites', 'sites.id', '=', 'site_files.site_id')
@@ -98,6 +106,7 @@ class TeamAlbumController extends Controller implements HasMiddleware
             ->whereNull('sites.deleted_at')
             ->whereNull('site_files.deleted_at')
             ->where('site_files.file_type', 'photo')
+            ->tap(fn($q) => BlockFilter::uploader($q, 'site_files.uploaded_by', $blocked))
             ->when($request->query('site_id'), fn($q, $v) => $q->where('sites.id', (int) $v))
             ->when(in_array($request->query('category'), ['before', 'during', 'after', 'other'], true),
                 fn($q) => $q->where('site_files.photo_category', $request->query('category')))
@@ -107,6 +116,7 @@ class TeamAlbumController extends Controller implements HasMiddleware
                 'site_files.id', 'site_files.file_path', 'site_files.photo_category', 'site_files.description', 'site_files.created_at',
                 'site_files.paired_with_id', 'sites.id as site_id', 'sites.apt_name', 'sites.address', 'users.id as uploader_id', 'users.name as uploader_name',
                 'users.avatar_color as uploader_color', 'users.avatar_image_path as uploader_avatar',
+                'users.deleted_at as uploader_deleted_at', // ★ v18.72 탈퇴한 사람은 차단 대상 아님(can_block)
             ]);
 
         $page = $query->paginate(60);
@@ -116,6 +126,8 @@ class TeamAlbumController extends Controller implements HasMiddleware
             ->join('sites', 'sites.id', '=', 'site_files.site_id')
             ->join('users', 'users.id', '=', 'site_files.uploaded_by')
             ->where('sites.team_id', $team->id)->whereNull('site_files.deleted_at')->where('site_files.file_type', 'photo')
+            ->whereNull('sites.deleted_at') // ★ v18.72 사진 목록과 같게(빠져 있던 조건)
+            ->tap(fn($q) => BlockFilter::actor($q, 'users.id', $blocked))
             ->when($request->query('site_id'), fn($q, $v) => $q->where('sites.id', (int) $v))
             ->groupBy('users.id', 'users.name')
             ->orderByRaw('COUNT(*) DESC')
@@ -141,6 +153,9 @@ class TeamAlbumController extends Controller implements HasMiddleware
                 'site'           => ['id' => $p->site_id, 'name' => $p->apt_name ?: $p->address],
                 'uploader'       => $p->uploader_id ? ['id' => $p->uploader_id, 'name' => $p->uploader_name,
                     'avatar_color' => $p->uploader_color, 'avatar_image_path' => $p->uploader_avatar] : null,
+                // ★ v18.72 — 남이 올린 사진만 신고·차단(사진 보기의 ⋯ 버튼). 올린 사람이 없거나 탈퇴했으면 신고만
+                'can_report'     => (int) $p->uploader_id !== $me,
+                'can_block'      => $p->uploader_id && !$p->uploader_deleted_at && (int) $p->uploader_id !== $me,
                 'created_at'     => $p->created_at,
             ]),
             'page'  => $page->currentPage(),

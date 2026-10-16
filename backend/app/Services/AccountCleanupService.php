@@ -9,6 +9,7 @@ use App\Models\Inquiry;
 use App\Models\InquiryFile;
 use App\Models\SiteReport;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Storage;
  *   - 내가 만든 보고서의 공유 링크(즉시 만료)
  *   - 고객 문의 첨부 사진 파일
  *   - 휴대폰 번호·카카오톡 아이디·주요 공정(★ v18.68), 푸시 기기 등록
+ *   - 차단 목록(★ v18.72): 내가 차단한 사람·나를 차단한 사람 기록 모두
  *   (★ v18.68 비밀번호 해시·remember_token은 본인 확인이 끝난 뒤 AuthController::withdraw()가 직접 비움 — 여기서 지우면
  *    이 함수를 본인 확인 전에 불렀을 때 비밀번호 확인이 깨짐. 탈퇴 회원의 접속 기록·마지막 로그인 시각은 3개월 뒤
  *    routes/console.php 'prune-withdrawn-login-records'가 지움)
@@ -30,6 +32,7 @@ use Illuminate\Support\Facades\Storage;
  * 남기는 것 (기존 정책 그대로)
  *   - 이름: 팀원들의 과거 일정·정산 기록에 표시
  *   - 팀원과 함께 쓰는 일정·현장·사진·견적·보고서 기록(팀 필터 조회용), 문의 글(응대 기록)
+ *   - 신고 기록(★ v18.72 content_reports — 운영자 처리 기록. 신고자·대상자 FK는 그대로, 계정이 실제 삭제되면 null)
  * 건드리지 않는 것
  *   - 소셜 로그인 ID·Apple 토큰: AuthController가 카카오 연결 끊기·Apple revoke를 먼저 한 뒤 직접 비움
  */
@@ -46,6 +49,9 @@ class AccountCleanupService
         $this->removeInquiryAttachments($user);
 
         DeviceToken::where('user_id', $user->id)->delete();
+
+        // ★ v18.72 — 차단 목록: 내가 차단한 것·나를 차단한 것 모두 지움(users는 소프트 삭제라 FK cascade가 안 걸림)
+        DB::table('user_blocks')->where('blocker_id', $user->id)->orWhere('blocked_id', $user->id)->delete();
 
         $this->clearContactAndEmail($user);
     }

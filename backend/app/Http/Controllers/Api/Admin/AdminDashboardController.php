@@ -32,6 +32,8 @@ class AdminDashboardController extends Controller
             'push_devices'         => DB::table('device_tokens')->count(),
             'notices_published'    => (clone $published)->where('type', 'notice')->count(),
             'events_published'     => (clone $published)->where('type', 'event')->count(),
+            // ★ v18.72 처리 대기 신고(Apple 1.2 — 24시간 안에 확인)
+            'reports_pending'      => DB::table('content_reports')->whereNull('deleted_at')->where('status', 'pending')->count(),
         ];
 
         // 최근 가입 회원 — 지역/주요 공정은 명함(business_cards)에 적어둔 값

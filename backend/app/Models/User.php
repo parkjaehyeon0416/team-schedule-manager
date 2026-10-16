@@ -119,6 +119,37 @@ class User extends Authenticatable
             ->all();
     }
 
+    /**
+     * ★ v18.72 — 내가 차단한 사람 id 목록 (Apple 1.2). 한 요청 안에서는 한 번만 조회 — teamRoleMap과 같은 방식.
+     *   팀 공지·팀 앨범·팀 활동·알림에서만 거르고, 팀원 목록·일정·정산 같은 업무 기록은 거르지 않음.
+     */
+    private ?array $blockedMap = null;
+
+    public function blockedUserIds(): array
+    {
+        return $this->blockedMap ??= \Illuminate\Support\Facades\DB::table('user_blocks')
+            ->where('blocker_id', $this->id)
+            ->pluck('blocked_id')
+            ->map(fn($v) => (int) $v)
+            ->all();
+    }
+
+    /** ★ v18.72 — 내가 이 사람을 차단했나 */
+    public function hasBlocked(int $userId): bool
+    {
+        return in_array($userId, $this->blockedUserIds(), true);
+    }
+
+    /** ★ v18.72 — 이 사람을 차단한 사람들 id (알림·푸시 받는 사람에서 빼는 용도) */
+    public static function blockerIdsOf(int $userId): array
+    {
+        return \Illuminate\Support\Facades\DB::table('user_blocks')
+            ->where('blocked_id', $userId)
+            ->pluck('blocker_id')
+            ->map(fn($v) => (int) $v)
+            ->all();
+    }
+
     /** ★ v18.67 — 운영자(웹 관리자 전용) 계정인가 */
     public function isOperator(): bool
     {

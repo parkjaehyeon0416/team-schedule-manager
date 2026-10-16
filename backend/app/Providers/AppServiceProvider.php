@@ -41,6 +41,11 @@ class AppServiceProvider extends ServiceProvider
             if (!$isValid) {
                 return false;
             }
+            // ★ v18.72 — 정지된 계정은 남아 있는 토큰으로도 못 씀 → 401 ERR_AUTH_003 → 앱 자동 로그아웃
+            //   (403으로 막으면 앱이 로그아웃하지 않고 요청만 계속 실패함. 다시 로그인하면 403 ERR_AUTH_009 '이용이 정지된 계정')
+            if (optional($token->tokenable)->suspended_at) {
+                return false;
+            }
             $last = $token->last_used_at ?? $token->created_at;
             $idle = optional($token->tokenable)->user_type === 'operator'
                 ? now()->subHours(\App\Support\LoginSession::OPERATOR_IDLE_HOURS)

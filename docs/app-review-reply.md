@@ -1,6 +1,6 @@
 # App Store 심사 답변 (Guideline 2.1 - Information Needed, 2026-10-16)
 
-> Apple 요청: ① 실제 아이폰 화면 녹화 ② 앱 목적·대상 ③ 사용 방법·로그인 정보 ④ 외부 서비스 ⑤ 지역 차이 ⑥ 규제 업종 서류.
+> Apple 요청: ① 실제 아이폰 화면 녹화(2026-11-02 사장님 결정: 실기기가 없어 시뮬레이터로 찍었다고 밝히고 보냄) ② 앱 목적·대상 ③ 사용 방법·로그인 정보 ④ 외부 서비스 ⑤ 지역 차이 ⑥ 규제 업종 서류.
 > 아래 영어 본문을 **앱 심사 메시지 답장**에 붙여 넣고, 같은 내용을 **버전 페이지 › 앱 심사 정보 › 메모**에도 넣는다(4,000자 제한 — 메모에는 "Screen recording" 줄을 빼도 됨).
 > ※ 2026-10-17 사장님 결정: 신고·차단 화면 없이 지금 빌드(1.1.0 (11))로 답변 — 초대제 업무 앱이라는 점을 설명. 1.2로 다시 반려되면 신고·차단 화면을 넣는다(서버 v18.72는 이미 배포됨).
 > ※ `<영상 링크>`와 `<비밀번호>`는 사장님이 채움. 비밀번호는 이 파일에 적지 말 것.
@@ -13,8 +13,9 @@ Hello App Review team,
 Thank you for the review. Please find the requested information below.
 
 1. Screen recording
-A screen recording captured on a physical iPhone (latest iOS) is available here: <영상 링크>
-It starts from launching the app and shows: sign-up (with SMS verification of a Korean mobile number), login, the main features (schedules, daily wage/income, site photos, quotes, business card), creating a team and the leader-controlled invitation, the in-app customer inquiry used for reports, and account deletion.
+We are an individual developer and do not currently have a physical iPhone available, so we recorded the screen on the iOS Simulator (iPhone 17 Pro, iOS 26). We apologize for this. The recording is available here: <영상 링크>
+It was made from the same source code as build 1.1.0 (11), connected to a local test copy of our server that contains sample data (sample names such as "한예시" and "가상고객"). It starts from launching the app and shows: logging in, the main features (home and monthly income, schedule calendar and details, quote and its PDF preview, business card, team members, the leader-controlled invitation code, posting a team notice), the in-app customer inquiry used for reports, logging out, signing up with SMS verification of a Korean mobile number, and deleting the new account (내정보 > 앱 정보 > 회원 탈퇴).
+If a recording from a physical device is still required, please let us know and we will provide one.
 
 2. Purpose and target audience
 현장메이트 ("Hyunjang Mate") is a work-management app for Korean construction and interior trade workers (wallpaper, tile, film, painting) who move between job sites as freelancers or day laborers, and for the team leaders who assign them to sites.

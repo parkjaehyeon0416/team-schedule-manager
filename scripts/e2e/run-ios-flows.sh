@@ -100,6 +100,31 @@ kill_web_auth() {
 
 wait_backend || exit 1
 
+# ★ App Store 심사 답변용 화면 녹화 모드(.maestro/ios-e2e/VIDEO_MODE 파일이 있을 때만) — 다른 흐름은 안 돌림
+#   앱 데이터 지우고 홈 화면에서 녹화 시작 → v_review_video → 녹화 중단 → ffmpeg로 폭 600px로 줄임(결과 올리기 40MB 제한)
+if [ -f "$FLOWS/VIDEO_MODE" ]; then
+  VDIR="$RESULTS/video"
+  mkdir -p "$VDIR"
+  (cd "$VDIR" && maestro --device "$DEV" test "$FLOWS/common/reset-app.yaml") > "$VDIR/reset.log" 2>&1 || true
+  xcrun simctl terminate "$DEV" com.workmatekr.app > /dev/null 2>&1 || true
+  sleep 3
+  xcrun simctl io "$DEV" recordVideo --codec=h264 --force "$VDIR/raw.mp4" > "$VDIR/record.log" 2>&1 &
+  REC=$!
+  sleep 4
+  run_flow v_review_video
+  sleep 2
+  kill -INT "$REC" 2>/dev/null || true
+  wait "$REC" 2>/dev/null || true
+  ls -la "$VDIR"
+  command -v ffmpeg > /dev/null || brew install ffmpeg > "$VDIR/brew.log" 2>&1 || true
+  if command -v ffmpeg > /dev/null && [ -f "$VDIR/raw.mp4" ]; then
+    ffmpeg -y -i "$VDIR/raw.mp4" -vf "scale=600:-2" -c:v libx264 -crf 26 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an \
+      "$VDIR/review-video.mp4" > "$VDIR/ffmpeg.log" 2>&1 && rm -f "$VDIR/raw.mp4"
+  fi
+  ls -la "$VDIR"
+  exit 0
+fi
+
 # 기본: 최소 1.0.0 · 최신 1.1.0(= 앱 버전) → 업데이트 안내 없음
 run_flow e_signup_phone_verify
 run_flow b_login_tabs_profile_appinfo

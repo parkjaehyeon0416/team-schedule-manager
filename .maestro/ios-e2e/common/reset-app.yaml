@@ -1,0 +1,10 @@
+# 녹화 전: 앱 데이터를 지우고 한 번 켰다가 끈 뒤 홈 화면으로(녹화는 홈 화면에서 앱 아이콘을 여는 장면부터)
+appId: com.workmatekr.app
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 60000
+- stopApp

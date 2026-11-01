@@ -1,0 +1,277 @@
+# (v) App Store 심사 답변용 화면 녹화(실기기가 없어 시뮬레이터 — 답변에 그렇게 밝힘)
+#   run-ios-flows.sh가 VIDEO_MODE일 때만 simctl recordVideo로 감싸서 돌림. 시작 전 상태: 앱 데이터 지우고 종료(홈 화면)
+#   순서: 앱 실행 → 샘플 데이터 계정(가상 팀장) 로그인 → 홈·일정·일정 상세·견적서·미리보기·명함·팀(팀원·초대·공지 쓰기)·고객 문의
+#        → 로그아웃 → 새 회원가입(휴대폰 문자 인증) → 회원 탈퇴
+#   보는 사람이 따라올 수 있게 화면마다 쉬는 시간(common/pause*.yaml)
+appId: com.workmatekr.app
+name: v_review_video
+---
+- runFlow: common/pause-long.yaml
+- launchApp
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 60000
+- runFlow: common/pause.yaml
+
+# ── 1. 샘플 데이터 계정으로 로그인 ──
+- runFlow: common/login-leader.yaml
+- runFlow: common/pause-long.yaml
+- scrollUntilVisible:
+    element: "팀 활동"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+- runFlow: common/pause.yaml
+- scrollUntilVisible:
+    element: ".*이번 달 수입.*"
+    direction: UP
+    timeout: 10000
+    optional: true
+
+# ── 2. 일정 탭(달력) ──
+- tapOn: "일정, tab, 2 of 5"
+- runFlow: common/pause-long.yaml
+- tapOn: "홈, tab, 1 of 5"
+- runFlow: common/pause-short.yaml
+
+# ── 3. 오늘의 일정 → 일정 상세 ──
+- tapOn: ".*가상아파트.*"
+- extendedWaitUntil:
+    visible: "일정 상세"
+    timeout: 20000
+- runFlow: common/pause-long.yaml
+- scrollUntilVisible:
+    element: "작업 정보"
+    direction: DOWN
+    timeout: 8000
+    optional: true
+- runFlow: common/pause.yaml
+- runFlow: common/back.yaml
+
+# ── 4. 견적서 → 상세 → 미리보기 ──
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 15000
+- tapOn: "견적서"
+- extendedWaitUntil:
+    visible: ".*가상고객 고객.*"
+    timeout: 20000
+- runFlow: common/pause.yaml
+- tapOn: ".*가상고객 고객.*"
+- extendedWaitUntil:
+    visible: "견적 항목"
+    timeout: 20000
+- runFlow: common/pause.yaml
+- tapOn: ".*미리보기"
+- extendedWaitUntil:
+    visible: "견적서 미리보기"
+    timeout: 20000
+- runFlow: common/pause-long.yaml
+- scrollUntilVisible:
+    element: "합계 금액"
+    direction: DOWN
+    timeout: 8000
+    optional: true
+- runFlow: common/pause.yaml
+- runFlow: common/back.yaml
+- runFlow: common/back.yaml
+- runFlow: common/back.yaml
+
+# ── 5. 내 명함 ──
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 15000
+- tapOn: "내 명함"
+- extendedWaitUntil:
+    visible: "현장 사진 공개"
+    timeout: 20000
+- runFlow: common/pause-long.yaml
+- runFlow: common/back.yaml
+
+# ── 6. 팀: 팀원 · 초대(팀장이 고른 사람만 코드로 가입) · 팀 공지 쓰기 ──
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 15000
+- tapOn: "팀관리"
+- extendedWaitUntil:
+    visible: "내 팀 1"
+    timeout: 20000
+- runFlow: common/pause-short.yaml
+- tapOn: ".*${TEAM_NAME}.*"
+- extendedWaitUntil:
+    visible: "팀원 3"
+    timeout: 20000
+- runFlow: common/pause.yaml
+- tapOn: ".*오가상.*"
+- extendedWaitUntil:
+    visible: ".*팀에서 내보내기.*"
+    timeout: 15000
+- runFlow: common/pause.yaml
+- tapOn: "닫기"
+- waitForAnimationToEnd:
+    timeout: 3000
+- scrollUntilVisible:
+    element: ".*팀원 초대.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: ".*팀원 초대.*"
+- extendedWaitUntil:
+    visible: "초대 코드"
+    timeout: 20000
+- runFlow: common/pause-long.yaml
+- runFlow: common/back.yaml
+- scrollUntilVisible:
+    element: "팀 공지.*"
+    direction: UP
+    timeout: 10000
+- tapOn: "팀 공지.*"
+- extendedWaitUntil:
+    visible: ".*공지 쓰기"
+    timeout: 20000
+- runFlow: common/pause-short.yaml
+- tapOn: ".*공지 쓰기"
+- extendedWaitUntil:
+    visible: "팀 공지 쓰기"
+    timeout: 10000
+- tapOn: "팀원들에게 알릴 내용을 적어주세요"
+- runFlow: common/system-dialogs.yaml
+- inputText: "Tomorrow 8:00 AM - meet at the site. Bring the wallpaper rolls."
+- runFlow: common/pause-short.yaml
+- tapOn: "올리기"
+- extendedWaitUntil:
+    visible: "공지를 올렸어요"
+    timeout: 15000
+- runFlow: common/pause.yaml
+- tapOn: "확인"
+- runFlow: common/pause.yaml
+- runFlow: common/back.yaml
+- runFlow: common/back.yaml
+- runFlow: common/back.yaml
+
+# ── 7. 문제·신고는 앱 안 고객 문의로 ──
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 15000
+- tapOn: "내정보, tab, 5 of 5"
+- extendedWaitUntil:
+    visible: "프로필 설정.*"
+    timeout: 20000
+- runFlow: common/pause.yaml
+- scrollUntilVisible:
+    element: "고객 문의.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "고객 문의.*"
+- extendedWaitUntil:
+    visible: ".*문의하기"
+    timeout: 20000
+- runFlow: common/pause-long.yaml
+- runFlow: common/back.yaml
+
+# ── 8. 로그아웃 ──
+- scrollUntilVisible:
+    element: ".*로그아웃"
+    direction: DOWN
+    timeout: 10000
+- runFlow: common/pause-short.yaml
+- tapOn: ".*로그아웃"
+- extendedWaitUntil:
+    visible: "정말 로그아웃하시겠습니까?"
+    timeout: 10000
+- runFlow: common/pause-short.yaml
+- tapOn:
+    text: "로그아웃"
+    below: "정말 로그아웃하시겠습니까?"
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 30000
+- runFlow: common/pause.yaml
+
+# ── 9. 새 회원가입(휴대폰 문자 인증) ──
+- tapOn: "이메일로 회원가입"
+- extendedWaitUntil:
+    visible: "기본정보 입력"
+    timeout: 20000
+- runFlow: common/pause-short.yaml
+- tapOn: "이름"
+- runFlow: common/system-dialogs.yaml
+- inputText: "Review Demo"
+- tapOn: "이메일"
+- inputText: ${SIGNUP_EMAIL}
+- tapOn: "비밀번호"
+- inputText: ${SIGNUP_PW}
+- tapOn: "비밀번호 확인"
+- inputText: ${SIGNUP_PW}
+- tapOn: "휴대폰 번호"
+- inputText: ${SIGNUP_PHONE}
+- runFlow: common/pause-short.yaml
+- tapOn: "인증번호 받기"
+- extendedWaitUntil:
+    visible: "다시 받기"
+    timeout: 20000
+- runFlow: common/pause.yaml
+- runScript:
+    file: scripts/get_code.js
+    env:
+      PHONE: ${SIGNUP_PHONE}
+- tapOn: "인증번호"
+- inputText: ${output.code}
+- tapOn: "확인"
+- extendedWaitUntil:
+    visible: "휴대폰 인증을 완료했어요"
+    timeout: 20000
+- runFlow: common/pause.yaml
+- scrollUntilVisible:
+    element: "이용약관 및.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "이용약관 및.*"
+    point: "3%,50%"
+- scrollUntilVisible:
+    element: "가입하기"
+    direction: DOWN
+    timeout: 10000
+- runFlow: common/pause-short.yaml
+- tapOn: "가입하기"
+- extendedWaitUntil:
+    visible: "팀관리|Allow|회원가입 실패|오류"
+    timeout: 40000
+- runFlow: common/system-dialogs.yaml
+- extendedWaitUntil:
+    visible: "팀관리"
+    timeout: 20000
+- runFlow: common/pause-long.yaml
+
+# ── 10. 회원 탈퇴(내정보 › 앱 정보 › 회원 탈퇴) ──
+- tapOn: "내정보, tab, 5 of 5"
+- extendedWaitUntil:
+    visible: "프로필 설정.*"
+    timeout: 20000
+- scrollUntilVisible:
+    element: "앱 정보.*"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "앱 정보.*"
+- extendedWaitUntil:
+    visible: ".*현재 버전.*"
+    timeout: 20000
+- runFlow: common/pause-short.yaml
+- scrollUntilVisible:
+    element: "회원 탈퇴"
+    direction: DOWN
+    timeout: 10000
+- runFlow: common/pause-short.yaml
+- tapOn: "회원 탈퇴"
+- extendedWaitUntil:
+    visible: ".*계속하려면 비밀번호를 입력해주세요.*"
+    timeout: 15000
+- runFlow: common/pause.yaml
+- tapOn: "비밀번호"
+- inputText: ${SIGNUP_PW}
+- runFlow: common/pause-short.yaml
+- tapOn: "탈퇴하기"
+- extendedWaitUntil:
+    visible: "아이디 찾기"
+    timeout: 30000
+- runFlow: common/pause-long.yaml

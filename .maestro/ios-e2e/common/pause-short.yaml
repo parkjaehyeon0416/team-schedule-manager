@@ -1,0 +1,7 @@
+# 녹화용 쉬는 시간(1500ms) — 없는 글자를 기다리다 시간이 지나면 그냥 넘어감(optional)
+appId: com.workmatekr.app
+---
+- extendedWaitUntil:
+    visible: "ZZ_VIDEO_PAUSE_NEVER"
+    timeout: 1500
+    optional: true

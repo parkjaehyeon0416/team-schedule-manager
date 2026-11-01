@@ -1,0 +1,6 @@
+# 머리 왼쪽 ← (AppHeader)
+appId: com.workmatekr.app
+---
+- tapOn: "←"
+- waitForAnimationToEnd:
+    timeout: 3000

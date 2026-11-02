@@ -133,7 +133,7 @@ name: v_review_video
 - extendedWaitUntil:
     visible: "팀 공지 쓰기"
     timeout: 10000
-- tapOn: "팀원들에게 알릴 내용을 적어주세요"
+- tapOn: ".*알릴 내용을 적어주세요"
 - runFlow: common/system-dialogs.yaml
 - inputText: "Tomorrow 8:00 AM - meet at the site. Bring the wallpaper rolls."
 - runFlow: common/pause-short.yaml

@@ -66,6 +66,8 @@
         border-top: 1px solid #eee;
     }
     .footer a { color: #1F3864; text-decoration: none; font-weight: 600; }
+    .footer .report { margin-top: 6px; word-break: break-all; }
+    .footer .report a { font-weight: 400; color: #999; text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -134,6 +136,8 @@
 
     <div class="footer">
         이 명함은 <a href="/">현장메이트</a>로 만들어졌습니다.
+        {{-- ★ v18.72 — 부적절한 명함 신고 창구(메일 제목에 명함 코드를 넣어 운영자가 어떤 명함인지 바로 알 수 있게) --}}
+        <div class="report">부적절한 내용 신고: <a href="mailto:{{ $supportEmail }}?subject={{ rawurlencode('현장메이트 명함 신고 ' . $card->share_code) }}">{{ $supportEmail }}</a></div>
     </div>
 </div>
 </body>

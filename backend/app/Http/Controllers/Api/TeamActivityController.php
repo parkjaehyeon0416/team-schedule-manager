@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Support\BlockFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  * ★ v18.48 — 팀 상세 "활동" 탭(TEAM_DETAIL): ?team_id=로 한 팀만, ?limit=(최대 30),
  *   팀 공지 작성(notice)·현장 사진 올림(photos, 같은 사람·현장·날짜는 "n장"으로 묶음) 추가.
  *   type: schedule | join | notice | photos
+ *
+ * ★ v18.72 — 내가 차단한 사람의 활동(일정 추가·참여·공지·사진)은 빼고 보여줌(Apple 1.2, 한쪽만 적용).
  */
 class TeamActivityController extends Controller
 {
@@ -29,6 +32,8 @@ class TeamActivityController extends Controller
             return ApiResponse::success([], '팀 활동 조회 성공');
         }
         $limit = max(1, min(30, (int) $request->query('limit', 5)));
+        // ★ v18.72 — 내가 차단한 사람의 활동은 안 보임(Apple 1.2). 출처마다 SQL limit 후 합치므로 꼭 SQL에서 거름
+        $blocked = $request->user()->blockedUserIds();
 
         // ★ v18.68 — actor_id(사용자 id) 추가: 앱이 아바타 색을 사람마다 고정으로 고름(팀원 탭과 같은 색).
         //   예전엔 id가 없어 앱이 "이름 길이 + 줄 번호"로 골라서 같은 사람도 줄마다 색이 달랐음
@@ -43,6 +48,7 @@ class TeamActivityController extends Controller
             ->join('teams', 'teams.id', '=', 'schedules.team_id')
             ->whereIn('schedules.team_id', $teamIds)
             ->whereNull('schedules.deleted_at')
+            ->tap(fn($q) => BlockFilter::actor($q, 'schedules.created_by', $blocked))
             ->orderByDesc('schedules.created_at')
             ->limit($limit)
             ->get($base([DB::raw("'schedule' as type"), 'schedules.id as schedule_id', DB::raw('NULL as count'), 'schedules.created_at']));
@@ -52,6 +58,7 @@ class TeamActivityController extends Controller
             ->join('teams', 'teams.id', '=', 'team_members.team_id')
             ->whereIn('team_members.team_id', $teamIds)
             ->whereNull('team_members.deleted_at')
+            ->tap(fn($q) => BlockFilter::actor($q, 'team_members.user_id', $blocked))
             ->orderByDesc('team_members.joined_at')
             ->limit($limit)
             ->get($base([DB::raw("'join' as type"), DB::raw('NULL as schedule_id'), DB::raw('NULL as count'), 'team_members.joined_at as created_at']));
@@ -61,6 +68,7 @@ class TeamActivityController extends Controller
             ->join('teams', 'teams.id', '=', 'team_notices.team_id')
             ->whereIn('team_notices.team_id', $teamIds)
             ->whereNull('team_notices.deleted_at')
+            ->tap(fn($q) => BlockFilter::actor($q, 'team_notices.user_id', $blocked))
             ->orderByDesc('team_notices.created_at')
             ->limit($limit)
             ->get($base([DB::raw("'notice' as type"), DB::raw('NULL as schedule_id'), DB::raw('NULL as count'), 'team_notices.created_at']));
@@ -72,6 +80,7 @@ class TeamActivityController extends Controller
             ->whereIn('sites.team_id', $teamIds)
             ->whereNull('site_files.deleted_at')
             ->where('site_files.file_type', 'photo')
+            ->tap(fn($q) => BlockFilter::actor($q, 'site_files.uploaded_by', $blocked)) // users와 inner join이라 NULL은 원래 빠짐
             ->groupBy('users.id', 'users.name', 'users.avatar_color', 'users.avatar_image_path', 'teams.id', 'teams.name', 'sites.id', DB::raw('DATE(site_files.created_at)'))
             ->orderByDesc(DB::raw('MAX(site_files.created_at)'))
             ->limit($limit)

@@ -116,6 +116,8 @@ footer a { color: #0A6CE0; text-decoration: none; margin: 0 8px; }
       <li>고객 문의에 첨부한 사진</li>
       <li>비밀번호(암호화된 값)와 로그인 토큰(모든 기기에서 로그아웃), 푸시 알림 기기 정보</li>
       <li>팀 소속(모든 팀에서 나가요)</li>
+      {{-- ★ v18.72 — AccountCleanupService::onWithdraw가 user_blocks의 양쪽 줄(차단한 기록·차단당한 기록)을 지움 --}}
+      <li>차단 목록(내가 차단한 사람과 나를 차단한 기록 모두)</li>
     </ul>
     <p>이메일 주소는 누구인지 알 수 없는 값으로 바뀌고, 고객에게 보낸 보고서 · 견적서 공유 링크도 바로 열리지 않게 돼요.</p>
   </section>
@@ -141,6 +143,12 @@ footer a { color: #0A6CE0; text-decoration: none; margin: 0 8px; }
           <td data-k="기간">따로 정한 삭제 시점 없이 보관(삭제 요청 가능)</td>
         </tr>
         <tr>
+          {{-- ★ v18.72 — content_reports는 처리 기록이라 탈퇴해도 남김(개인정보 처리방침 3항과 같게) --}}
+          <td>신고 처리 기록(신고 내용 · 처리 결과)</td>
+          <td data-k="이유">부적절한 게시물 처리와 분쟁 대응 기록</td>
+          <td data-k="기간">따로 정한 삭제 시점 없이 보관</td>
+        </tr>
+        <tr>
           {{-- ★ v18.68 리뷰 반영 — 접속한 날(daily_active_users)·마지막 로그인 시각은 routes/console.php 'prune-withdrawn-login-records'가 매일 정리 --}}
           <td>로그인 기록(접속한 날짜 · 마지막 로그인 시각)</td>
           <td data-k="이유">통신비밀보호법</td>
@@ -163,6 +171,6 @@ footer a { color: #0A6CE0; text-decoration: none; margin: 0 8px; }
     <p style="margin-top:12px">자세한 내용은 <a href="/privacy">개인정보 처리방침</a> 3항(보유 및 이용기간)을 확인해 주세요.</p>
   </section>
 </main>
-<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/account-delete">계정 삭제</a> · <a href="/">현장메이트 소개</a></footer>
+<footer><a href="/terms">이용약관</a> · <a href="/privacy">개인정보 처리방침</a> · <a href="/account-delete">계정 삭제</a> · <a href="/support">고객 지원</a> · <a href="/">현장메이트 소개</a></footer>
 </body>
 </html>

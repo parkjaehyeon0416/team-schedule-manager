@@ -11,6 +11,9 @@ Route::get('/privacy', [\App\Http\Controllers\LandingPageController::class, 'pri
 //   (PreventRequestForgery도 같이 빼야 함 — GET에도 XSRF 쿠키를 붙이려고 세션을 찾다가 500)
 Route::get('/account-delete', [\App\Http\Controllers\LandingPageController::class, 'accountDelete'])
     ->withoutMiddleware([\Illuminate\Session\Middleware\StartSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);
+// ★ v18.70 — 고객 지원(App Store "지원 URL"). 계정 삭제 안내와 같은 안내문이라 세션 미들웨어 뺌
+Route::get('/support', [\App\Http\Controllers\LandingPageController::class, 'support'])
+    ->withoutMiddleware([\Illuminate\Session\Middleware\StartSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class]);
 
 // ★ v14 — 명함 공개 웹페이지. 앱 설치 없이 누구나 볼 수 있어야 하므로(설계 원칙 2-3절)
 //   /api 프리픽스가 붙는 api.php가 아니라 이 web.php에 등록한다.

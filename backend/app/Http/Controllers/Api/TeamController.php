@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Models\Team;
+use App\Support\BlockFilter;
+use App\Support\ContentFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -25,7 +27,8 @@ class TeamController extends Controller
         $user = $request->user();
 
         $teams = $user->teams()->orderByDesc('teams.id')->get();
-        $teams->each(function ($team) use ($user) {
+        $blocked = $user->blockedUserIds(); // ★ v18.72 차단한 사람의 공지·사진은 숫자에서도 뺌(팀 공지·앨범 화면과 같게)
+        $teams->each(function ($team) use ($user, $blocked) {
             $team->is_active = $team->id === $user->team_id;
             // ★ v18.44 — 팀마다 내 역할(활성 팀과 무관하게 앱이 팀장 기능을 보여줄지 판단)
             $team->my_role_id = (int) $team->pivot->role_id;
@@ -38,10 +41,13 @@ class TeamController extends Controller
             // ★ v18.48 — 팀 상세 메뉴 타일: 안 읽은 공지 수(남이 쓴 것), 현장 앨범 사진 수
             $readAt = DB::table('team_members')->where('team_id', $team->id)->where('user_id', $user->id)->whereNull('deleted_at')->value('notices_read_at');
             $team->notice_unread = \App\Models\TeamNotice::where('team_id', $team->id)->where('user_id', '!=', $user->id)
+                ->tap(fn($q) => BlockFilter::actor($q, 'user_id', $blocked))
                 ->when($readAt, fn($q) => $q->where('created_at', '>', $readAt))->count();
             $team->photo_count = DB::table('site_files')->join('sites', 'sites.id', '=', 'site_files.site_id')
                 ->where('sites.team_id', $team->id)->whereNull('sites.deleted_at')->whereNull('site_files.deleted_at')
-                ->where('site_files.file_type', 'photo')->count();
+                ->where('site_files.file_type', 'photo')
+                ->tap(fn($q) => BlockFilter::uploader($q, 'site_files.uploaded_by', $blocked))
+                ->count();
         });
 
         return ApiResponse::success($teams, '팀 목록 조회 성공');
@@ -63,6 +69,10 @@ class TeamController extends Controller
             'activity_area' => 'nullable|string|max:100',
             'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
+        // ★ v18.72 — 팀 이름은 초대 링크 웹페이지(/join/{code})에 그대로 보이므로 금지어 확인(Apple 1.2)
+        if ($err = ContentFilter::error($data['name'], 'name')) {
+            return $err;
+        }
 
         // ★ v18.47 — 무료는 팀장으로 1팀까지(여러 팀 운영은 팀 요금제)
         $ledLimit = \App\Services\PlanService::limit($user, 'led_teams', 'multi_team_lead');
@@ -144,6 +154,10 @@ class TeamController extends Controller
             'activity_area' => 'nullable|string|max:100',
             'photo'         => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
+        // ★ v18.72 — 팀 이름 금지어 확인(store와 같음)
+        if (isset($data['name']) && ($err = ContentFilter::error($data['name'], 'name'))) {
+            return $err;
+        }
 
         if ($request->hasFile('photo')) {
             if ($fail = $this->teamPhotoError($request, $user)) { // ★ v18.67
@@ -417,10 +431,12 @@ class TeamController extends Controller
         $this->switchActiveTeam($user, $team->id);
 
         // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가 — 기존 팀원들에게 새 팀원 참여 알림
+        //   ★ v18.72 — 가입한 사람을 차단한 기존 팀원은 뺌(Apple 1.2)
         $existingMemberIds = DB::table('team_members')
             ->where('team_id', $team->id)
             ->where('user_id', '!=', $user->id)
             ->whereNull('deleted_at')
+            ->whereNotIn('user_id', User::blockerIdsOf($user->id))
             ->pluck('user_id');
 
         foreach ($existingMemberIds as $memberId) {
@@ -513,6 +529,10 @@ class TeamController extends Controller
             ->orderBy('team_members.role_id')
             ->orderBy('users.name')
             ->get();
+
+        // ★ v18.72 — 차단한 팀원도 목록에서 빼지 않음(일정 배정·정산에 필요). 앱이 '차단됨' 표시·차단 해제 메뉴를 보여주게 표시만
+        $blocked = $user->blockedUserIds();
+        $members->each(fn($m) => $m->is_blocked = in_array((int) $m->id, $blocked, true));
 
         return ApiResponse::success($members, '팀원 목록 조회 성공');
     }

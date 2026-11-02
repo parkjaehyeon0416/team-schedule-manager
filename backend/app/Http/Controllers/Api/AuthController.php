@@ -423,6 +423,11 @@ class AuthController extends Controller
                 ? User::where('email', $profile['email'])->where('user_type', '!=', 'operator')->whereNull('password')->first()
                 : null;
 
+            // ★ v18.72 — 정지된 계정에는 새 소셜 계정을 자동 연결하지 않음(예전엔 연결부터 하고 아래에서 로그인만 막았음)
+            if ($existing?->suspended_at) {
+                return ApiResponse::error('이용이 정지된 계정입니다. 고객센터로 문의해주세요.', ErrorCode::AUTH_ACCOUNT_SUSPENDED, 403);
+            }
+
             if ($existing && !SocialAuthService::attach($existing, $data['provider'], $profile['id'])) {
                 $user = $existing->fresh('role');
             } elseif ($linking) {

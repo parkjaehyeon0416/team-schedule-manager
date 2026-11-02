@@ -199,10 +199,13 @@ class ScheduleController extends Controller implements HasMiddleware
 
         // ★ DESIGN-CANVAS(NOTIFICATIONS) 추가 — 팀 일정이면 작성자 본인을 뺀 나머지 팀원에게 알림
         if ($schedule->team_id) {
+            // ★ v18.72 — 작성자를 차단한 팀원은 뺌(Apple 1.2). 단, 이 일정에 배정된 사람은 업무 알림이라 차단과 상관없이 받음
+            $skip = array_values(array_diff(\App\Models\User::blockerIdsOf($user->id), $schedule->users->pluck('id')->map(fn($v) => (int) $v)->all()));
             $otherMemberIds = \Illuminate\Support\Facades\DB::table('team_members')
                 ->where('team_id', $schedule->team_id)
                 ->where('user_id', '!=', $user->id)
                 ->whereNull('deleted_at')
+                ->whereNotIn('user_id', $skip)
                 ->pluck('user_id');
 
             foreach ($otherMemberIds as $memberId) {

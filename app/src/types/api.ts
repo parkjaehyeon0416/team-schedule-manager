@@ -92,6 +92,8 @@ export interface TeamMember {
   kakao_talk_id?: string | null;
   avatar_color?: string;
   avatar_image_path?: string | null;
+  // ★ v18.72 — 내가 차단한 팀원인지("차단됨" 표시·차단 해제 메뉴용). 차단해도 목록에서 빠지지 않음(배정·정산에 필요)
+  is_blocked?: boolean;
 }
 
 /**

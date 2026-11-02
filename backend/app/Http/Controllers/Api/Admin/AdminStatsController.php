@@ -76,6 +76,8 @@ class AdminStatsController extends Controller
                 'pending_inquiries'  => DB::table('inquiries')->whereNull('deleted_at')->where('status', 'pending')->count(),
                 'oldest_pending_hours' => ($oldest = DB::table('inquiries')->whereNull('deleted_at')->where('status', 'pending')->min('created_at'))
                     ? (int) floor(now()->diffInMinutes($oldest, true) / 60) : null,
+                // ★ v18.72 처리 대기 신고(신고 관리)
+                'pending_reports'    => DB::table('content_reports')->whereNull('deleted_at')->where('status', 'pending')->count(),
             ],
         ], '통계 조회 성공');
     }

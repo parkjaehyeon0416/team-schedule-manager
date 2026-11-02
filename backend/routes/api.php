@@ -65,6 +65,8 @@ Route::middleware('signed:relative')->group(function () {
     Route::get('/files/tax/{user}/xlsx', [TaxSummaryController::class, 'signedXlsx'])->name('tax.xlsx.signed');
     // ★ v18.47 — 팀원 정산표 엑셀
     Route::get('/files/teams/{id}/settlements/{month}/xlsx', [\App\Http\Controllers\Api\TeamSettlementController::class, 'signedXlsx'])->name('teams.settlements.xlsx.signed');
+    // ★ v18.72 — 운영자 웹 신고 상세의 사진(<img>엔 토큰이 안 붙어서 30분 서명 링크). 숨긴 사진·증거 사본은 여기로만 열림
+    Route::get('/files/content-reports/{id}/photo', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'signedPhoto'])->name('content-reports.photo.signed');
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -112,6 +114,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/inquiries',               [\App\Http\Controllers\Api\Admin\AdminInquiryController::class, 'index']);
         Route::get('/inquiries/{id}',          [\App\Http\Controllers\Api\Admin\AdminInquiryController::class, 'show']);
         Route::post('/inquiries/{id}/answer',  [\App\Http\Controllers\Api\Admin\AdminInquiryController::class, 'answer']);
+        // ★ v18.72 신고 관리 (Apple 1.2) — 계정 정지는 위 /members/{id}/suspend를 부른 뒤 resolve { action: 'suspended' }
+        Route::get('/content-reports',               [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'index']);
+        Route::get('/content-reports/{id}',          [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'show']);
+        Route::post('/content-reports/{id}/hide',    [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'hide']);    // { reason? }
+        Route::post('/content-reports/{id}/unhide',  [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'unhide']);
+        Route::post('/content-reports/{id}/resolve', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'resolve']); // { action: none|hidden|suspended, note? }
+        Route::post('/content-reports/{id}/dismiss', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'dismiss']); // { note? }
         // ★ v18.43 문자 템플릿·발송
         Route::get('/sms/templates',           [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'templates']);
         Route::post('/sms/templates',          [\App\Http\Controllers\Api\Admin\AdminSmsController::class, 'storeTemplate']);
@@ -204,6 +213,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/teams/{id}/settlements/{userId}',      [\App\Http\Controllers\Api\TeamSettlementController::class, 'mark']);
     Route::get('/teams/{id}/album',                      [\App\Http\Controllers\Api\TeamAlbumController::class, 'index']);
     Route::get('/teams/{id}/album/photos',               [\App\Http\Controllers\Api\TeamAlbumController::class, 'photos']);
+
+    // ★ v18.72 — 신고·차단 (Apple 1.2). 신고는 사용자별 하루 30건(컨트롤러), 여기선 분당 횟수(묶음 이름 따로)
+    Route::post('/content-reports',   [\App\Http\Controllers\Api\ContentReportController::class, 'store'])->middleware('throttle:10,1,content-report');
+    Route::get('/blocks',             [\App\Http\Controllers\Api\UserBlockController::class, 'index']);
+    Route::post('/blocks',            [\App\Http\Controllers\Api\UserBlockController::class, 'store'])->middleware('throttle:30,1,user-block');
+    Route::delete('/blocks/{userId}', [\App\Http\Controllers\Api\UserBlockController::class, 'destroy'])->middleware('throttle:30,1,user-unblock');
 
     // 평수 계산
     Route::post('calculate/area',  [CalculateController::class, 'area']);

@@ -32,6 +32,7 @@ class ErrorCode
     public const AUTH_REAUTH_REQUIRED       = 'ERR_AUTH_018'; // v18.63 — 탈퇴 등 중요한 작업 전 본인 확인 필요(인증번호·소셜 재로그인)
     public const AUTH_PHONE_TAKEN           = 'ERR_AUTH_019'; // ★ v18.68 — 회원가입 휴대폰 인증: 이미 가입된 휴대폰 번호
     public const AUTH_PHONE_UNVERIFIED      = 'ERR_AUTH_020'; // ★ v18.68 — 회원가입: 휴대폰 인증을 안 했거나 만료됨(phone_token 없음·만료·번호 다름)
+    public const AUTH_ACCOUNT_SUSPENDED     = 'ERR_AUTH_009'; // ★ v18.72 이름만 붙임 — 403 정지 계정 로그인(아이디 찾기 404와 문자열 같음, 상태 코드로 구분. 운영자 웹 Login.tsx가 사용)
 
     // ═══════════════════════════════════════════════
     // 입력 검증 (v6)
@@ -61,6 +62,14 @@ class ErrorCode
     // ★ v18.68 팀원 내보내기 (ERR_TEAM_003은 옛 정의서에 "팀 관리 권한 없음"으로 잡혀 있어 건너뜀 — 권한 없음은 ERR_AUTH_002)
     public const TEAM_NOT_MEMBER         = 'ERR_TEAM_004'; // 내보내려는 사람이 지금 이 팀 팀원이 아님(이미 나감 등)
     public const TEAM_KICK_NOT_ALLOWED   = 'ERR_TEAM_005'; // 본인이나 팀장은 내보낼 수 없음
+
+    // ═══════════════════════════════════════════════
+    // ★ v18.72 사용자 콘텐츠 안전장치 (신고·차단·금지어, Apple 1.2) ★
+    //   ERR_REPORT_*는 작업 보고서가 이미 써서 ERR_MOD_*로 따로 둠
+    // ═══════════════════════════════════════════════
+    public const MOD_OBJECTIONABLE       = 'ERR_MOD_001'; // 422 — 금지어(욕설 등)가 들어 있어 올릴 수 없음
+    public const MOD_TARGET_NOT_FOUND    = 'ERR_MOD_002'; // 404 — 신고·차단 대상이 없거나 내가 볼 수 없음(지금 소속 팀 밖)
+    public const MOD_SELF_NOT_ALLOWED    = 'ERR_MOD_003'; // 422 — 본인을(본인 글을) 신고·차단
 
     // ═══════════════════════════════════════════════
     // ★ v10.1 공수·급여 자동 계산 ★

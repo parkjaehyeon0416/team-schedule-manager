@@ -57,6 +57,9 @@ export interface TeamNotice {
   author: { id: number; name: string; avatar_color?: string | null; avatar_image_path?: string | null } | null;
   author_role: TeamRoleLabel;
   can_delete: boolean;
+  // ★ v18.72 — 신고·차단 메뉴 표시 여부(내 공지가 아니면 신고, 작성자가 남아 있으면 차단). 옛 서버 응답엔 없음
+  can_report?: boolean;
+  can_block?: boolean;
   created_at: string;
 }
 
@@ -64,6 +67,7 @@ export interface TeamNoticeList {
   team_name: string;
   can_write: boolean;
   member_count: number;
+  hidden_by_block?: number; // ★ v18.72 — 내가 차단한 사람의 공지 수("차단한 사람의 글 N개 숨김" 안내)
   items: TeamNotice[];
 }
 
@@ -173,6 +177,9 @@ export interface AlbumPhoto {
   description: string | null;
   site: { id: number; name: string };
   uploader: { id: number; name: string; avatar_color?: string | null; avatar_image_path?: string | null } | null;
+  // ★ v18.72 — 사진 보기의 신고·차단 버튼 표시 여부(내가 올린 사진이 아니면 신고, 올린 사람이 남아 있으면 차단). 옛 서버 응답엔 없음
+  can_report?: boolean;
+  can_block?: boolean;
   created_at: string;
 }
 

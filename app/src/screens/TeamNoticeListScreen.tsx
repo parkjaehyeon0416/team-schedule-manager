@@ -4,7 +4,7 @@
  * 팀 상세 "팀 공지" 타일, 팀 공지 알림(link_type team_notice)에서 진입.
  */
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image, TextInput, Alert } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from '../components/Gradient';
@@ -159,7 +159,7 @@ export default function TeamNoticeListScreen() {
 
       {/* ★ v18.70 QA — 입력칸 있는 시트(withInput): 안드로이드에서 키보드가 열리면 창이 줄어 시트가 키보드 위로 올라오게 */}
       <BottomSheet visible={writing} onClose={closeWrite} label="공지 쓰기" withInput>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View>
           {done === null ? (
             <View style={{ gap: 14 }}>
               <View style={styles.sheetHead}>
@@ -210,7 +210,7 @@ export default function TeamNoticeListScreen() {
               </Pressable>
             </View>
           )}
-        </KeyboardAvoidingView>
+        </View>
       </BottomSheet>
     </View>
   );

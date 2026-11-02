@@ -59,6 +59,8 @@ class BusinessCardPageController extends Controller
             'card'     => $card,
             // ★ v18.68 — [['after' => 사진], …] 또는 [['before' => 사진, 'after' => 사진], …]
             'showcase' => $this->showcase($card),
+            // ★ v18.72 — 로그인 없이 누구나 보는 페이지라 앱 신고 버튼 대신 메일 신고 안내(Apple 1.2, 이용약관 제8조 4항)
+            'supportEmail' => config('workmate.support_email') ?: 'workmatekr@gmail.com',
         ]);
     }
 

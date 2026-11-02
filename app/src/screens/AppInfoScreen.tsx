@@ -12,7 +12,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Linking, Modal, TextInput, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView, Linking, Modal, TextInput, ActivityIndicator, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Clipboard from '@react-native-clipboard/clipboard';
@@ -225,7 +225,8 @@ export default function AppInfoScreen() {
       </ScrollView>
 
       <Modal visible={withdrawVisible} animationType="fade" transparent onRequestClose={() => setWithdrawVisible(false)}>
-        <View style={styles.modalBackdrop}>
+        {/* ★ v18.73 — 비밀번호·인증번호 칸을 누르면 iOS 키보드가 [탈퇴하기]를 가리지 않게 창을 키보드 위로 */}
+        <KeyboardAvoidingView style={styles.modalBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>회원 탈퇴</Text>
             <Text style={styles.modalDesc}>
@@ -281,7 +282,7 @@ export default function AppInfoScreen() {
               )}
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

@@ -3,7 +3,7 @@
  *   아바타(사진 또는 이름 첫 글자, 팔레트는 디자인 AVB/AVT), 역할 태그, 체크 상자, 안내 상자, 탭, 아래에서 올라오는 시트
  */
 import React from 'react';
-import { View, Text, Image, Pressable, Modal, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, Image, Pressable, Modal, StyleSheet, ViewStyle, KeyboardAvoidingView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SERVER_BASE_URL } from '../api/axiosInstance';
 import { colors } from '../theme/designTokens';
@@ -115,13 +115,15 @@ export function BottomSheet({ visible, onClose, children, label, withInput }: {
   const barProps = withInput ? { statusBarTranslucent: true } : MODAL_UNDER_SYSTEM_BARS;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} {...barProps}>
-      <View style={styles.sheetWrap}>
+      {/* ★ v18.73 — 입력칸 시트는 iOS에서 Modal 맨 바깥(화면 전체)에서 키보드만큼 올림. 예전엔 시트 안쪽에 두어서
+          자기 위치를 시트 기준으로 재는 바람에 0만큼만 올라가 [올리기]가 키보드에 가렸음(아이폰 시뮬레이터 녹화에서 발견) */}
+      <KeyboardAvoidingView style={styles.sheetWrap} behavior={withInput && Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.sheetBackdrop} onPress={onClose} accessibilityLabel="닫기" />
         <ModalBottomSafeArea style={styles.sheet} accessibilityViewIsModal accessibilityLabel={label}>
           <View style={styles.sheetHandle} />
           {children}
         </ModalBottomSafeArea>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

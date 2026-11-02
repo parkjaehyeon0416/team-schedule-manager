@@ -1,0 +1,7 @@
+269e600197a42b4660fbf787de50dc805bdf51a8 success Mon Nov  2 03:07:34 UTC 2026
+job=success run=https://github.com/parkjaehyeon0416/team-schedule-manager/actions/runs/41378239187
+v_review_video PASS (exit 0)
+video ok=1
+size= 48M files=     255 full
+removed (>40MB):
+./flows/v_review_video/out/2026-11-02_025032/v_review_video/logs/device-simulator.log

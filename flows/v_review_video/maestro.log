@@ -1,0 +1,280 @@
+Running on iPhone 17 Pro - iOS 26.2 - B7CD7ED2-0DFF-42FE-A30F-21CD2E3D3D2C
+ > Flow v_review_video
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Launch app "com.workmatekr.app"... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Run common/login-leader.yaml...
+  Assert that "아이디 찾기" is visible... COMPLETED
+  Tap on "이메일"... COMPLETED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+  Input text ***REDACTED***
+  Press Enter key... COMPLETED
+  Input text ***REDACTED***
+  Press Enter key... COMPLETED
+  Assert that "팀관리|Allow" is visible... COMPLETED
+  Run system-dialogs.yaml...
+    Run flow when "Allow" is visible...
+    Run flow when "Allow" is visible... SKIPPED
+    Run flow when "Continue" is visible...
+    Run flow when "Continue" is visible... SKIPPED
+  Run system-dialogs.yaml... COMPLETED
+  Assert that "팀관리" is visible... COMPLETED
+Run common/login-leader.yaml... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Scrolling DOWN until "팀 활동" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Scrolling UP until ".*이번 달 수입.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "일정, tab, 2 of 5"... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Tap on "홈, tab, 1 of 5"... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on ".*가상아파트.*"... COMPLETED
+Assert that "일정 상세" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Scrolling DOWN until "작업 정보" is visible with speed 40, visibility percentage 100%, timeout 8000 ms, with centering disabled... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Assert that "팀관리" is visible... COMPLETED
+Tap on "견적서"... COMPLETED
+Assert that ".*가상고객 고객.*" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on ".*가상고객 고객.*"... COMPLETED
+Assert that "견적 항목" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on ".*미리보기"... COMPLETED
+Assert that "견적서 미리보기" is visible... COMPLETED
+Assert that (Optional) ".*합계 금액.*" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Scrolling DOWN until "합계 금액" is visible with speed 40, visibility percentage 100%, timeout 8000 ms, with centering disabled... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Assert that "팀관리" is visible... COMPLETED
+Tap on "내 명함"... COMPLETED
+Assert that "현장 사진 공개" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Assert that "팀관리" is visible... COMPLETED
+Tap on "팀관리"... COMPLETED
+Assert that "내 팀 1" is visible... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on ".*${TEAM_NAME}.*"... COMPLETED
+Assert that "팀원 3" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on ".*오가상.*"... COMPLETED
+Assert that ".*팀에서 내보내기.*" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on "닫기"... COMPLETED
+Wait for animation to end within 3000 ms... COMPLETED
+Scrolling DOWN until ".*팀원 초대.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on ".*팀원 초대.*"... COMPLETED
+Assert that "초대 코드" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Scrolling UP until "팀 공지.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "팀 공지.*"... COMPLETED
+Assert that ".*공지 쓰기" is visible... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on ".*공지 쓰기"... COMPLETED
+Assert that "팀 공지 쓰기" is visible... COMPLETED
+Tap on ".*알릴 내용을 적어주세요"... COMPLETED
+Run common/system-dialogs.yaml...
+  Run flow when "Allow" is visible...
+  Run flow when "Allow" is visible... SKIPPED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+Run common/system-dialogs.yaml... COMPLETED
+Input text ***REDACTED***
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "올리기"... COMPLETED
+Assert that "공지를 올렸어요" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on "확인"... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Assert that "팀관리" is visible... COMPLETED
+Tap on "내정보, tab, 5 of 5"... COMPLETED
+Assert that "프로필 설정.*" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Scrolling DOWN until "고객 문의.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "고객 문의.*"... COMPLETED
+Assert that ".*문의하기" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Run common/back.yaml...
+  Tap on "←"... COMPLETED
+  Wait for animation to end within 3000 ms... COMPLETED
+Run common/back.yaml... COMPLETED
+Scrolling DOWN until ".*로그아웃" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on ".*로그아웃"... COMPLETED
+Assert that "정말 로그아웃하시겠습니까?" is visible... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "로그아웃", Below "정말 로그아웃하시겠습니까?"... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on "이메일로 회원가입"... COMPLETED
+Assert that "기본정보 입력" is visible... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "이름"... COMPLETED
+Run common/system-dialogs.yaml...
+  Run flow when "Allow" is visible...
+  Run flow when "Allow" is visible... SKIPPED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+Run common/system-dialogs.yaml... COMPLETED
+Input text ***REDACTED***
+Tap on "이메일"... COMPLETED
+Input text ***REDACTED***
+Tap on "비밀번호"... COMPLETED
+Input text ***REDACTED***
+Tap on "비밀번호 확인"... COMPLETED
+Input text ***REDACTED***
+Tap on "휴대폰 번호"... COMPLETED
+Input text ***REDACTED***
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "인증번호 받기"... COMPLETED
+Assert that "다시 받기" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Run scripts/get_code.js... COMPLETED
+Tap on "인증번호"... COMPLETED
+Input text ***REDACTED***
+Tap on "확인"... COMPLETED
+Assert that "휴대폰 인증을 완료했어요" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Scrolling DOWN until "이용약관 및.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "이용약관 및.*" at 3%,50%... COMPLETED
+Scrolling DOWN until "가입하기" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "가입하기"... COMPLETED
+Assert that "팀관리|Allow|회원가입 실패|오류" is visible... COMPLETED
+Run common/system-dialogs.yaml...
+  Run flow when "Allow" is visible...
+  Run flow when "Allow" is visible... SKIPPED
+  Run flow when "Continue" is visible...
+  Run flow when "Continue" is visible... SKIPPED
+Run common/system-dialogs.yaml... COMPLETED
+Assert that "팀관리" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED
+Tap on "내정보, tab, 5 of 5"... COMPLETED
+Assert that "프로필 설정.*" is visible... COMPLETED
+Scrolling DOWN until "앱 정보.*" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Tap on "앱 정보.*"... COMPLETED
+Assert that ".*현재 버전.*" is visible... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Scrolling DOWN until "회원 탈퇴" is visible with speed 40, visibility percentage 100%, timeout 10000 ms, with centering disabled... COMPLETED
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "회원 탈퇴"... COMPLETED
+Assert that ".*계속하려면 비밀번호를 입력해주세요.*" is visible... COMPLETED
+Run common/pause.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause.yaml... COMPLETED
+Tap on "비밀번호"... COMPLETED
+Input text ***REDACTED***
+Run common/pause-short.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-short.yaml... COMPLETED
+Tap on "탈퇴하기"... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Run common/pause-long.yaml...
+  Assert that (Optional) "ZZ_VIDEO_PAUSE_NEVER" is visible... WARNED
+Run common/pause-long.yaml... COMPLETED

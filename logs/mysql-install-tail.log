@@ -1,0 +1,56 @@
+::warning::`$HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK` is set: not checking for outdated%0Adependents or dependents with broken linkage!%0A
+[32m==>[0m [1mDownloading bottle manifests[0m
+✔︎ Bottle Manifest mysql@8.4 (8.4.13_1)
+[34m==>[0m [1mWould install 1 formula:[0m
+mysql@8.4 8.4.13_1
+[34m==>[0m [1mWould install 3 dependencies for mysql@8.4:[0m
+abseil          20260817.0
+protobuf        36.2
+zlib-ng-compat  2.3.3_1
+[32m==>[0m [1mFetching downloads for: [32mmysql@8.4[39m[0m
+✔︎ Bottle Manifest abseil (20260817.0)
+✔︎ Bottle Manifest zlib-ng-compat (2.3.3_1)
+✔︎ Bottle Manifest protobuf (36.2)
+✔︎ Bottle protobuf (36.2)
+✔︎ Bottle abseil (20260817.0)
+✔︎ Bottle zlib-ng-compat (2.3.3_1)
+✔︎ Bottle mysql@8.4 (8.4.13_1)
+[32m==>[0m [1mInstalling dependencies for mysql@8.4:[0m [32mabseil[39m, [32mprotobuf[39m and [32mzlib-ng-compat[39m[0m
+[32m==>[0m [1mInstalling mysql@8.4 dependency: [32mabseil[39m (20260817.0)[0m
+[34m==>[0m [1mPouring abseil--20260817.0.arm64_sequoia.bottle.1.tar.gz[0m
+🍺  /opt/homebrew/Cellar/abseil/20260817.0: 832 files, 11.8MB
+[32m==>[0m [1mInstalling mysql@8.4 dependency: [32mprotobuf[39m (36.2)[0m
+[34m==>[0m [1mPouring protobuf--36.2.arm64_sequoia.bottle.tar.gz[0m
+🍺  /opt/homebrew/Cellar/protobuf/36.2: 387 files, 17.9MB
+[32m==>[0m [1mInstalling mysql@8.4 dependency: [32mzlib-ng-compat[39m (2.3.3_1)[0m
+[34m==>[0m [1mPouring zlib-ng-compat--2.3.3_1.arm64_sequoia.bottle.1.tar.gz[0m
+🍺  /opt/homebrew/Cellar/zlib-ng-compat/2.3.3_1: 17 files, 429.1KB
+[32m==>[0m [1mInstalling [32mmysql@8.4[39m[0m
+[34m==>[0m [1mPouring mysql@8.4--8.4.13_1.arm64_sequoia.bottle.tar.gz[0m
+2026-11-02T02:32:49.860858Z 0 [System] [MY-015017] [Server] MySQL Server Initialization - start.
+2026-11-02T02:32:49.886578Z 0 [System] [MY-013169] [Server] /opt/homebrew/Cellar/mysql@8.4/8.4.13_1/bin/mysqld (mysqld 8.4.13) initializing of server in progress as process 2315
+2026-11-02T02:32:49.886601Z 0 [System] [MY-015150] [Server] Server version with update: '8.4.13.0'
+2026-11-02T02:32:49.891632Z 0 [Warning] [MY-010159] [Server] Setting lower_case_table_names=2 because file system for /opt/homebrew/var/mysql/ is case insensitive
+2026-11-02T02:32:49.899969Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-11-02T02:32:50.003739Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-11-02T02:32:50.675755Z 6 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+2026-11-02T02:32:51.176137Z 0 [System] [MY-013172] [Server] Received SHUTDOWN from user <via user signal>. Shutting down mysqld (Version: 8.4.13).
+2026-11-02T02:32:52.152978Z 0 [System] [MY-015018] [Server] MySQL Server Initialization - end.
+🍺  /opt/homebrew/Cellar/mysql@8.4/8.4.13_1: 324 files, 315MB
+[32m==>[0m [1mCaveats[0m
+[34m==>[0m [1mmysql@8.4[0m
+A "/etc/my.cnf" or "/etc/mysql/my.cnf" from another install may interfere
+with a Homebrew-built server starting up correctly.
+
+We've installed your MySQL database without a root password. To secure it run:
+    mysql_secure_installation
+
+MySQL is configured to only allow connections from localhost by default
+
+To connect run:
+    mysql -u root
+
+To start mysql@8.4 now and restart at login:
+  brew services start mysql@8.4
+Or, if you don't want/need a background service you can just run:
+  /opt/homebrew/opt/mysql@8.4/bin/mysqld_safe --datadir\=/opt/homebrew/var/mysql

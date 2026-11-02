@@ -1,0 +1,5 @@
+Running on iPhone 17 Pro - iOS 26.2 - B7CD7ED2-0DFF-42FE-A30F-21CD2E3D3D2C
+ > Flow reset-app
+Launch app "com.workmatekr.app" with clear state... COMPLETED
+Assert that "아이디 찾기" is visible... COMPLETED
+Stop com.workmatekr.app... COMPLETED

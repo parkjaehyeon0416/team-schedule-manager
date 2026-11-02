@@ -168,6 +168,8 @@ jobs:
           SESSION_DRIVER=file
           CACHE_STORE=file
           QUEUE_CONNECTION=sync
+          # 녹화 중엔 영상 인코딩이 CPU를 써서 비밀번호 확인(bcrypt 12)이 14~16초 → 앱 10초 제한에 걸림. 시험용 서버만 4
+          BCRYPT_ROUNDS=4
           BROADCAST_CONNECTION=log
           FILESYSTEM_DISK=local
           MAIL_MAILER=log

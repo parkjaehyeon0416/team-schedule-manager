@@ -152,6 +152,9 @@ if [ -f "$FLOWS/VIDEO_MODE" ]; then
       n="$(basename "$f" .mp4)"; n="${n#raw-}"
       ffmpeg -y -i "$f" -vf "scale=600:-2" -c:v libx264 -crf 26 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an \
         "$VDIR/review-video-$n.mp4" > "$VDIR/ffmpeg-$n.log" 2>&1 && rm -f "$f"
+      # 확인용 장면(8초마다 한 장, 폭 300px)
+      mkdir -p "$VDIR/frames-$n"
+      ffmpeg -y -i "$VDIR/review-video-$n.mp4" -vf "fps=1/8,scale=300:-2" "$VDIR/frames-$n/f_%03d.jpg" > /dev/null 2>&1 || true
     done
   fi
   ls -la "$VDIR"

@@ -105,21 +105,54 @@ wait_backend || exit 1
 if [ -f "$FLOWS/VIDEO_MODE" ]; then
   VDIR="$RESULTS/video"
   mkdir -p "$VDIR"
-  (cd "$VDIR" && maestro --device "$DEV" test "$FLOWS/common/reset-app.yaml") > "$VDIR/reset.log" 2>&1 || true
-  xcrun simctl terminate "$DEV" com.workmatekr.app > /dev/null 2>&1 || true
-  sleep 3
-  xcrun simctl io "$DEV" recordVideo --codec=h264 --force "$VDIR/raw.mp4" > "$VDIR/record.log" 2>&1 &
-  REC=$!
-  sleep 4
-  run_flow v_review_video
-  sleep 2
-  kill -INT "$REC" 2>/dev/null || true
-  wait "$REC" 2>/dev/null || true
+  # 1차 실행: 처음 Maestro 드라이버 연결이 시간 초과(iOS driver not ready)로 실패 → 녹화 중 연결이 끊김.
+  #   그래서 녹화 전에 드라이버를 먼저 띄워 두고(hierarchy, 최대 3번), 앱 초기화도 3번까지 다시 시도
+  warm_driver() {
+    for i in 1 2 3; do
+      (cd "$VDIR" && maestro --device "$DEV" hierarchy) > "$VDIR/warm-$i.log" 2>&1 && return 0
+      pkill -f maestro-driver > /dev/null 2>&1 || true
+      sleep 15
+    done
+    return 1
+  }
+  reset_app() {
+    for i in 1 2 3; do
+      (cd "$VDIR" && maestro --device "$DEV" test "$FLOWS/common/reset-app.yaml") > "$VDIR/reset-$i.log" 2>&1 && break
+      pkill -f maestro-driver > /dev/null 2>&1 || true
+      sleep 15
+    done
+    xcrun simctl terminate "$DEV" com.workmatekr.app > /dev/null 2>&1 || true
+    sleep 3
+  }
+  # 녹화 한 번: 성공하면 0. 중간에 끊기면 새 가입 이메일·번호로 한 번 더(앞 시도에서 가입만 되고 탈퇴 못 했을 수 있어서)
+  record_once() {
+    local n="$1"
+    warm_driver || true
+    reset_app
+    xcrun simctl io "$DEV" recordVideo --codec=h264 --force "$VDIR/raw-$n.mp4" > "$VDIR/record-$n.log" 2>&1 &
+    local rec=$!
+    sleep 4
+    run_flow v_review_video
+    sleep 2
+    kill -INT "$rec" 2>/dev/null || true
+    wait "$rec" 2>/dev/null || true
+    tail -1 "$SUMMARY" | grep -q ' PASS '
+  }
+  OK=0
+  if record_once 1; then OK=1; else
+    export SIGNUP_EMAIL="v2.$SIGNUP_EMAIL" SIGNUP_PHONE="01099990088"
+    record_once 2 && OK=2
+  fi
+  echo "video ok=$OK" | tee -a "$SUMMARY"
   ls -la "$VDIR"
   command -v ffmpeg > /dev/null || brew install ffmpeg > "$VDIR/brew.log" 2>&1 || true
-  if command -v ffmpeg > /dev/null && [ -f "$VDIR/raw.mp4" ]; then
-    ffmpeg -y -i "$VDIR/raw.mp4" -vf "scale=600:-2" -c:v libx264 -crf 26 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an \
-      "$VDIR/review-video.mp4" > "$VDIR/ffmpeg.log" 2>&1 && rm -f "$VDIR/raw.mp4"
+  if command -v ffmpeg > /dev/null; then
+    for f in "$VDIR"/raw-*.mp4; do
+      [ -f "$f" ] || continue
+      n="$(basename "$f" .mp4)"; n="${n#raw-}"
+      ffmpeg -y -i "$f" -vf "scale=600:-2" -c:v libx264 -crf 26 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an \
+        "$VDIR/review-video-$n.mp4" > "$VDIR/ffmpeg-$n.log" 2>&1 && rm -f "$f"
+    done
   fi
   ls -la "$VDIR"
   exit 0

@@ -131,6 +131,8 @@ if [ -f "$FLOWS/VIDEO_MODE" ]; then
     reset_app
     xcrun simctl io "$DEV" recordVideo --codec=h264 --force "$VDIR/raw-$n.mp4" > "$VDIR/record-$n.log" 2>&1 &
     local rec=$!
+    for _ in $(seq 1 20); do grep -q "Recording started" "$VDIR/record-$n.log" 2>/dev/null && break; sleep 0.5; done
+    python3 -c "import time; print(time.time())" > "$VDIR/t0-$n.txt"
     sleep 4
     run_flow v_review_video
     sleep 2
@@ -150,11 +152,18 @@ if [ -f "$FLOWS/VIDEO_MODE" ]; then
     for f in "$VDIR"/raw-*.mp4; do
       [ -f "$f" ] || continue
       n="$(basename "$f" .mp4)"; n="${n#raw-}"
-      ffmpeg -y -i "$f" -vf "scale=600:-2" -c:v libx264 -crf 26 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an \
+      # 앞(앱 실행 전 홈 화면·드라이버 설치)과 뒤(끝난 뒤 멈춘 화면) 자르기 — 시각은 Maestro 로그와 녹화 시작 시각으로 계산
+      log="$(ls -t "$RESULTS"/flows/v_review_video/out/*/v_review_video/logs/maestro.log 2>/dev/null | sed -n "$((3 - n))p")"
+      [ -n "$log" ] || log="$(ls -t "$RESULTS"/flows/v_review_video/out/*/v_review_video/logs/maestro.log | head -1)"
+      read -r SS TO < <(python3 "$ROOT/scripts/e2e/video-trim.py" "$VDIR/t0-$n.txt" "$log" 2>/dev/null || echo "0 0")
+      echo "trim $n: $SS ~ $TO (log $log)" | tee -a "$VDIR/trim.log"
+      TRIM=()
+      if [ "$TO" != "0" ] && [ "$TO" != "0.00" ]; then TRIM=(-ss "$SS" -to "$TO"); fi
+      ffmpeg -y "${TRIM[@]}" -i "$f" -vf "fps=30,scale=600:-2" -c:v libx264 -crf 26 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an \
         "$VDIR/review-video-$n.mp4" > "$VDIR/ffmpeg-$n.log" 2>&1 && rm -f "$f"
-      # 확인용 장면(8초마다 한 장, 폭 300px)
+      # 확인용 장면(4초마다 한 장, 폭 300px)
       mkdir -p "$VDIR/frames-$n"
-      ffmpeg -y -i "$VDIR/review-video-$n.mp4" -vf "fps=1/8,scale=300:-2" "$VDIR/frames-$n/f_%03d.jpg" > /dev/null 2>&1 || true
+      ffmpeg -y -i "$VDIR/review-video-$n.mp4" -vf "fps=1/4,scale=300:-2" "$VDIR/frames-$n/f_%03d.jpg" > /dev/null 2>&1 || true
     done
   fi
   ls -la "$VDIR"

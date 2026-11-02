@@ -66,6 +66,11 @@ name: v_review_video
 - extendedWaitUntil:
     visible: "견적서 미리보기"
     timeout: 20000
+# 내용(합계 금액)이 다 뜬 뒤에 보여주기 — 앞 녹화 장면에선 로딩 표시만 찍혔음
+- extendedWaitUntil:
+    visible: ".*합계 금액.*"
+    timeout: 20000
+    optional: true
 - runFlow: common/pause-long.yaml
 - scrollUntilVisible:
     element: "합계 금액"

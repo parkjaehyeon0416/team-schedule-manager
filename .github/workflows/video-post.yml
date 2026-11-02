@@ -1,0 +1,32 @@
+# App Store 답변용 녹화 끝부분 자르기(한 번 쓰고 마는 작업) — ios-e2e-results의 review-video-1.mp4 → video-final 브랜치
+name: Video post-process
+on:
+  push:
+    branches: [video-post]
+permissions:
+  contents: write
+jobs:
+  cut:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios-e2e-results
+          path: res
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+      - name: Cut the idle tail (login screen after account deletion)
+        run: |
+          mkdir -p out/frames
+          ffmpeg -y -i res/video/review-video-1.mp4 -t 419 -c:v libx264 -crf 24 -preset veryfast -pix_fmt yuv420p -movflags +faststart -an out/hyunjangmate-review.mp4
+          ffprobe -v error -show_entries format=duration -of csv=p=0 out/hyunjangmate-review.mp4 | tee out/duration.txt
+          ffmpeg -y -sseof -14 -i out/hyunjangmate-review.mp4 -vf "fps=1/2,scale=300:-2" out/frames/end_%02d.jpg
+          ls -la out out/frames
+      - name: Publish to video-final
+        run: |
+          cd out
+          git init -q && git checkout -q -b video-final
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -qm "final review video"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" video-final

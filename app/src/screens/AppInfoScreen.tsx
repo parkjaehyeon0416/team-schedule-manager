@@ -19,7 +19,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import AppHeader from '../components/AppHeader';
 import axiosInstance from '../api/axiosInstance';
 import { withdrawAccount, requestWithdraw, WithdrawMethod, WithdrawChannel } from '../api/profileApi';
-import { getSocialCredential, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
+import { getSocialCredential, isSocialCancel, socialErrorSuffix, SocialProvider } from '../api/socialAuthApi';
 import { SocialButton } from '../components/AuthUi';
 import { useAuthStore } from '../store/authStore';
 import { colors, radius, spacing } from '../theme/designTokens';
@@ -137,7 +137,7 @@ export default function AppInfoScreen() {
       await finishWithdraw({ provider, token });
     } catch (e: any) {
       setWithdrawing(false);
-      if (!isSocialCancel(e)) Alert.alert('탈퇴 실패', '다시 로그인하지 못했어요.');
+      if (!isSocialCancel(e)) Alert.alert('탈퇴 실패', `다시 로그인하지 못했어요.${socialErrorSuffix(e)}`);
     }
   };
 

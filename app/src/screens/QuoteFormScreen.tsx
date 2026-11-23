@@ -21,6 +21,7 @@ import { formatMoney, parseMoney } from '../utils/format';
 import { formatPhoneInput } from '../utils/phone';
 import { colors, radius, spacing } from '../theme/designTokens';
 import { isPlanLocked } from '../utils/planLock';
+import { siteShortLabel } from '../utils/scheduleLocation';
 
 interface LineForm {
   name: string;
@@ -44,7 +45,7 @@ export default function QuoteFormScreen() {
   const [clientName, setClientName] = useState(editing?.client_name ?? '');
   const [clientContact, setClientContact] = useState(editing?.client_contact ?? '');
   const [siteId, setSiteId] = useState<number | null>(editing?.site_id ?? null);
-  const [siteLabel, setSiteLabel] = useState(editing?.site ? [editing.site.apt_name, editing.site.dong, editing.site.ho].filter(Boolean).join(' ') || editing?.address || '' : editing?.address ?? '');
+  const [siteLabel, setSiteLabel] = useState(editing?.site ? siteShortLabel(editing.site) || editing?.address || '' : editing?.address ?? '');
   const [sitePickerVisible, setSitePickerVisible] = useState(false);
   const [sites, setSites] = useState<Site[]>([]);
   const [addressSearchVisible, setAddressSearchVisible] = useState(false);
@@ -77,7 +78,7 @@ export default function QuoteFormScreen() {
 
   const handlePickSite = (s: Site) => {
     setSiteId(s.id);
-    setSiteLabel([s.apt_name, s.dong, s.ho].filter(Boolean).join(' ') || s.address);
+    setSiteLabel(siteShortLabel(s));
     setSitePickerVisible(false);
   };
 
@@ -315,7 +316,7 @@ export default function QuoteFormScreen() {
             ListEmptyComponent={<Text style={styles.modalEmpty}>등록된 현장이 없습니다.</Text>}
             renderItem={({ item }) => (
               <Pressable style={styles.modalRow} onPress={() => handlePickSite(item)}>
-                <Text style={styles.modalRowText}>{[item.apt_name, item.dong, item.ho].filter(Boolean).join(' ') || item.address}</Text>
+                <Text style={styles.modalRowText}>{siteShortLabel(item)}</Text>
               </Pressable>
             )}
           />

@@ -14,7 +14,7 @@ import { ProviderBadge } from '../components/AuthUi';
 import ReauthSheet from '../components/ReauthSheet';
 import { MODAL_UNDER_SYSTEM_BARS } from '../components/ModalBottomSafeArea'; // ★ v18.70 QA — 확인 창 어두운 배경이 기기 바 뒤까지
 import {
-  getLoginLinks, linkSocial, unlinkSocial, isSocialCancel, LoginLinks, PROVIDER_NAME, SocialProvider, APPLE_LOGIN_AVAILABLE,
+  getLoginLinks, linkSocial, unlinkSocial, isSocialCancel, socialErrorSuffix, LoginLinks, PROVIDER_NAME, SocialProvider, APPLE_LOGIN_AVAILABLE,
   ReauthInfo,
 } from '../api/socialAuthApi';
 
@@ -113,7 +113,7 @@ export default function MyLoginLinksScreen() {
       const body = e?.response?.data;
       if (body?.error_code === 'ERR_AUTH_018') askVerify('connect', p, body?.message ?? '본인 확인이 필요해요. 다시 확인해주세요.');
       else if (body?.error_code === 'ERR_AUTH_014') setFail(p);
-      else showToast(body?.message ?? '연결하지 못했어요. 다시 시도해주세요.');
+      else showToast(body?.message ?? `연결하지 못했어요. 다시 시도해주세요.${socialErrorSuffix(e)}`);
     } finally {
       setBusy(null);
     }

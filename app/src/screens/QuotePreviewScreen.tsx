@@ -20,6 +20,7 @@ import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
 import { formatPhoneInput } from '../utils/phone';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { siteShortLabel } from '../utils/scheduleLocation';
 
 /** ★ v18.68 — 부가세 줄: 서버 tax_label("부가세 별도")을 "부가세(…)"로 한 번 더 감싸 "부가세(부가세 별도)"로 보이던 것 */
 function vatLine(quote: Quote): string {
@@ -111,7 +112,7 @@ export default function QuotePreviewScreen() {
   }
 
   const supplyAmount = quote.supply_amount ?? Number(quote.total_amount) - Number(quote.vat_amount ?? 0);
-  const siteLabel = quote.site ? [quote.site.apt_name, quote.site.dong, quote.site.ho].filter(Boolean).join(' ') || quote.site.address : quote.address;
+  const siteLabel = quote.site ? siteShortLabel(quote.site) : quote.address;
 
   return (
     <View style={styles.screen}>

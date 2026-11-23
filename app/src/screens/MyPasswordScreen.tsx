@@ -6,7 +6,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, KeyboardAvoid
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { setPassword, verifyPasswordSetup, getSocialCredential, isSocialCancel, SocialProvider } from '../api/socialAuthApi';
+import { setPassword, verifyPasswordSetup, getSocialCredential, isSocialCancel, socialErrorSuffix, SocialProvider } from '../api/socialAuthApi';
 import type { WithdrawMethod, WithdrawChannel } from '../api/profileApi';
 import { SocialButton } from '../components/AuthUi';
 import GradientButton from '../components/GradientButton';
@@ -98,7 +98,7 @@ export default function MyPasswordScreen() {
       setSocial({ provider, token });
       setCodeErr('');
     } catch (e: any) {
-      if (!isSocialCancel(e)) setCodeErr('다시 로그인하지 못했어요.');
+      if (!isSocialCancel(e)) setCodeErr(`다시 로그인하지 못했어요.${socialErrorSuffix(e)}`);
     }
   };
 

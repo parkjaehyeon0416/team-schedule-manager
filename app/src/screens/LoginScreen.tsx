@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import axiosInstance from '../api/axiosInstance';
-import { socialLogin, isSocialCancel, SocialProvider, APPLE_LOGIN_AVAILABLE } from '../api/socialAuthApi';
+import { socialLogin, isSocialCancel, socialErrorSuffix, SocialProvider, APPLE_LOGIN_AVAILABLE } from '../api/socialAuthApi';
 import { isSuspendedAccount, showSuspendedAlert } from '../utils/suspendedAccount';
 import { colors } from '../theme/designTokens';
 import GradientButton from '../components/GradientButton';
@@ -45,7 +45,7 @@ export default function LoginScreen() {
         showSuspendedAlert(error); // ★ v18.72
         return;
       }
-      Alert.alert('로그인 실패', error?.response?.data?.message ?? '소셜 로그인 중 오류가 발생했습니다.');
+      Alert.alert('로그인 실패', error?.response?.data?.message ?? `소셜 로그인 중 오류가 발생했습니다.${socialErrorSuffix(error)}`);
     } finally {
       setSocialLoading(null);
     }

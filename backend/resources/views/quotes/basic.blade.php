@@ -59,7 +59,8 @@
         <td class="label">현장 주소</td>
         <td colspan="3">
             @if($quote->site)
-                {{ $quote->site->apt_name }} {{ $quote->site->dong }}동 {{ $quote->site->ho }}호
+                {{-- ★ v18.74 동·호가 비어 있어도 '동'·'호' 글자만 찍히던 문제(단독주택 등) — 보고서 PDF와 같은 방식 --}}
+                {{ collect([$quote->site->apt_name, $quote->site->dong ? $quote->site->dong.'동' : null, $quote->site->ho ? $quote->site->ho.'호' : null])->filter()->implode(' ') ?: ($quote->site->address ?? '-') }}
             @else
                 {{ $quote->address ?? '-' }}
             @endif

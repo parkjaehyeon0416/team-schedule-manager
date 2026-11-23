@@ -16,6 +16,7 @@ import { getQuote, updateQuoteStatus, approveQuote, deleteQuote } from '../api/q
 import type { Quote } from '../types/api';
 import { formatMoney } from '../utils/format';
 import { colors, radius, spacing } from '../theme/designTokens';
+import { siteShortLabel } from '../utils/scheduleLocation';
 
 const STATUS_CHIP: Record<Quote['status'], { bg: string; fg: string; label: string }> = {
   draft: { bg: '#FFF2E2', fg: '#B95E00', label: '작성중' },
@@ -108,7 +109,7 @@ export default function QuoteDetailScreen() {
   }
 
   const chip = STATUS_CHIP[quote.status];
-  const siteLabel = quote.site ? [quote.site.apt_name, quote.site.dong, quote.site.ho].filter(Boolean).join(' ') || quote.site.address : quote.address;
+  const siteLabel = quote.site ? siteShortLabel(quote.site) : quote.address;
 
   return (
     <View style={styles.screen}>

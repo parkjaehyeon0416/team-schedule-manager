@@ -98,6 +98,17 @@ export function isSocialCancel(error: any): boolean {
   return error?.code === 'SIGN_IN_CANCELLED' || error?.code === '12501' || error?.code === appleAuth.Error.CANCELED || msg.includes('cancel');
 }
 
+/**
+ * ★ v18.74 — 소셜 SDK(구글·카카오·애플) 쪽 오류 번호를 안내 문구 뒤에 붙일 글자. 서버가 돌려준 오류면 빈 글자.
+ * 예: 구글 OAuth 설정이 어긋나면 ' (오류 번호: 10)' → 사용자가 문의할 때 원인을 바로 알 수 있음.
+ */
+export function socialErrorSuffix(error: any): string {
+  if (error?.response) return '';
+  const code = error?.code ?? error?.nativeErrorCode;
+  if (code === undefined || code === null || String(code) === '') return '';
+  return ` (오류 번호: ${String(code)})`;
+}
+
 // ── 로그인 연결 관리 (내 정보) ──
 /** ★ v18.68 — 연결·해제 전 본인 확인에 쓸 수 있는 방법(target은 가린 값: 010-****-5678 / chu****@gmail.com) */
 export type ReauthChannel = { type: 'phone' | 'email'; target: string };

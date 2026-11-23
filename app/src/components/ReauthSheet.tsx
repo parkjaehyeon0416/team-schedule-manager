@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocialButton } from './AuthUi';
 import ModalBottomSafeArea from './ModalBottomSafeArea';
 import {
-  reauthSend, reauthVerify, getSocialCredential, isSocialCancel, APPLE_LOGIN_AVAILABLE,
+  reauthSend, reauthVerify, getSocialCredential, isSocialCancel, socialErrorSuffix, APPLE_LOGIN_AVAILABLE,
   ReauthInfo, ReauthChannel, ReauthPurpose, SocialProvider,
 } from '../api/socialAuthApi';
 import { colors } from '../theme/designTokens';
@@ -169,7 +169,7 @@ export default function ReauthSheet({ visible, subtitle, info, purpose, notice, 
       done(await reauthVerify({ purpose, provider: p, token }));
     } catch (e: any) {
       if (!isSocialCancel(e)) {
-        setErr({ msg: e?.response?.data?.message ?? '다시 로그인하지 못했어요. 다시 시도해주세요.', field: false });
+        setErr({ msg: e?.response?.data?.message ?? `다시 로그인하지 못했어요. 다시 시도해주세요.${socialErrorSuffix(e)}`, field: false });
       }
     } finally {
       inFlight.current = false;

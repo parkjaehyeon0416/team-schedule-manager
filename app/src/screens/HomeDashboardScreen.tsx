@@ -63,49 +63,39 @@ export default function HomeDashboardScreen() {
   // ★ v18.66 — 휴대폰 시간(한국) 기준 날짜. 예전엔 toISOString(UTC)이라 새벽 0~9시엔 어제 일정이 '오늘의 일정'에 나왔음
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+  // ★ v18.74 — 처음 불러오기가 끝나기 전엔 "일정이 없습니다"·"팀 활동 내역이 없습니다"를 띄우지 않음(잠깐 잘못 보이던 문제)
+  const [loaded, setLoaded] = useState(false);
+
+  // ★ v18.74 — 홈 요청 7개를 차례로(하나 끝나야 다음) 보내던 것을 한꺼번에 보냄 → 현장 모바일 데이터에서 홈이 늦게 뜨던 문제.
+  //   하나가 실패해도 나머지는 그대로 보여 줌(전과 같음)
   const load = useCallback(async () => {
-    try {
-      setSummary(await getMonthlySummary(now.getFullYear(), now.getMonth() + 1));
-    } catch {
-      setSummary(null);
-    }
-    try {
-      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      setPrevSummary(await getMonthlySummary(prev.getFullYear(), prev.getMonth() + 1));
-    } catch {
-      setPrevSummary(null);
-    }
-    try {
-      const list = await getSchedules(now.getFullYear(), now.getMonth() + 1);
-      setTodaySchedules(list.filter(s => s.date === today));
-    } catch {
-      setTodaySchedules([]);
-    }
-    try {
-      const quotes = await getQuotes();
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const [sum, prevSum, list, quotes, notice, event, activities] = await Promise.allSettled([
+      getMonthlySummary(now.getFullYear(), now.getMonth() + 1),
+      getMonthlySummary(prev.getFullYear(), prev.getMonth() + 1),
+      getSchedules(now.getFullYear(), now.getMonth() + 1),
+      getQuotes(),
+      getLatestNotice(),
+      getLatestEvent(),
+      getTeamActivities(),
+    ]);
+    setSummary(sum.status === 'fulfilled' ? sum.value : null);
+    setPrevSummary(prevSum.status === 'fulfilled' ? prevSum.value : null);
+    setTodaySchedules(list.status === 'fulfilled' ? list.value.filter(s => s.date === today) : []);
+    if (quotes.status === 'fulfilled') {
+      const q = quotes.value;
       setQuoteCounts({
-        draft: quotes.filter(q => q.status === 'draft').length,
-        sent: quotes.filter(q => q.status === 'sent').length,
-        done: quotes.filter(q => q.status === 'approved' || q.status === 'rejected').length,
+        draft: q.filter(x => x.status === 'draft').length,
+        sent: q.filter(x => x.status === 'sent').length,
+        done: q.filter(x => x.status === 'approved' || x.status === 'rejected').length,
       });
-    } catch {
+    } else {
       setQuoteCounts({ draft: 0, sent: 0, done: 0 });
     }
-    try {
-      setLatestNotice(await getLatestNotice());
-    } catch {
-      setLatestNotice(null);
-    }
-    try {
-      setLatestEvent(await getLatestEvent());
-    } catch {
-      setLatestEvent(null);
-    }
-    try {
-      setTeamActivities(await getTeamActivities());
-    } catch {
-      setTeamActivities([]);
-    }
+    setLatestNotice(notice.status === 'fulfilled' ? notice.value : null);
+    setLatestEvent(event.status === 'fulfilled' ? event.value : null);
+    setTeamActivities(activities.status === 'fulfilled' ? activities.value : []);
+    setLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today]);
 
@@ -214,7 +204,7 @@ export default function HomeDashboardScreen() {
 
       {todaySchedules.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>오늘 등록된 일정이 없습니다.</Text>
+          <Text style={styles.emptyText}>{loaded ? '오늘 등록된 일정이 없습니다.' : '불러오는 중이에요…'}</Text>
         </View>
       ) : (
         <View style={styles.listCard}>
@@ -309,7 +299,7 @@ export default function HomeDashboardScreen() {
       {/* ★ v18.38 — 실제 팀 활동(일정 추가·팀원 참여) 표시 */}
       {teamActivities.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>최근 팀 활동 내역이 없습니다.</Text>
+          <Text style={styles.emptyText}>{loaded ? '최근 팀 활동 내역이 없습니다.' : '불러오는 중이에요…'}</Text>
         </View>
       ) : (
         <View style={styles.listCard}>
